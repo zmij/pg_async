@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.76 2004/09/20 23:41:03 redi Exp $
+/* $Id: pstream.h,v 1.77 2004/09/24 23:38:37 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -850,7 +850,7 @@ namespace redi
   template <typename C, typename T>
     inline
     basic_pstreambuf<C,T>::basic_pstreambuf()
-    : ppid_(0)
+    : ppid_(-1)   // initialise to -1 to indicate no process run yet.
     , wpipe_(-1)
     , wbuffer_(0)
     , rsrc_(rsrc_out)
@@ -871,7 +871,7 @@ namespace redi
   template <typename C, typename T>
     inline
     basic_pstreambuf<C,T>::basic_pstreambuf(const std::string& command, pmode mode)
-    : ppid_(0)
+    : ppid_(-1)   // initialise to -1 to indicate no process run yet.
     , wpipe_(-1)
     , wbuffer_(0)
     , rsrc_(rsrc_out)
@@ -896,7 +896,7 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf( const std::string& file,
                                              const std::vector<std::string>& argv,
                                              pmode mode )
-    : ppid_(0)
+    : ppid_(-1)   // initialise to -1 to indicate no process run yet.
     , wpipe_(-1)
     , wbuffer_(0)
     , rsrc_(rsrc_out)
@@ -1297,9 +1297,10 @@ namespace redi
    * already exited wait() returns immediately.
    *
    * @param   nohang  true to return immediately if the process has not exited.
-   * @return  1 if the process has exited, 0 if @a nohang is true and the
-   *          process has not exited yet, -1 if an error occurs, in which
-   *          case the error can be found using error().
+   * @return  1 if the process has exited.
+   *          0 if @a nohang is true and the process has not exited yet.
+   *          -1 if no process has been started or if an error occurs,
+   *          in which case the error can be found using error().
    */
   template <typename C, typename T>
     int
@@ -1368,7 +1369,7 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::exited()
     {
-      return wait(true)==1;
+      return ppid_ == 0 || wait(true)==1;
     }
 
 
