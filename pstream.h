@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.81 2004/10/03 04:15:21 redi Exp $
+/* $Id: pstream.h,v 1.82 2004/10/03 04:56:43 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -393,8 +393,7 @@ namespace redi
       /**
        * @brief Start a process.
        *
-       * Starts a new process by passing @a command to the shell
-       * and opens a pipe to the process with the specified @a mode.
+       * Calls do_open( @a %command , @a mode|pstdout ).
        *
        * @param command  a string containing a shell command.
        * @param mode     the I/O mode to use when opening the pipe.
@@ -409,8 +408,7 @@ namespace redi
       /**
        * @brief Start a process.
        *
-       * Starts a new process by executing @a file with the arguments in
-       * @a argv and opens pipes to the process as given by @a mode.
+       * Calls do_open( @a file , @a argv , @a mode|pstdout ).
        *
        * @param file  a string containing the pathname of a program to execute.
        * @param argv  a vector of argument strings passed to the new program.
@@ -521,6 +519,9 @@ namespace redi
 
       /**
        * @brief Start a process.
+       *
+       * Calls do_open( @a %command , @a mode|pstdin ).
+       *
        * @param command  a string containing a shell command.
        * @param mode     the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
@@ -533,6 +534,9 @@ namespace redi
 
       /**
        * @brief Start a process.
+       *
+       * Calls do_open( @a file , @a argv , @a mode|pstdin ).
+       *
        * @param file  a string containing the pathname of a program to execute.
        * @param argv  a vector of argument strings passed to the new program.
        * @param mode  the I/O mode to use when opening the pipe.
@@ -625,6 +629,9 @@ namespace redi
 
       /**
        * @brief Start a process.
+       *
+       * Calls do_open( @a %command , @a mode ).
+       *
        * @param command  a string containing a shell command.
        * @param mode     the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
@@ -637,6 +644,9 @@ namespace redi
 
       /**
        * @brief Start a process.
+       *
+       * Calls do_open( @a file , @a argv , @a mode ).
+       *
        * @param file  a string containing the pathname of a program to execute.
        * @param argv  a vector of argument strings passed to the new program.
        * @param mode  the I/O mode to use when opening the pipe.
@@ -757,8 +767,8 @@ namespace redi
       /**
        * @brief  Start a process.
        *
-       * Starts a new process by passing @a command to the shell
-       * and opens a pipe to the process with the specified @a mode.
+       * Calls do_open( @a %command , @a mode ).
+       *
        * @param command a string containing a shell command.
        * @param mode the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
@@ -772,8 +782,7 @@ namespace redi
       /**
        * @brief  Start a process.
        *
-       * Starts a new process by executing @a file with the arguments in
-       * @a argv and opens pipes to the process as given by @a mode.
+       * Calls do_open( @a file , @a argv , @a mode ).
        *
        * @param file a string containing the pathname of a program to execute.
        * @param argv a vector of argument strings passed to the new program.
@@ -934,6 +943,7 @@ namespace redi
   /**
    * Starts a new process by passing @a command to the shell
    * and opens pipes to the process with the specified @a mode.
+   *
    * There is no way to tell whether the shell command succeeded, this
    * function will always succeed unless resource limits (such as
    * memory usage, or number of processes or open files) are exceeded.
@@ -942,6 +952,7 @@ namespace redi
    * @param   mode     a bitwise OR of one or more of @c out, @c in, @c err.
    * @return  NULL if the shell could not be started or the
    *          pipes could not be opened, @c this otherwise.
+   * @see execlp(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
@@ -984,6 +995,7 @@ namespace redi
   /**
    * Starts a new process by executing @a file with the arguments in
    * @a argv and opens pipes to the process with the specified @a mode.
+   *
    * By convention argv[0] should be the file name of the file being executed.
    * Will duplicate the actions of  the  shell  in searching for an
    * executable file if the specified file name does not contain a slash (/)
@@ -994,7 +1006,7 @@ namespace redi
    * @param   mode  a bitwise OR of one or more of @c out, @c in and @c err.
    * @return  NULL if a pipe could not be opened or if the program could
    *          not be executed, @c this otherwise.
-   * @see execvp()
+   * @see execvp(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
@@ -1693,12 +1705,12 @@ namespace redi
     }
 
   /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
+   * Initialises the stream buffer by calling
+   * do_open( @a command , @a mode )
    *
    * @param command a string containing a shell command.
    * @param mode    the I/O mode to use when opening the pipe.
-   * @see   open()
+   * @see   do_open(const std::string&, pmode)
    */
   template <typename C, typename T>
     inline
@@ -1712,13 +1724,13 @@ namespace redi
     }
 
   /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
+   * Initialises the stream buffer by calling
+   * do_open( @a file , @a argv , @a mode )
    *
    * @param file  a string containing the pathname of a program to execute.
    * @param argv  a vector of argument strings passed to the new program.
    * @param mode  the I/O mode to use when opening the pipe.
-   * @see open()
+   * @see do_open(const std::string&, const argv_type&, pmode)
    */
   template <typename C, typename T>
     inline
@@ -1749,12 +1761,12 @@ namespace redi
     }
 
   /**
-   * Starts a new process by passing @a command to the shell and
-   * opens pipes to the process as given by @a mode.
+   * Calls rdbuf()->open( @a command , @a mode )
+   * and sets @c failbit on error.
    *
    * @param command a string containing a shell command.
    * @param mode    the I/O mode to use when opening the pipe.
-   * @see   basic_pstreambuf::open()
+   * @see   basic_pstreambuf::open(const std::string&, pmode)
    */
   template <typename C, typename T>
     inline void
@@ -1765,13 +1777,13 @@ namespace redi
     }
 
   /**
-   * Starts a new process by executing @a file with the arguments in
-   * @a argv and opens pipes to the process as given by @a mode.
+   * Calls rdbuf()->open( @a file, @a  argv, @a mode )
+   * and sets @c failbit on error.
    *
    * @param file  a string containing the pathname of a program to execute.
    * @param argv  a vector of argument strings passed to the new program.
    * @param mode  the I/O mode to use when opening the pipe.
-   * @see   basic_pstreambuf::open()
+   * @see   basic_pstreambuf::open(const std::string&, const argv_type&, pmode)
    */
   template <typename C, typename T>
     inline void
@@ -1783,7 +1795,7 @@ namespace redi
         this->setstate(std::ios_base::failbit);
     }
 
-  /** Waits for the associated process to finish and closes the pipe. */
+  /** Calls rdbuf->close() and sets @c failbit on error. */
   template <typename C, typename T>
     inline void
     pstream_common<C,T>::close()
@@ -1793,8 +1805,8 @@ namespace redi
     }
 
   /**
-   * @return  true if open() has been successfully called, false otherwise.
-   * @see     basic_pstreambuf::open()
+   * @return  rdbuf()->is_open().
+   * @see     basic_pstreambuf::is_open()
    */
   template <typename C, typename T>
     inline bool
