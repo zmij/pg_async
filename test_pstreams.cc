@@ -198,7 +198,7 @@ int main()
     {
         // open after construction, then write
         opstream os;
-        os.open("sed '/^/STDIN: /'");
+        os.open("sed 's/^/STDIN: /'");
         os << "Hello, world!\n";
         check_pass(os);
     }
