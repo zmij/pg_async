@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.34 2002/07/24 23:02:50 redi Exp $
+/* $Id: pstream.h,v 1.35 2002/08/19 00:36:40 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -1209,6 +1209,14 @@ namespace redi
       return rpipe_[rsrc_];
     }
 
+  /** @return a reference to the specified input file descriptor */
+  template <typename C, typename T>
+    inline typename basic_pstreambuf<C,T>::fd_t&
+    basic_pstreambuf<C,T>::rpipe(buf_read_src which)
+    {
+      return rpipe_[which];
+    }
+
   /** @return a reference to the state of the active input character buffer */
   template <typename C, typename T>
     inline bool&
@@ -1412,7 +1420,7 @@ namespace redi
     basic_pstreambuf<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
     {
       in = out = err = NULL;
-      pmode open_files = 0;
+      size_t open_files = 0;
       if (this->wpipe() > -1)
       {
         in = ::fdopen(this->wpipe(), "w");
