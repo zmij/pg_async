@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.60 2003/07/17 23:45:37 redi Exp $
+/* $Id: pstream.h,v 1.61 2003/09/03 23:53:16 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003 Jonathan Wakely
 
@@ -1191,14 +1191,14 @@ namespace redi
       {
         delete[] wbuffer_;
         wbuffer_ = new char_type[bufsz];
-        setp(wbuffer_, wbuffer_ + bufsz);
+        this->setp(wbuffer_, wbuffer_ + bufsz);
       }
       if (mode & pstdout)
       {
         delete[] rbuffer_[rsrc_out];
         rbuffer_[rsrc_out] = new char_type[bufsz];
         if (rsrc_ == rsrc_out)
-          setg(rbuffer_[rsrc_out] + pbsz, rbuffer_[rsrc_out] + pbsz,
+          this->setg(rbuffer_[rsrc_out] + pbsz, rbuffer_[rsrc_out] + pbsz,
               rbuffer_[rsrc_out] + pbsz);
       }
       if (mode & pstderr)
@@ -1206,7 +1206,7 @@ namespace redi
         delete[] rbuffer_[rsrc_err];
         rbuffer_[rsrc_err] = new char_type[bufsz];
         if (rsrc_ == rsrc_err)
-          setg(rbuffer_[rsrc_err] + pbsz, rbuffer_[rsrc_err] + pbsz,
+          this->setg(rbuffer_[rsrc_err] + pbsz, rbuffer_[rsrc_err] + pbsz,
               rbuffer_[rsrc_err] + pbsz);
       }
     }
@@ -1218,21 +1218,21 @@ namespace redi
     {
       if (mode & pstdin)
       {
-        setp(0, 0);
+        this->setp(0, 0);
         delete[] wbuffer_;
         wbuffer_ = 0;
       }
       if (mode & pstdout)
       {
         if (rsrc_ == rsrc_out)
-          setg(0, 0, 0);
+          this->setg(0, 0, 0);
         delete[] rbuffer_[rsrc_out];
         rbuffer_[rsrc_out] = 0;
       }
       if (mode & pstderr)
       {
         if (rsrc_ == rsrc_err)
-          setg(0, 0, 0);
+          this->setg(0, 0, 0);
         delete[] rbuffer_[rsrc_err];
         rbuffer_[rsrc_err] = 0;
       }
@@ -1245,10 +1245,10 @@ namespace redi
       if (rsrc_ != src)
       {
         char_type* tmpbufstate[3];
-        tmpbufstate[0] = eback();
-        tmpbufstate[1] = gptr();
-        tmpbufstate[2] = egptr();
-        setg(rbufstate_[0], rbufstate_[1], rbufstate_[2]);
+        tmpbufstate[0] = this->eback();
+        tmpbufstate[1] = this->gptr();
+        tmpbufstate[2] = this->egptr();
+        this->setg(rbufstate_[0], rbufstate_[1], rbufstate_[2]);
         for (size_t i = 0; i < 3; ++i)
           rbufstate_[i] = tmpbufstate[i];
       }
@@ -1442,10 +1442,10 @@ namespace redi
     std::streamsize
     basic_pstreambuf<C,T>::xsputn(const char_type* s, std::streamsize n)
     {
-      if (n < epptr() - pptr())
+      if (n < this->epptr() - this->pptr())
       {
-        memcpy(pptr(), s, n * sizeof(char_type));
-        pbump(n);
+        memcpy(this->pptr(), s, n * sizeof(char_type));
+        this->pbump(n);
         return n;
       }
       else
@@ -1467,11 +1467,11 @@ namespace redi
     bool
     basic_pstreambuf<C,T>::empty_buffer()
     {
-      int count = pptr() - pbase();
+      int count = this->pptr() - this->pbase();
       std::streamsize written = write(wbuffer_, count);
       if (count > 0 && written == count)
       {
-        pbump(-written);
+        this->pbump(-written);
         return true;
       }
       return false;
@@ -1490,8 +1490,8 @@ namespace redi
     typename basic_pstreambuf<C,T>::int_type
     basic_pstreambuf<C,T>::underflow()
     {
-      if (gptr() < egptr() || fill_buffer())
-        return traits_type::to_int_type(*gptr());
+      if (this->gptr() < this->egptr() || fill_buffer())
+        return traits_type::to_int_type(*this->gptr());
       else
         return traits_type::eof();
     }
@@ -1509,11 +1509,11 @@ namespace redi
     typename basic_pstreambuf<C,T>::int_type
     basic_pstreambuf<C,T>::pbackfail(int_type c)
     {
-      if (gptr() != eback())
+      if (this->gptr() != this->eback())
       {
-        gbump(-1);
+        this->gbump(-1);
         if (!traits_type::eq_int_type(c, traits_type::eof()))
-          *gptr() = traits_type::to_char_type(c);
+          *this->gptr() = traits_type::to_char_type(c);
         return traits_type::not_eof(c);
       }
       else
@@ -1527,20 +1527,20 @@ namespace redi
     bool
     basic_pstreambuf<C,T>::fill_buffer()
     {
-      int npb = std::min(gptr()-eback(), static_cast<int>(pbsz));
+      int npb = std::min(this->gptr()-this->eback(), static_cast<int>(pbsz));
 
-      std::memmove(rbuffer()+pbsz-npb, gptr()-npb, npb*sizeof(char_type));
+      std::memmove(rbuffer()+pbsz-npb, this->gptr()-npb, npb*sizeof(char_type));
 
       std::streamsize rc = read(rbuffer() + pbsz, bufsz - pbsz);
 
       if (rc > 0)
       {
-        setg(rbuffer()+pbsz-npb, rbuffer()+pbsz, rbuffer()+pbsz+rc);
+        this->setg(rbuffer()+pbsz-npb, rbuffer()+pbsz, rbuffer()+pbsz+rc);
         return true;
       }
       else
       {
-        setg(0, 0, 0);
+        this->setg(0, 0, 0);
         return false;
       }
     }
