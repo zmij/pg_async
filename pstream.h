@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.33 2002/07/24 21:06:03 redi Exp $
+/* $Id: pstream.h,v 1.34 2002/07/24 23:02:50 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -208,6 +208,7 @@ namespace redi
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class pstream_base : virtual public std::basic_ios<CharT, Traits>
     {
+    protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
 
     public:
