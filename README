@@ -51,6 +51,7 @@ Release notes for PStreams 0.5.0
 
 Version numbering changed to the GNU-style major.minor.patchlevel scheme.
 The PSTREAMS_VERSION macro has jumped to 0x0050, 1.0.0 will still be 0x0100.
+The current release would have been 0.50 with the old scheme.
 
 Because all names ending in _t are reserved by POSIX, the pstreambuf::fd_t
 typedef has been renamed to fd_type. The fd_t name is still available, but
@@ -171,5 +172,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.15 2004/10/17 15:43:16 redi Exp $
+$Id: README,v 1.16 2004/10/17 16:07:32 redi Exp $
 :vim: set tw=78

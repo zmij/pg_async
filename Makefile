@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.20 2004/10/17 15:43:16 redi Exp $
+# $Id: Makefile,v 1.21 2004/10/17 16:07:32 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -29,7 +29,8 @@ CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
 SOURCES = pstream.h
 GENERATED_FILES = ChangeLog MANIFEST
-EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README mainpage.html
+EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
+	    mainpage.html test_pstreams.cc test_minimum.cc
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
@@ -57,7 +58,7 @@ mainpage.html: Makefile
 	@perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $(VERS)\2/" $@
 
 ChangeLog:
-	@cvs2cl.pl
+	@if [ -f CVS/Root ] ; then cvs2cl.pl ; fi
 
 packages: pstreams-$(VERS).tar.gz pstreams-docs-$(VERS).tar.gz
 
