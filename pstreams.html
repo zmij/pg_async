@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 <html>
 <head>
-  <!-- $Id: pstreams.html,v 1.5 2001/12/31 22:02:33 redi Exp $ -->
+  <!-- $Id: pstreams.html,v 1.6 2002/01/13 04:53:23 redi Exp $ -->
   <title>Redi PStreams Library</title>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name='description' content='PStreams - A C++ IOStream interface to POSIX Process I/O'>
@@ -56,11 +56,16 @@ character traits or wide characters.</p>
 <a href='http://www.gnu.org/licenses/gpl.txt'>General Public License</a>
 <p>&nbsp;</p>
 <h2><a name='status'>Current status</a></h2>
-<p>Version 0.11</p>
-<p>Working (but not very well tested) <code>ipstream</code> and
-<code>opstream</code> classes for ISO C++-compliant compilers.
+<p>Version 0.16</p>
+<p>Working <code>ipstream</code> and <code>opstream</code> classes for
+ISO C++-compliant compilers.
 <code>pstream</code> class for systems known to use a bidirectional pipe
 to implement <code>popen()</code>.<a href='#footnote2' class='ref'>[2]</a></p>
+<p>I am currently working on a new implementation of the stream buffer class,
+<code>pstreambuf</code>, that doesn't use <code>popen()</code>. The stream
+buffer uses up to three pipes shared with the associated process, giving
+access to any combination of the process' <code>stdin</code>,
+ <code>stdout</code> and <code>stderr</code> streams.</p>
 <p>For non-ISO C++-compliant compilers there are alternative versions of
 all classes.
 These use non-standard extensions found in the old streams
@@ -82,7 +87,8 @@ currently sets <code>errno</code> to <code>ESPIPE</code> because the
 is not allowed for pipes. <code>errno</code> is reset by the classes.</p>
 <p>&nbsp;</p>
 <h2><a name='usage'>Usage</a></h2>
-<p class='note'>This section is slightly out of date. I will amend it soon</p>
+<p class='note'>This section is out of date. Please use the doxygen-generated
+documentation, accessible through the links at the top of the page.</p>
 <p>The PStreams classes have a common public interface.
 <code>ipstream</code> is shown here, but <code>opstream</code> is the same
 (as is <code>pstream</code> where available).</p>
@@ -90,17 +96,17 @@ is not allowed for pipes. <code>errno</code> is reset by the classes.</p>
 class ipstream {
 public:
     ipstream();
-    ipstream(const char* command);
-    void open(const char* command);
+    ipstream(const std::string&amp; command);
+    void open(const std::string&amp; command);
 };
 </code>
 <code>ipstream();</code>
     Creates a new object with no associated process.
 
-<code>ipstream(const char* command);</code>
+<code>ipstream(const std::string&amp; command);</code>
     Passes command to /bin/sh and opens a pipe to the new process.
 
-<code>void open(const char* command);</code>
+<code>void open(const std::string&amp; command);</code>
      Passes command to /bin/sh and opens a pipe to the new process.
 </pre>
 <p>The  command  argument  is  a pointer to a null-terminated
@@ -127,15 +133,6 @@ is made for every character, I don't know whether this is very efficient.</p>
 <p>The "library" currently consists of a single header file,
 <a href='pstream.h'>pstream.h</a>, which defines the PStreams classes
 in the <code>redi</code> namespace.</p>
-<!--
-<p>The "library" currently consists of a single header file,
-<a href='pstream.h'>pstream.h</a>, which defines the PStreams classes
-in the <code>redi</code> namespace, and
-<a href='pstreamconf.h'>pstreamconf.h</a> which is used by pstream.h
-to set some macros. pstreamconf.h should not be included directly.
-<p>You can download the library as a gzipped tar file:
-<a href='pstreams.tar.gz'>pstreams.tar.gz</a></p>
--->
 <p><a href='#top'>top</a></p>
 <hr>
 <p class='note'><a name='footnote1'>[1]</a> Implementations of
@@ -155,7 +152,7 @@ NetBSD version 1.4 and above.</p>
 <address>
 <p>Please send comments, suggestions, bugfixes, patches, cakes, pies etc. to
 pstreams&nbsp;at&nbsp;redi&nbsp;dot&nbsp;uklinux&nbsp;dot&nbsp;net
-<br />This page last updated on $Date: 2001/12/31 22:02:33 $
+<br />This page last updated on $Date: 2002/01/13 04:53:23 $
 <br />Copyright &copy; 2001 Jonathan Wakely</p>
 </address>
 <p>
