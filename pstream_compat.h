@@ -1,4 +1,4 @@
-/* $Id: pstream_compat.h,v 1.4 2004/03/30 11:14:51 redi Exp $
+/* $Id: pstream_compat.h,v 1.5 2004/03/30 11:51:26 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -37,8 +37,6 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
     For ISO C++ conforming compilers use pstream.h instead.
 
 #elif GCC_BACK_COMPAT == 1
-// gcc 2.7 / 2.8 / 2.9x / egcs
-//#elif __GNUC__ == 2 && __GNUC_MINOR__ >= 7
 
 #warning "PStreams needs an ISO C++ compliant compiler."
 #warning "These classes are unsupported and largely untested."
@@ -53,51 +51,64 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 namespace redi
 {
-  class pstreambase : public fstreambase {
+  class pstreambase : public fstreambase
+  {
   public:
     void open(const char* command)
-    { attach(fileno(popen(command, mode_))); errno=0; }
+    {
+      if ((fp_ = popen(command, mode_)))
+      {
+        attach(fileno(fp_));
+        // errno is set to zero because fstreambase tries to lseek()
+        // to the end of the stream which is not allowed for pipes
+        // and sets errno to ESPIPE, so we clear it.
+        errno=0;
+      }
+    }
+
+    int close() { return fp_ ? rdbuf()->sync(), pclose(fp_) : 0; }
+
+    bool is_open() { return fp_; }
 
   protected:
-    pstreambase(const char* mode) : fstreambase() { copy_mode(mode); }
+    pstreambase(const char* mode) : fstreambase(), mode_(mode), fp_(0) { }
 
     pstreambase(const char* command, const char* mode)
-    : fstreambase(fileno(popen(command, mode))) { errno=0; copy_mode(mode); }
+    : fstreambase(), mode_(mode), fp_(0)
+    {
+      open(command);
+    }
 
-    virtual ~pstreambase()
-    { if (FILE* fp = fdopen(filedesc(), mode_)) pclose(fp); }
+    ~pstreambase() { close(); }
 
   private:
-    void copy_mode(const char* mode) { strncpy(mode_, mode, 2); }
-    char mode_[3]; // "r", "w" or "r+"
+    const char* const mode_; // Points to static mode member of derived class.
+    FILE*             fp_;   // Preserves return value of popen().
   };
-  // errno is set to zero because fstreambase tries to lseek()
-  // to the end of the stream which is not allowed for pipes
-  // and sets errno to ESPIPE, so we clear it.
 
 
   class ipstream : public pstreambase, public istream
   {
-    static const char * const MODE = "r";
+    static const char * const mode = "r";
   public:
-    ipstream() : pstreambase(MODE) { }
-    ipstream(const char* name) : pstreambase(name, MODE) { }
+    ipstream() : pstreambase(mode) { }
+    ipstream(const char* command) : pstreambase(command, mode) { }
   };
 
   class opstream : public pstreambase, public ostream
   {
-    static const char * const MODE = "w";
+    static const char * const mode = "w";
   public:
-    opstream() : pstreambase(MODE) { }
-    opstream(const char* name) : pstreambase(MODE) { }
+    opstream() : pstreambase(mode) { }
+    opstream(const char* command) : pstreambase(command, mode) { }
   };
 
 #if REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE
   class pstream :  protected pstreambase, public iostream {
-    static const char * const MODE = "r+";
+    static const char * const mode = "r+";
   public:
-    pstream() : pstreambase(MODE) { }
-    pstream(const char* command) : pstreambase(command, MODE) { }
+    pstream() : pstreambase(mode) { }
+    pstream(const char* command) : pstreambase(command, mode) { }
   };
 #endif
 
@@ -113,36 +124,52 @@ namespace redi
 #include <cerrno>
 
   // very basic implementations
-  // incomplete interface: no open(const char*)
+  // incomplete interfaces: no open(const char*)
   // use non-standard extensions
   // use at your own risk!
 
 namespace redi
 {
-
-  class opstream : public std::ofstream {
-    static const char MODE[] = "w";
-  public:
-    opstream(const char* command) : std::ofstream(fileno(popen(command, MODE)))
-    { errno=0; }
-    ~opstream() { pclose(fdopen(rdbuf()->fd(), MODE)); }
+  struct FILE_wrapper {
+    explicit FILE_wrapper(FILE* p) : fp(p) {}
+    FILE* fp;
   };
 
-  class ipstream : public std::ifstream {
-    static const char MODE[] = "r";
+  class opstream : private FILE_wrapper, public std::ofstream {
+    static const char * const mode = "w";
   public:
-    ipstream(const char* command) : std::ifstream(fileno(popen(command, MODE)))
-    { errno=0; }
-    ~ipstream() { pclose(fdopen(rdbuf()->fd(), MODE)); }
+    opstream(const char* command)
+    : FILE_wrapper(popen(command, mode)), std::ofstream(fileno(fp))
+    {
+      errno=0;
+    }
+
+    ~opstream() { pclose(fp); }
+  };
+
+  class ipstream : private FILE_wrapper, public std::ifstream {
+    static const char * const mode = "r";
+  public:
+    ipstream(const char* command)
+    : FILE_wrapper(popen(command, mode)), std::ifstream(fileno(fp))
+    {
+      errno=0;
+    }
+
+    ~ipstream() { pclose(fp); }
   };
 
 #if REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE
-  class pstream : public std::fstream {
-    static const char MODE[] = "r+";
+  class pstream : private FILE_wrapper, public std::fstream {
+    static const char * const mode = "r+";
   public:
-    pstream(const char* command) : std::fstream(fileno(popen(command, MODE)))
-    { errno=0; }
-    ~pstream() { pclose(fdopen(rdbuf()->fd(), MODE)); }
+    pstream(const char* command)
+    : FILE_wrapper(popen(command, mode)), std::fstream(fileno(fp))
+    {
+      errno=0;
+    }
+    
+    ~pstream() { pclose(fp); }
   };
 #endif
 
