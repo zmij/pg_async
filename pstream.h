@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.25 2002/04/27 03:51:46 redi Exp $
+/* $Id: pstream.h,v 1.26 2002/04/27 14:58:29 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -167,7 +167,7 @@ namespace redi
 
       /// Close an array of file descriptors.
       static void
-      fdclose(fd_t* filedes, size_t count);
+      close_fd_array(fd_t* filedes, size_t count);
 
       pid_t         ppid_;        // pid of process
       fd_t          wpipe_;       // pipe used to write to process' stdin
@@ -761,7 +761,7 @@ namespace redi
 
       // three pairs of file descriptors, for pipes connected to the
       // process' stdin, stdout and stderr
-      // (stored in a single array so fdclose() can close all at once)
+      // (stored in a single array so close_fd_array() can close all at once)
       fd_t fd[6] =  {-1, -1, -1, -1, -1, -1};
       fd_t* pin = fd;
       fd_t* pout = fd+2;
@@ -812,7 +812,7 @@ namespace redi
             // TODO use exceptions, not cerr, don't #include <iostream>
             std::cerr << "Cannot fork: " << strerror(error) << '\n';
             // couldn't fork for some reason, close any open pipes
-            basic_pstreambuf<C,T>::fdclose(fd, 6);
+            basic_pstreambuf<C,T>::close_fd_array(fd, 6);
             break;
           }
           default :
@@ -851,7 +851,7 @@ namespace redi
         // TODO report error to cerr ?
 
         // close any pipes we opened before failure
-        basic_pstreambuf<C,T>::fdclose(fd, 6);
+        basic_pstreambuf<C,T>::close_fd_array(fd, 6);
       }
       return pid;
     }
@@ -867,8 +867,8 @@ namespace redi
       basic_pstreambuf<C,T>* ret = NULL;
       if (this->is_open())
       {
-        basic_pstreambuf<C,T>::fdclose(&wpipe_, 1);
-        basic_pstreambuf<C,T>::fdclose(rpipe_, 2);
+        basic_pstreambuf<C,T>::close_fd_array(&wpipe_, 1);
+        basic_pstreambuf<C,T>::close_fd_array(rpipe_, 2);
         wpipe_ = rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
 
         int status;
@@ -1191,7 +1191,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline void
-    basic_pstreambuf<C,T>::fdclose(fd_t* filedes, size_t count)
+    basic_pstreambuf<C,T>::close_fd_array(fd_t* filedes, size_t count)
     {
       for (size_t i = 0; i < count; ++i)
         if (filedes[i] >= 0)
