@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.80 2004/10/01 19:00:43 redi Exp $
+/* $Id: pstream.h,v 1.81 2004/10/03 04:15:21 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -865,7 +865,7 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf()
     : ppid_(-1)   // initialise to -1 to indicate no process run yet.
     , wpipe_(-1)
-    , wbuffer_(0)
+    , wbuffer_(NULL)
     , rsrc_(rsrc_out)
     , status_(-1)
     , error_(0)
@@ -886,7 +886,7 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf(const std::string& command, pmode mode)
     : ppid_(-1)   // initialise to -1 to indicate no process run yet.
     , wpipe_(-1)
-    , wbuffer_(0)
+    , wbuffer_(NULL)
     , rsrc_(rsrc_out)
     , status_(-1)
     , error_(0)
@@ -911,7 +911,7 @@ namespace redi
                                              pmode mode )
     : ppid_(-1)   // initialise to -1 to indicate no process run yet.
     , wpipe_(-1)
-    , wbuffer_(0)
+    , wbuffer_(NULL)
     , rsrc_(rsrc_out)
     , status_(-1)
     , error_(0)
@@ -956,7 +956,7 @@ namespace redi
           case 0 :
           {
             // this is the new process, exec command
-            ::execlp("sh", "sh", "-c", command.c_str(), 0);
+            ::execlp("sh", "sh", "-c", command.c_str(), (void*)NULL);
 
             // can only reach this point if exec() failed
 
@@ -1018,9 +1018,9 @@ namespace redi
               const std::string& src = argv[i];
               char*& dest = arg_v[i];
               dest = new char[src.size()+1];
-              dest[ src.copy(dest, src.size()) ] = 0;
+              dest[ src.copy(dest, src.size()) ] = '\0';
             }
-            arg_v[argv.size()] = 0;
+            arg_v[argv.size()] = NULL;
 
             ::execvp(file.c_str(), arg_v);
 
@@ -1230,8 +1230,8 @@ namespace redi
     basic_pstreambuf<C,T>::init_rbuffers()
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
-      rbuffer_[rsrc_out] = rbuffer_[rsrc_err] = 0;
-      rbufstate_[0] = rbufstate_[1] = rbufstate_[2] = 0;
+      rbuffer_[rsrc_out] = rbuffer_[rsrc_err] = NULL;
+      rbufstate_[0] = rbufstate_[1] = rbufstate_[2] = NULL;
     }
 
   template <typename C, typename T>
@@ -1268,23 +1268,23 @@ namespace redi
     {
       if (mode & pstdin)
       {
-        this->setp(0, 0);
+        this->setp(NULL, NULL);
         delete[] wbuffer_;
-        wbuffer_ = 0;
+        wbuffer_ = NULL;
       }
       if (mode & pstdout)
       {
         if (rsrc_ == rsrc_out)
-          this->setg(0, 0, 0);
+          this->setg(NULL, NULL, NULL);
         delete[] rbuffer_[rsrc_out];
-        rbuffer_[rsrc_out] = 0;
+        rbuffer_[rsrc_out] = NULL;
       }
       if (mode & pstderr)
       {
         if (rsrc_ == rsrc_err)
-          this->setg(0, 0, 0);
+          this->setg(NULL, NULL, NULL);
         delete[] rbuffer_[rsrc_err];
-        rbuffer_[rsrc_err] = 0;
+        rbuffer_[rsrc_err] = NULL;
       }
     }
 
@@ -1599,7 +1599,7 @@ namespace redi
       }
       else
       {
-        this->setg(0, 0, 0);
+        this->setg(NULL, NULL, NULL);
         return false;
       }
     }
