@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2002/09/09 22:40:44 redi Exp $
+# $Id: Makefile,v 1.13 2002/09/10 00:10:59 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -37,7 +37,7 @@ DIST_FILES= $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 all: docs $(GENERATED_FILES)
 
 test: test_pstreams test_minimum
-	@: ./test_minimum >/dev/null
+	@./test_minimum >/dev/null 2>&1 || echo "TEST EXITED WITH STATUS $$?"
 	@./test_pstreams >/dev/null || echo "TEST EXITED WITH STATUS $$?"
 
 test_pstreams: test_pstreams.cc pstream.h

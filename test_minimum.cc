@@ -20,11 +20,13 @@ int main()
     while (who >> c)
         cat << c;
 
-    cat << '\n';
+    cat << '\n' << peof;
 
     pstream fail("ghghghg", pstreambuf::pstderr);
-    if (!(std::cerr << fail.rdbuf()))
+    std::string s;
+    if (!std::getline(fail, s))
         return 3;
+    std::cerr << s << '\n';
     
     rpstream who2("whoami");
     if (!(who2.out() >> c))
