@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.1 2002/04/24 23:23:33 redi Exp $
+/* $Id: rpstream.h,v 1.2 2002/04/25 02:00:32 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -30,12 +30,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef REDI_RPSTREAM_H
 #define REDI_RPSTREAM_H
 
-#include <pstream.h>
+#include "pstream.h"
 
 // Check the PStreams version.
-#if PSTREAMS_VERSION < 0x0020
-#error This version of rpstream.h is incompatible with your pstream.h
-#error Please use pstream.h v0.32 or higher.
+#if PSTREAMS_VERSION < 0x0021
+//#error This version of rpstream.h is incompatible with your pstream.h
+//#error Please use pstream.h v0.33 or higher.
 #endif
 
 
@@ -119,7 +119,7 @@ namespace redi
   template <typename C, typename T>
     basic_rpstream<C,T>::basic_rpstream()
     : ostream_type(NULL)
-    , istream_(NULL)
+    , istream_type(NULL)
     , pbase_type()
     {
       this->init(&buf_);  // calls shared std::basic_ios virtual base class
@@ -136,7 +136,7 @@ namespace redi
   template <typename C, typename T>
     basic_rpstream<C,T>::basic_rpstream(const std::string& command, pmode mode)
     : ostream_type(NULL)
-    , istream_(NULL)
+    , istream_type(NULL)
     , pbase_type(command, mode)
     {
       this->init(&buf_);
@@ -155,7 +155,7 @@ namespace redi
     inline
     basic_rpstream<C,T>::basic_rpstream(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     : ostream_type(NULL)
-    , istream_(NULL)
+    , istream_type(NULL)
     , pbase_type(command, argv, mode)
     {
       this->init(&buf_);
@@ -188,7 +188,7 @@ namespace redi
     inline void
     basic_rpstream<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     {
-      pbase_type::open(command, argv, mode);
+      pbase_type::open(file, argv, mode);
     }
 
   /**

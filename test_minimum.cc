@@ -1,4 +1,5 @@
 #include "pstream.h"
+#include "rpstream.h"
 
 int main()
 {
@@ -19,7 +20,13 @@ int main()
     cat << '\n';
 
     pstream fail("ghghghg", pstreambuf::pstderr);
+    if (!(std::cerr << fail.rdbuf()))
+        return 3;
     
+    rpstream who2("whoami");
+    if (!(who2.out() >> c))
+        return 4;
+
     return 0;
 }
 

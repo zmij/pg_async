@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.21 2002/04/24 23:23:33 redi Exp $
+/* $Id: pstream.h,v 1.22 2002/04/25 02:00:32 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAM_H
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0020   // 0.32
+#define PSTREAMS_VERSION 0x0021   // 0.33
 
 #include <ios>
 #include <streambuf>
@@ -181,11 +181,11 @@ namespace redi
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class pstream_base : virtual public std::basic_ios<CharT, Traits>
     {
-      typedef std::basic_ios<CharT, Traits>         base_class_type;
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef typename streambuf_type::pmode        pmode;
 
     public:
+      typedef typename streambuf_type::pmode        pmode;
+
       /// Default constructor.
       pstream_base();
 
@@ -219,30 +219,6 @@ namespace redi
       const std::string&
       command() const;
 
-      /**
-       * @brief Set streambuf to read from process' @c stdout.
-       *
-       * This is a pure virtual function and must be overriden by a derived
-       * class in order to use classes of type pstream_base.
-       *
-       * @return The return type is std::basic_ios so that a derived class
-       *         can return any type derived from basic_ios.
-       */
-      virtual base_class_type&
-      out() =0;
-
-      /**
-       * @brief Set streambuf to read from process' @c stderr.
-       *
-       * This is a pure virtual function and must be overriden by a derived
-       * class in order to use classes of type pstream_base.
-       *
-       * @return The return type is std::basic_ios so that a derived class
-       *         can return any type derived from basic_ios.
-       */
-      virtual base_class_type&
-      err() =0;
-
     protected:
       std::string       command_;
       streambuf_type    buf_;
@@ -265,13 +241,15 @@ namespace redi
     , public pstream_base<CharT, Traits>
     {
       typedef std::basic_istream<CharT, Traits>     istream_type;
-      typedef typename pstream_base::streambuf_type streambuf_type;
-      typedef typename pstream_base::pmode          pmode;
+      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
+      typedef typename pbase_type::pmode            pmode;
+
       /// Default constructor, creates an uninitialised stream.
       basic_ipstream()
-      : istream_type(NULL), pstream_base()
+      : istream_type(NULL), pbase_type()
       {}
 
       /**
@@ -285,7 +263,7 @@ namespace redi
        * @see open()
        */
       basic_ipstream(const std::string& command, pmode mode = std::ios_base::in)
-      : istream_type(NULL), pstream_base(command, mode)
+      : istream_type(NULL), pbase_type(command, mode)
       {}
 
       /**
@@ -300,7 +278,7 @@ namespace redi
        * @see open()
        */
       basic_ipstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
-      : istream_type(NULL), pstream_base(file, argv, mode)
+      : istream_type(NULL), pbase_type(file, argv, mode)
       {}
 
       /**
@@ -323,7 +301,7 @@ namespace redi
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::in)
-      { pstream_base::open(command, mode); }
+      { pbase_type::open(command, mode); }
 
       /**
        * @brief Start a process.
@@ -338,17 +316,7 @@ namespace redi
        */
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
-      { pstream_base::open(command, argv, mode); }
-
-    private:
-      // pstream_base::out() and pstream_base::err() are private and undefined
-      // for ipstream.They don't make any sense. Trying to call them will
-      // result in a compilation error.
-      basic_ipstream&
-      out();
-
-      basic_ipstream&
-      err();
+      { pbase_type::open(file, argv, mode); }
     };
 
 
@@ -367,13 +335,15 @@ namespace redi
     , public pstream_base<CharT, Traits>
     {
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
-      typedef typename pstream_base::streambuf_type streambuf_type;
-      typedef typename pstream_base::pmode          pmode;
+      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
+      typedef typename pbase_type::pmode            pmode;
+
       /// Default constructor, creates an uninitialised stream.
       basic_opstream()
-      : ostream_type(NULL), pstream_base()
+      : ostream_type(NULL), pbase_type()
       {}
 
       /**
@@ -387,7 +357,7 @@ namespace redi
        * @see open()
        */
       basic_opstream(const std::string& command, pmode mode = std::ios_base::out)
-      : ostream_type(NULL), pstream_base(command, mode)
+      : ostream_type(NULL), pbase_type(command, mode)
       {}
 
       /**
@@ -402,7 +372,7 @@ namespace redi
        * @see open()
        */
       basic_opstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
-      : ostream_type(NULL), pstream_base(command, argv, mode)
+      : ostream_type(NULL), pbase_type(command, argv, mode)
       {}
 
       /**
@@ -420,7 +390,7 @@ namespace redi
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::out)
-      { pstream_base::open(command, mode); }
+      { pbase_type::open(command, mode); }
 
       /**
        * @brief Start a process.
@@ -431,23 +401,29 @@ namespace redi
        */
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
-      { pstream_base::open(command, argv, mode); }
+      { pbase_type::open(file, argv, mode); }
 
       /**
        * @brief Set streambuf to read from process' @c stdout.
        * @return @c *this
        */
-      virtual basic_opstream&
+      basic_opstream&
       out()
-      { buf_.read_err(false); return *this; }
+      {
+        buf_.read_err(false);
+        return *this;
+      }
 
       /**
        * @brief Set streambuf to read from process' @c stderr.
        * @return @c *this
        */
-      virtual basic_opstream&
+      basic_opstream&
       err()
-      { buf_.read_err(true); return *this; }
+      {
+        buf_.read_err(true);
+        return *this;
+      }
     };
 
 
@@ -465,18 +441,20 @@ namespace redi
    * unless altered by the command itself.
    */
   template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class basic_pstream : public std::basic_iostream<CharT, Traits>
+    class basic_pstream
     : public std::basic_iostream<CharT, Traits>
     , public pstream_base<CharT, Traits>
     {
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
-      typedef typename pstream_base::streambuf_type streambuf_type;
-      typedef typename pstream_base::pmode          pmode;
+      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
+      typedef typename pbase_type::pmode            pmode;
+
       /// Default constructor, creates an uninitialised stream.
       basic_pstream()
-      : iostream_type(NULL), pstream_base()
+      : iostream_type(NULL), pbase_type()
       {}
 
       /**
@@ -490,7 +468,7 @@ namespace redi
        * @see open(const std::string&, pmode)
        */
       basic_pstream(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out)
-      : iostream_type(NULL), pstream_base(command, mode)
+      : iostream_type(NULL), pbase_type(command, mode)
       {}
 
       /**
@@ -505,7 +483,7 @@ namespace redi
        * @see open(const std::string&, const std::vector<std::string>&, pmode)
        */
       basic_pstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
-      : ostream_type(NULL), pstream_base(command, argv, mode)
+      : iostream_type(NULL), pbase_type(command, argv, mode)
       {}
 
       /**
@@ -522,7 +500,8 @@ namespace redi
        * @see pstream_base::open(const std::string&, pmode)
        */
       void
-      open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
+      open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out)
+      { pbase_type::open(command, mode); }
 
       /**
        * @brief Start a process.
@@ -532,7 +511,8 @@ namespace redi
        * @see pstream_base::open(const std::string&, const std::vector<std::string>&, pmode)
        */
       void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
+      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
+      { pbase_type::open(file, argv, mode); }
 
       /**
        * @brief Set streambuf to read from process' @c stdout.
@@ -627,7 +607,7 @@ namespace redi
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
-      this->open(command, argv, mode);
+      this->open(file, argv, mode);
     }
 
   /**
@@ -1254,8 +1234,8 @@ namespace redi
     , command_(command)
     , buf_()
     {
-      this->init(&buf);
-      this->open(command_, mode);
+      this->init(&buf_);
+      this->open(command, mode);
     }
    
   /**
@@ -1290,7 +1270,7 @@ namespace redi
     inline void
     pstream_base<C,T>::open(const std::string& command, pmode mode)
     {
-      if (!buf_.open((command_=command), (mode|std::ios_base::in)))
+      if (!buf_.open((command_=command), mode))
         this->setstate(std::ios_base::failbit);
     }
 
@@ -1307,7 +1287,7 @@ namespace redi
     inline void
     pstream_base<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     {
-      if (!buf_.open((command_=file), argv, (mode|std::ios_base::in)))
+      if (!buf_.open((command_=file), argv, mode))
         this->setstate(std::ios_base::failbit);
     }
 
