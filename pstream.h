@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.45 2002/09/21 21:53:03 redi Exp $
+/* $Id: pstream.h,v 1.46 2002/09/22 01:05:15 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -44,7 +44,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <signal.h>     // for kill()
 
 
-// TODO   add buffering to pstreambuf
+// TODO   add input buffering to pstreambuf
 
 // TODO   abstract process creation and control to a process class.
 
@@ -58,7 +58,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0028   // 0.40
+#define PSTREAMS_VERSION 0x0029   // 0.41
 
 
 /**
@@ -171,6 +171,15 @@ namespace redi
       int_type
       pbackfail(int_type c = traits_type::eof());
 
+#if BUFFERED
+      /// Write any buffered characters to the stream.
+      int
+      sync();
+
+      std::streamsize
+      xsputn(const char_type* s, std::streamsize n);
+#endif
+
       /// Insert a character into the pipe.
       bool
       write(char_type c);
@@ -179,7 +188,7 @@ namespace redi
       bool
       read(char_type& c);
 
-#if 0
+#if BUFFERED
       /// Insert a sequence of characters into the pipe.
       std::streamsize
       write(char_type* s, std::streamsize n);
@@ -221,6 +230,12 @@ namespace redi
       char_type&
       char_buf();
 
+#if BUFFERED
+      /// Writes out any buffered characters.
+      bool
+      empty_buffer();
+#endif
+
     private:
       basic_pstreambuf(const basic_pstreambuf&);
       basic_pstreambuf& operator=(const basic_pstreambuf&);
@@ -234,6 +249,12 @@ namespace redi
       buf_read_src  rsrc_;
       int           status_;      // hold exit status of child process
       int           error_;       // hold errno if fork() or exec() fails
+
+#if BUFFERED
+      static const size_t bufsz_ = 0x40;
+      char_type           wbuffer_[bufsz_];
+      // char_type           rbuffer_[bufSize][2];
+#endif
     };
 
   /// Class template for common base class.
@@ -657,6 +678,7 @@ namespace redi
    * member definitions for pstreambuf
    */
 
+
   /**
    * @class basic_pstreambuf
    * Provides underlying streambuf functionality for the PStreams classes.
@@ -674,6 +696,9 @@ namespace redi
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
+#if BUFFERED
+      this->setp(NULL, NULL);
+#endif
     }
 
   /**
@@ -695,6 +720,9 @@ namespace redi
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
+#if BUFFERED
+      this->setp(NULL, NULL);
+#endif
       this->open(command, mode);
     }
 
@@ -718,6 +746,9 @@ namespace redi
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
+#if BUFFERED
+      this->setp(NULL, NULL);
+#endif
       this->open(file, argv, mode);
     }
 
@@ -779,6 +810,10 @@ namespace redi
             switch (this->wait(true))
             {
               case 0 :
+#if BUFFERED
+                // activate buffer
+                this->setp(wbuffer_, wbuffer_ + bufsz_);
+#endif
                 ret = this;
                 break;
               case 1:
@@ -791,6 +826,10 @@ namespace redi
                 break;
             }
 #else
+#if BUFFERED
+            // activate buffer
+            this->setp(wbuffer_, wbuffer_ + bufsz_);
+#endif
             ret = this;
 #endif
           }
@@ -861,6 +900,10 @@ namespace redi
             switch (this->wait(true))
             {
               case 0 :
+#if BUFFERED
+                // activate buffer
+                this->setp(wbuffer_, wbuffer_ + bufsz_);
+#endif
                 ret = this;
                 break;
               case 1:
@@ -873,6 +916,10 @@ namespace redi
                 break;
             }
 #else
+#if BUFFERED
+            // activate buffer
+            this->setp(wbuffer_, wbuffer_ + bufsz_);
+#endif
             ret = this;
 #endif
           }
@@ -1042,6 +1089,9 @@ namespace redi
       if (this->is_open())
       {
         this->sync();
+#if BUFFERED
+        this->setp(NULL, NULL);
+#endif
 
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
@@ -1222,6 +1272,35 @@ namespace redi
       return ret;
     }
 
+#if  BUFFERED
+  /**
+   * Called when the internal character buffer is not present or is full,
+   * to transfer the buffer contents to the pipe. For unbuffered streams
+   * this is called for every insertion.
+   *
+   * @param c a character to be written to the pipe
+   * @return @c traits_type::not_eof(c) if @a c is equal to @c
+   * traits_type::eof(). Otherwise returns @a c if @a c can be written
+   * to the pipe, or @c traits_type::eof() if not.
+   */
+  template <typename C, typename T>
+    typename basic_pstreambuf<C,T>::int_type
+    basic_pstreambuf<C,T>::overflow(int_type c)
+    {
+      if (!this->empty_buffer())
+      {
+        return traits_type::eof();
+      }
+      else if (!traits_type::eq_int_type(c, traits_type::eof()))
+      {
+        return this->sputc(c);
+      }
+      else
+      {
+        return traits_type::not_eof(c);
+      }
+    }
+#else
   /**
    * Called when the internal character buffer is not present or is full,
    * to transfer the buffer contents to the pipe. For unbuffered streams
@@ -1245,6 +1324,7 @@ namespace redi
       }
       return traits_type::not_eof(c);
     }
+#endif
 
   /**
    * Called when the internal character buffer is not present or is empty,
@@ -1340,6 +1420,120 @@ namespace redi
       }
     }
 
+
+#if BUFFERED
+  template <typename C, typename T>
+    int
+    basic_pstreambuf<C,T>::sync()
+    {
+      return (this->empty_buffer() ? 0 : -1);
+    }
+
+
+  template <typename C, typename T>
+    std::streamsize
+    basic_pstreambuf<C,T>::xsputn(const char_type* s, std::streamsize n)
+    {
+      if (n < epptr() - pptr())
+      {
+        memcpy(pptr(), s, n * sizeof(char_type));
+        pbump(n);
+        return n;
+      }
+      else
+      {
+        for (std::streamsize i = 0; i < n; ++i)
+        {
+          if (traits_type::eq_int_type(sputc(s[i]), traits_type::eof()))
+            return i;
+        }
+        return n;
+      }
+    }
+
+
+  /**
+   * @return  true if the buffer was emptied, false otherwise.
+   */
+  template <typename C, typename T>
+    bool
+    basic_pstreambuf<C,T>::empty_buffer()
+    {
+      bool retval = false;
+      int count = pptr() - pbase();
+      std::streamsize written = this->write(wbuffer_, count);
+      if (count > 0 && written == count)
+      {
+        pbump(-written);
+        retval = true;
+      }
+      return retval;
+    }
+#endif
+
+
+#if BUFFERED
+  /**
+   * Attempts to insert @a c into the pipe. Used by overflow().
+   *
+   * @param c a character to insert.
+   * @return true if the character could be inserted, false otherwise.
+   * @see write(char_type* s, std::streamsize n)
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_pstreambuf<C,T>::write(char_type c)
+    {
+      return (this->write(&c, 1) == 1);
+    }
+
+  /**
+   * Attempts to extract a character from the pipe and store it in @a c.
+   * Used by underflow().
+   *
+   * @param c a reference to hold the extracted character.
+   * @return true if a character could be extracted, false otherwise.
+   * @see read(char_type* s, std::streamsize n)
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_pstreambuf<C,T>::read(char_type& c)
+    {
+      return (this->read(&c, 1) == 1);
+    }
+
+  /**
+   * Writes up to @a n characters to the pipe from the buffer @a s.
+   * This currently only works for fixed width character encodings where
+   * each character uses sizeof(char_type) bytes.
+   *
+   * @param s character buffer.
+   * @param n buffer length.
+   * @return the number of characters written.
+   */
+  template <typename C, typename T>
+    inline std::streamsize
+    basic_pstreambuf<C,T>::write(char_type* s, std::streamsize n)
+    {
+      return (wpipe() >= 0 ? ::write(wpipe(), s, n * sizeof(char_type)) : 0);
+    }
+
+  /**
+   * Reads up to @a n characters from the pipe to the buffer @a s.
+   * This currently only works for fixed width character encodings where
+   * each character uses sizeof(char_type) bytes.
+   *
+   * @param s character buffer.
+   * @param n buffer length.
+   * @return the number of characters read.
+   */
+  template <typename C, typename T>
+    inline std::streamsize
+    basic_pstreambuf<C,T>::read(char_type* s, std::streamsize n)
+    {
+      return (rpipe() >= 0 ? ::read(rpipe(), s, n * sizeof(char_type)) : 0);
+    }
+#else
   /**
    * Attempts to insert @a c into the pipe. Used by overflow().
    * This currently only works for fixed width character encodings where
@@ -1377,65 +1571,6 @@ namespace redi
         return (::read(rpipe(), &c, sizeof(char_type)) == sizeof(char_type));
       }
       return false;
-    }
-
-
-#if 0
-  /**
-   * Attempts to insert @a c into the pipe. Used by overflow().
-   *
-   * @param c a character to insert.
-   * @return true if the character could be inserted, false otherwise.
-   * @see write(char_type* s, std::streamsize n)
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_pstreambuf<C,T>::write(char_type c)
-    {
-      return (this->write(&c, 1) == 1);
-    }
-
-  /**
-   * Attempts to extract a character from the pipe and store it in @a c.
-   * Used by underflow().
-   *
-   * @param c a reference to hold the extracted character.
-   * @return true if a character could be extracted, false otherwise.
-   * @see read(char_type* s, std::streamsize n)
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_pstreambuf<C,T>::read(char_type& c)
-    {
-      return (this->read(&c, 1) == 1);
-    }
-
-  /**
-   * Writes up to @a n characters to the pipe from the buffer @a s.
-   *
-   * @param s character buffer.
-   * @param n buffer length.
-   * @return the number of characters written.
-   */
-  template <typename C, typename T>
-    inline std::streamsize
-    basic_pstreambuf<C,T>::write(char_type* s, std::streamsize n)
-    {
-      return (wpipe() >= 0 ? ::write(wpipe(), s, n * sizeof(char_type)) : 0);
-    }
-
-  /**
-   * Reads up to @a n characters from the pipe to the buffer @a s.
-   *
-   * @param s character buffer.
-   * @param n buffer length.
-   * @return the number of characters read.
-   */
-  template <typename C, typename T>
-    inline std::streamsize
-    basic_pstreambuf<C,T>::read(char_type* s, std::streamsize n)
-    {
-      return (rpipe() >= 0 ? ::read(rpipe(), s, n * sizeof(char_type)) : 0);
     }
 #endif
 
@@ -1478,6 +1613,8 @@ namespace redi
     {
       return char_buf_[rsrc_];
     }
+
+
 
   /*
    * member definitions for pstream_base
