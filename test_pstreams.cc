@@ -277,7 +277,7 @@ int main()
     cerr << "# Testing writing to closed stream\n";
 
     {
-        opstream os("cat");
+        opstream os("sed 's/foo/FOO/'");
         os << "foo\n";
         os.close();
         if (os << "bar\n")
