@@ -1,6 +1,6 @@
 /*
 PStreams - POSIX Process I/O for C++
-Copyright (C) 2001 Jonathan Wakely
+Copyright (C) 2002 Jonathan Wakely
 
 This file is part of PStreams.
 
@@ -29,9 +29,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#define REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE 1
+
+//#include "pstream_compat.h"
 #include "pstream.h"
 
 using namespace std;
+using namespace redi;
+
 
 string
 test_type(const istream& s)
@@ -55,7 +61,8 @@ template <typename T>
 void
 print_result(const T& s, bool result)
 {
-    cerr << "Test " << test_id(s) << ": " << (result ? "Pass" : "Fail!")
+    cerr << "Test" << setw(4) << test_id(s) << ": "
+        << (result ? "Pass" : "Fail!")
         << endl;
 }
 
@@ -85,14 +92,16 @@ int main()
 
     {
         // test formatted output
-        redi::opstream cat("/bin/cat");
+        opstream cat("/bin/cat");
         cat << "Hello, world!\n";
+        str = "Hello, world!\n";
+        cat << str;
         check_pass(cat);
     }
 
     {
         // test unformatted output
-        redi::opstream cat("/bin/cat");
+        opstream cat("/bin/cat");
         str = "Hello, world!\n";
         for (string::const_iterator i = str.begin(); i!=str.end(); ++i)
             cat.put(*i);
@@ -101,7 +110,7 @@ int main()
 
     {
         // test formatted input
-        redi::ipstream host("hostname");
+        ipstream host("hostname");
         if (getline(host, str))  // extracts up to newline, eats newline
             cout << "hostname = " << str << endl;
         check_pass(host);
@@ -115,7 +124,7 @@ int main()
 
     {
         // test unformatted input
-        redi::ipstream host("hostname");
+        ipstream host("hostname");
         str.clear();
         char c;
         while (host.get(c))  // extracts up to EOF (including newline)
@@ -126,7 +135,7 @@ int main()
 
     {
         // open after construction, then write
-        redi::opstream cat2;
+        opstream cat2;
         cat2.open("/bin/cat");
         cat2 << "Hello, world!\n";
         check_pass(cat2);
@@ -134,7 +143,7 @@ int main()
 
     {
         // open after construction, then write
-        redi::ipstream host;
+        ipstream host;
         host.open("hostname");
         if (host >> str)
             cout << "hostname = " << str << endl;
@@ -149,7 +158,7 @@ int main()
 #if 0
     {
         cerr << "Testing some more\n";
-        redi::opstream grep("grep 'pattern'");
+        opstream grep("grep 'pattern'");
         grep << "This string matches pattern.\n"
             << "This string doesn't.\n"
             << "The first line of this multiline string matches pattern.\n"
@@ -165,14 +174,14 @@ int main()
 
     {
         // check eof() works 
-        redi::ipstream ifail(badcmd);
+        ipstream ifail(badcmd);
         int i = ifail.get();
         print_result(ifail, i==EOF && ifail.eof() );
     }
 
     {
         // test writing to bad command
-        redi::opstream ofail(badcmd);
+        opstream ofail(badcmd);
         if (ofail << "blahblah")
             cout << "Wrote to " << ofail.command() << endl;
         check_fail(ofail);
@@ -192,14 +201,14 @@ int main()
 
     {
         // check eof() works 
-        redi::ipstream ifail;
+        ipstream ifail;
         int i = ifail.get();
         print_result(ifail, i==EOF && ifail.eof() );
     }
 
     {
         // test writing to no command
-        redi::opstream ofail;
+        opstream ofail;
         if (ofail << "blahblah")
             cout << "Wrote to " << ofail.command() << endl;
         check_fail(ofail);
@@ -210,31 +219,43 @@ int main()
 
     {
         string cmd("grep re");
-        redi::opstream s(cmd);
+        opstream s(cmd);
         print_result(s, cmd == s.command());
     }
 
     {
         string cmd("grep re");
-        redi::opstream s;
+        opstream s;
         s.open(cmd);
         print_result(s, cmd == s.command());
     }
 
     {
         string cmd("/bin/ls");
-        redi::ipstream s(cmd);
+        ipstream s(cmd);
         print_result(s, cmd == s.command());
     }
 
     {
         string cmd("/bin/ls");
-        redi::ipstream s;
+        ipstream s;
         s.open(cmd);
         print_result(s, cmd == s.command());
     }
 
     // TODO more testing of other members?
+
+    cerr << "# Testing writing to closed stream\n";
+
+    {
+        opstream os("cat");
+        os << "foo\n";
+        os.close();
+        if (os << "bar\n")
+            cout << "Wrote to closed stream" << endl;
+        print_result(os, !(os << "bar\n"));
+    }
+
 
 #if 0
 
@@ -278,4 +299,5 @@ int main()
 
     return 0;
 }
+
 
