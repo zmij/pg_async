@@ -377,12 +377,27 @@ int main()
         check_fail(os << "bar\n");
     }
 
+    clog << "# Testing EOF detected correctly\n";
+    {
+        pstream p("tr '[:lower:]' '[:upper:]'");
+        p << "newline\neof" << peof;
+        string s;
+        check_pass(std::getline(p.out(),s));
+        print_result(p, s.size()>0);
+        cout << "STDOUT: " << s << endl;
+        s.clear();
+        std::getline(p.out(),s);           // sets eofbit
+        print_result(p, p.eof());
+        print_result(p, s.size()>0);
+        cout << "STDOUT: " << s << endl;
+    }
+
     clog << "# Testing restricted pstream\n";
     {
-        rpstream rs("tr '[:lower:]' '[:upper:]' | sed 's/^/STDIN: /'");
-        rs << "big\n" << peof;
+        rpstream rs("tr '[:lower:]' '[:upper:]'");
+        rs << "foo\n" << peof;
         string s;
-        check_pass(rs.out() >> s);
+        check_pass(std::getline(rs.out(),s));
         print_result(rs, s.size()>0);
         cout << "STDOUT: " << s << endl;
     }
