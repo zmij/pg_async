@@ -3,10 +3,12 @@ Release notes for PStreams 0.48
 
 This release includes changes to allow PStreams to be used with G++ 3.4,
 which is far more standards compliant that previous releases and caught
-a few bugs in the code.
+several bugs in the code. Let me know if you have any problems.
 
 I've removed the rpstream.h header and moved the definition of the
 redi::rpstream class into pstream.h. This is now the only file needed.
+Please ensure you remove any copies of rpstream.h from your system if
+you're using this release.
 
 Fixed a 64-bit bug where int was compared to a pointer.
 
@@ -17,6 +19,19 @@ change it back to using static_cast.
 Use POSIX's ::_exit() instead of std::exit() to terminate child if exec()
 fails. This will prevent static destructors being run in the child process
 (which could try to destroy resources twice).
+
+I've also changed the macro that guards the pstream.h header from being
+included multiple times, by appending "_SEEN" to the names. If this
+causes any problems make sure you dont have any old versions of pstream.h
+on your system.
+
+This release has been long overdue and it shouldn't be as long before the
+next one. I have some good suggestions to incorporate.
+
+Thanks to everyone who suggested fixes and improvements, or just got
+in touch to say they were using the code.
+
+Jon Wakely
 
 
 PStreams
@@ -91,5 +106,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.10 2004/04/30 19:13:14 redi Exp $
+$Id: README,v 1.11 2004/04/30 19:30:27 redi Exp $
 
