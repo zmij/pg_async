@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.13 2002/01/08 01:35:06 redi Exp $
+/* $Id: pstream.h,v 1.14 2002/01/08 03:41:27 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -33,13 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef REDI_PSTREAM_H
 #define REDI_PSTREAM_H
 
-/**
- * The value is @c ((major*0xff)+minor), where @c major is the number to
- * the left of the decimal point and @c minor is the number to the right.
- * (This gives a maximum of 256 minor revisions between major versions).
- * @brief The library version.
- */
-#define PSTREAMS_VERSION 0x000c   // 0.12
+/// The library version.
+#define PSTREAMS_VERSION 0x000e   // 0.14
 
 // check whether to provide pstream
 // popen() needs to use bidirectional pipe
@@ -57,6 +52,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <cstdio>
 
+// TODO add buffering to pstreambuf
+
+// TODO replace popen() with handrolled version
+
+
 /// All PStreams classes are declared in namespace redi.
 namespace redi
 {
@@ -65,121 +65,68 @@ namespace redi
   openmode2str(std::ios_base::openmode mode);
   // TODO extend openmode2str() to handle all openmode values
 
-  // TODO move function definitions out of class body (and most doxygen stuff)
-
   /// Class template for stream buffer.
-  /** Provides underlying streambuf functionality for the PStreams classes. */
   template <typename CharT, typename Traits>
     class basic_pstreambuf : public std::basic_streambuf<CharT, Traits>
     {
     public:
       /// Default constructor.
-      /** Creates an uninitialised stream buffer. */
-      basic_pstreambuf()
-      : file_(0), take_from_buf_(false)
-      { }
+      basic_pstreambuf();
 
       /// Constructor that initialises the buffer.
-      /**
-       * Initialises the stream buffer by calling open() with the supplied
-       * arguments.
-       *
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see open()
-       */
-      basic_pstreambuf(const std::string& command, std::ios_base::openmode mode)
-      : file_(0), take_from_buf_(false)
-      { this->open(command, mode_); }
+      basic_pstreambuf( const std::string& command, std::ios_base::openmode mode);
 
       /// Destructor.
-      /**
-       * Closes the stream by calling close().
-       * @see close()
-       */
-      ~basic_pstreambuf() { this->close(); }
+      ~basic_pstreambuf();
 
       /// Initialise the stream buffer.
-      /**
-       * Starts a new process by passing @a command to the shell
-       * and opens a pipe to the process with the specified @a mode.
-       * There is no way to tell whether the shell command succeeded, this
-       * function will always succeed unless resource limits (such as
-       * memory usage, or number of processes or open files) are exceeded.
-       *
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @return NULL if the shell could not be started or the
-       * pipe could not be opened, pointer to self otherwise.
-       */
       basic_pstreambuf*
-      open(const std::string& command, std::ios_base::openmode mode)
-      {
-        file_ = ::popen(command.c_str(), openmode2str(mode).c_str());
-        return is_open() ? this : NULL;
-      }
+      open(const std::string& command, std::ios_base::openmode mode);
 
       /// Close the stream buffer.
-      /**
-       * Waits for the associated process to finish and closes the pipe.
-       * @return pointer to self.
-       */
       basic_pstreambuf*
-      close(void)
-      {
-        if (this->is_open())
-        {
-          ::pclose(file_);
-          file_ = 0;
-        }
-        return this;
-      }
+      close();
 
       /// Report whether the stream buffer has been initialised.
-      /**
-       * @return true if open() has been successfully called, false otherwise.
-       * @warning Can't determine whether the command used to
-       * initialise the buffer was successfully executed or not. If the
-       * shell command failed this function will still return true.
-       * @see open()
-       */
       bool
-      is_open() const { return bool(file_); }
+      is_open() const;
 
     protected:
       /// Transfer characters to the pipe when character buffer overflows.
-      int_type overflow(int_type c);
+      int_type
+      overflow(int_type c);
 
       /// Transfer characters from the pipe when the character buffer is empty.
-      int_type uflow();
+      int_type
+      uflow();
 
       /// Transfer characters from the pipe when the character buffer is empty.
-      int_type underflow();
+      int_type
+      underflow();
 
       /// Make a character available to be returned by the next extraction.
-      int_type pbackfail(int_type c = traits_type::eof());
+      int_type
+      pbackfail(int_type c = traits_type::eof());
 
       /// Extract a character from the pipe.
-      bool read(int_type& c);
+      bool
+      read(int_type& c);
 
       /// Insert a character into the pipe.
-      bool write(int_type c);
+      bool
+      write(int_type c);
 
     private:
       basic_pstreambuf(const basic_pstreambuf&);
       basic_pstreambuf& operator=(const basic_pstreambuf&);
 
-      FILE* file_;
-      char_type char_buf_;
-      bool take_from_buf_;
+      FILE*         file_;
+      char_type     char_buf_;
+      bool          take_from_buf_;
     };
 
+
   /// Class template for Input PStreams.
-  /**
-   * Reading from an ipstream reads the command's standard output,
-   * and the command's standard input is the same as that of the process
-   * that created the object.
-   */
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_ipstream : public std::basic_istream<CharT, Traits>
     {
@@ -188,72 +135,37 @@ namespace redi
 
     public:
       /// Default constructor.
-      /** Creates an uninitialised stream. */
-      basic_ipstream()
-      : istream_type(NULL), command_(), buf_()
-      { this->init(&buf_); }
+      basic_ipstream();
 
       /// Constructor that initialises the stream by starting a process.
-      /**
-       * Initialises the stream buffer by calling open() with the supplied
-       * arguments.
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see open()
-       */
-      basic_ipstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::in)
-      : istream_type(NULL), command_(command), buf_()
-      {
-        this->init(&buf_);
-        this->open(command_, mode);
-      }
+      basic_ipstream(const std::string& command, std::ios_base::openmode mode = ios_base::in);
 
       /// Destructor
       ~basic_ipstream() { }
 
       /// Start a process.
-      /**
-       * Starts a new process by passing <em>command</em> to the shell
-       * and opens a pipe to the process with the specified mode.
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see basic_pstreambuf::open()
-       */
       void
-      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::in)
-      { buf_.open((command_=command), mode); }
+      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::in);
 
       /// Close the pipe.
-      /** Waits for the associated process to finish and closes the pipe. */
       void
-      close() { buf_.close(); }
+      close();
 
       /// Report whether the stream's buffer has been initialised.
-      /**
-       * @return true if open() has been successfully called, false otherwise.
-       * @see basic_pstreambuf::open()
-       */
       bool
-      is_open() const { return buf_.is_open(); }
+      is_open() const;
 
       /// Return the command used to initialise the stream.
-      /**
-       * @return a string containing the command used to initialise the stream.
-       */
       const std::string&
-      command() const { return command_; }
+      command() const;
 
     private:
-      std::string command_;
-      streambuf_type buf_;
+      std::string       command_;
+      streambuf_type    buf_;
     };
 
+
   /// Class template for Output PStreams.
-  /**
-   * Writing to an open opstream writes to the standard input of the command;
-   * the command's standard output is the same as that of the process that
-   * created the pstream object, unless this is altered by the command itself.
-   */
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_opstream : public std::basic_ostream<CharT, Traits>
     {
@@ -261,79 +173,135 @@ namespace redi
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
 
     public:
-      /**
-       * @brief Default constructor.
-       * Creates an uninitialised stream.
-       */
-      basic_opstream()
-      : ostream_type(NULL), command_(), buf_()
-      { this->init(&buf_); }
+      /// Default constructor.
+      basic_opstream();
 
-      /**
-       * @brief Constructor that initialises the stream by starting a process.
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see open()
-       *
-       * Initialises the stream buffer by calling open() with the supplied
-       * arguments.
-       */
-      basic_opstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::out)
-      : ostream_type(NULL), command_(command), buf_()
-      {
-        this->init(&buf_);
-        this->open(command_, mode);
-      }
+      /// Constructor that initialises the stream by starting a process.
+      basic_opstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::out);
 
       /// Destructor
       ~basic_opstream() { }
 
-      /**
-       * @brief Start a process.
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see basic_pstreambuf::open()
-       *
-       * Starts a new process by passing @a command to the shell
-       * and opens a pipe to the process with the specified @a mode.
-       */
+      /// Start a process.
       void
-      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::out)
-      { buf_.open((command_=command), mode); }
+      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::out);
 
-      /**
-       * @brief Close the pipe.
-       * Waits for the associated process to finish and closes the pipe.
-       */
+      /// Close the pipe.
       void
-      close() { buf_.close(); }
+      close();
 
-      /**
-       * @brief Report whether the stream's buffer has been initialised.
-       * @see basic_pstreambuf::open()
-       * @return true if open() has been successfully called, false otherwise.
-       */
+      /// Report whether the stream's buffer has been initialised.
       bool
-      is_open() const { return buf_.is_open(); }
+      is_open() const;
 
-      /**
-       * @brief Return the command used to initialise the stream.
-       * @return a string containing the command used to initialise the stream.
-       */
+      /// Return the command used to initialise the stream.
       const std::string&
-      command() const { return command_; }
+      command() const;
 
     private:
-      std::string command_;
-      streambuf_type buf_;
+      std::string       command_;
+      streambuf_type    buf_;
     };
 
-  /// Type definition for the most common template specialisation.
+  /// Type definition for common template specialisation.
   typedef basic_ipstream<char> ipstream;
-  /// Type definition for the most common template specialisation.
+  /// Type definition for common template specialisation.
   typedef basic_opstream<char> opstream;
 
+
   // member definitions for pstreambuf
+
+  /**
+   * @class basic_pstreambuf
+   * Provides underlying streambuf functionality for the PStreams classes.
+   */
+
+  /** Creates an uninitialised stream buffer. */
+  template <typename C, typename T>
+    inline
+    basic_pstreambuf<C,T>::basic_pstreambuf()
+    : file_(0)
+    , take_from_buf_(false)
+    { }
+
+  /**
+   * Initialises the stream buffer by calling open() with the supplied
+   * arguments.
+   *
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see open()
+   */
+  template <typename C, typename T>
+    inline
+    basic_pstreambuf<C,T>::basic_pstreambuf( const std::string& command, std::ios_base::openmode mode )
+    : file_(0)
+    , take_from_buf_(false)
+    {
+      this->open(command, mode_);
+    }
+
+  /**
+   * Closes the stream by calling close().
+   * @see close()
+   */
+  template <typename C, typename T>
+    inline
+    basic_pstreambuf<C,T>::~basic_pstreambuf()
+    {
+      this->close();
+    }
+
+  /**
+   * Starts a new process by passing @a command to the shell
+   * and opens a pipe to the process with the specified @a mode.
+   * There is no way to tell whether the shell command succeeded, this
+   * function will always succeed unless resource limits (such as
+   * memory usage, or number of processes or open files) are exceeded.
+   *
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @return NULL if the shell could not be started or the
+   * pipe could not be opened, pointer to self otherwise.
+   */
+  template <typename C, typename T>
+    inline basic_pstreambuf<C,T>*
+    basic_pstreambuf<C,T>::open( const std::string& command, std::ios_base::openmode mode )
+    {
+      file_ = ::popen(command.c_str(), openmode2str(mode).c_str());
+      return is_open() ? this : NULL;
+    }
+
+  /**
+   * Waits for the associated process to finish and closes the pipe.
+   * @return pointer to self.
+   */
+  template <typename C, typename T>
+    inline basic_pstreambuf<C,T>*
+    basic_pstreambuf<C,T>::close()
+    {
+      if (this->is_open())
+      {
+        ::pclose(file_);
+        file_ = 0;
+      }
+      return this;
+    }
+
+  /**
+   * @return true if open() has been successfully called, false otherwise.
+   * @warning Can't determine whether the command used to
+   * initialise the buffer was successfully executed or not. If the
+   * shell command failed this function will still return true.
+   * @see open()
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_pstreambuf<C,T>::is_open() const
+    {
+      return bool(file_);
+    }
+
 
   /**
    * Called when the internal character buffer is not present or is full,
@@ -487,6 +455,174 @@ namespace redi
       return (file_ && (std::fwrite(&tmp, sizeof(char_type), 1, file_) == 1));
     }
 
+
+  // member definitions for basic_ipstream
+
+  /**
+   * @class basic_ipstream
+   * Reading from an ipstream reads the command's standard output,
+   * and the command's standard input is the same as that of the process
+   * that created the object.
+   */
+
+  /** Creates an uninitialised stream. */
+  template <typename C, typename T>
+    inline
+    basic_ipstream<C,T>::basic_ipstream()
+    : istream_type(NULL)
+    , command_()
+    , buf_()
+    {
+      this->init(&buf_);
+    }
+    
+  /**
+   * Initialises the stream buffer by calling open() with the supplied
+   * arguments.
+   *
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see open()
+   */
+  template <typename C, typename T>
+    inline
+    basic_ipstream<C,T>::basic_ipstream( const std::string& command, std::ios_base::openmode mode )
+    : istream_type(NULL)
+    , command_(command)
+    , buf_()
+    {
+      this->init(&buf_);
+      this->open(command_, mode);
+    }
+
+  /**
+   * Starts a new process by passing <em>command</em> to the shell
+   * and opens a pipe to the process with the specified mode.
+   *
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see basic_pstreambuf::open()
+   */
+  template <typename C, typename T>
+    inline void
+    basic_ipstream<C,T>::open( const std::string& command, std::ios_base::openmode mode )
+    {
+      buf_.open( (command_ = command), mode );
+    }
+
+  /** Waits for the associated process to finish and closes the pipe. */
+  template <typename C, typename T>
+    inline void
+    basic_ipstream<C,T>::close()
+    {
+      buf_.close();
+    }
+
+  /**
+   * @return true if open() has been successfully called, false otherwise.
+   * @see basic_pstreambuf::open()
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_ipstream<C,T>::is_open() const
+    {
+      return buf_.is_open();
+    }
+
+  /** @return a string containing the command used to initialise the stream. */
+  template <typename C, typename T>
+    inline const std::string&
+    basic_ipstream<C,T>::command() const
+    {
+      return command_;
+    }
+
+
+  // member definitions for basic_opstream
+
+  /**
+   * @class basic_opstream
+   * 
+   * Writing to an open opstream writes to the standard input of the command;
+   * the command's standard output is the same as that of the process that
+   * created the pstream object, unless this is altered by the command itself.
+   */
+
+  /** Creates an uninitialised stream. */
+  template <typename C, typename T>
+    inline
+    basic_opstream<C,T>::basic_opstream()
+    : ostream_type(NULL)
+    , command_()
+    , buf_()
+    {
+      this->init(&buf_);
+    }
+
+  /**
+   * Initialises the stream buffer by calling open() with the supplied
+   * arguments.
+   *
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see open()
+   */
+  template <typename C, typename T>
+    inline
+    basic_opstream<C,T>::basic_opstream( const std::string& command, std::ios_base::openmode mode )
+    : ostream_type(NULL)
+    , command_(command)
+    , buf_()
+    {
+      this->init(&buf_);
+      this->open(command_, mode);
+    }
+
+  /**
+   * Starts a new process by passing @a command to the shell
+   * and opens a pipe to the process with the specified @a mode.
+   *
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see basic_pstreambuf::open()
+   */
+  template <typename C, typename T>
+    inline void
+    basic_opstream<C,T>::open( const std::string& command, std::ios_base::openmode mode )
+    {
+      buf_.open( (command_ = command), mode );
+    }
+
+  /** Waits for the associated process to finish and closes the pipe. */
+  template <typename C, typename T>
+    inline void
+    basic_opstream<C,T>::close()
+    {
+      buf_.close();
+    }
+
+  /**
+   * @see basic_pstreambuf::open()
+   * @return true if open() has been successfully called, false otherwise.
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_opstream<C,T>::is_open() const
+    {
+      return buf_.is_open();
+    }
+
+  /** @return a string containing the command used to initialise the stream. */
+  template <typename C, typename T>
+    inline const std::string&
+    basic_opstream<C,T>::command() const
+    {
+      return command_;
+    }
+
+
+  // non-member function definitions
+
   /**
    * @a mode is masked with @c (ios_base::in|ios_base::out)
    * and converted to a string containing a stdio-style mode.
@@ -495,7 +631,7 @@ namespace redi
    * @return one of "r", "w", "r+" or "" as a string.
    */
   inline std::string
-  openmode2str(std::ios_base::openmode mode)
+  openmode2str( std::ios_base::openmode mode )
   {
     using std::ios_base;
     // restrict to the openmodes that pstreambuf honours
@@ -513,11 +649,6 @@ namespace redi
 #if REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE
 
   /// Class template for Bidirectional PStreams.
-  /**
-   * The pstream class for both reading and writing to a process is only
-   * available on some sytems, where popen(3) is implemented using a
-   * bidirectional pipe.
-   */
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_pstream : public std::basic_iostream<CharT, Traits>
     {
@@ -525,78 +656,133 @@ namespace redi
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
 
     public:
-      /**
-       * @brief Default constructor.
-       * Creates an uninitialised stream.
-       */
-      basic_pstream()
-      : iostream_type(NULL), command_(), buf_()
-      { this->init(&buf_); }
+      /// Default constructor.
+      basic_pstream();
 
-      /**
-       * @brief Constructor that initialises the stream by starting a process.
-       * Initialises the stream buffer by calling open() with the supplied
-       * arguments.
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see open()
-       */
-      basic_pstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out)
-      : iostream_type(NULL), command_(command), buf_()
-      {
-        this->init(&buf_);
-        this->open(command_, mode);
-      }
+      /// Constructor that initialises the stream by starting a process.
+      basic_pstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out);
 
       /// Destructor
       ~basic_pstream() { }
 
-      /**
-       * @brief Start a process.
-       * Starts a new process by passing @a command to the shell
-       * and opens a pipe to the process with the specified @a mode.
-       * @param command a string containing a shell command.
-       * @param mode the I/O mode to use when opening the pipe.
-       * @see basic_pstreambuf::open()
-       */
+      /// Start a process.
       void
-      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out)
-      { buf_.open((command_=command), mode); }
+      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out);
 
-      /**
-       * @brief Close the pipe.
-       * Waits for the associated process to finish and closes the pipe.
-       */
+      /// Close the pipe.
       void
-      close() { buf_.close(); }
+      close();
 
-      /**
-       * @brief Report whether the stream's buffer has been initialised.
-       * @see basic_pstreambuf::open()
-       * @return true if open() has been successfully called, false otherwise.
-       */
+      /// Report whether the stream's buffer has been initialised.
       bool
-      is_open() const { return buf_.is_open(); }
+      is_open() const;
 
-      /**
-       * @brief Return the command used to initialise the stream.
-       * @return a string containing the command used to initialise the stream.
-       */
+      /// Return the command used to initialise the stream.
       const std::string&
-      command() const { return command_; }
+      command() const;
 
     private:
       std::string command_;
       streambuf_type buf_;
     };
 
-  /// Type definition for the most common template specialisation.
+  /// Type definition for common template specialisation.
   typedef basic_pstream<char> pstream;
+
+
+  // member definitions for basic_pstream
+
+  /**
+   * @class basic_pstream
+   * The pstream class for both reading and writing to a process is only
+   * available on some sytems, where popen(3) is implemented using a
+   * bidirectional pipe.
+   */
+
+  /**
+   * Creates an uninitialised stream.
+   */
+  template <typename C, typename T>
+    basic_pstream<C,T>::basic_pstream()
+    : iostream_type(NULL)
+    , command_()
+    , buf_()
+    {
+      this->init(&buf_);
+    }
+
+  /**
+   * Initialises the stream buffer by calling open() with the supplied
+   * arguments.
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see open()
+   */
+  template <typename C, typename T>
+    basic_pstream<C,T>::basic_pstream(const std::string& command, std::ios_base::openmode mode)
+    : iostream_type(NULL)
+    , command_(command)
+    , buf_()
+    {
+      this->init(&buf_);
+      this->open(command_, mode);
+    }
+
+  /**
+   * Starts a new process by passing @a command to the shell
+   * and opens a pipe to the process with the specified @a mode.
+   * @param command a string containing a shell command.
+   * @param mode the I/O mode to use when opening the pipe.
+   * @see basic_pstreambuf::open()
+   */
+  template <typename C, typename T>
+    inline void
+    basic_pstream<C,T>::open(const std::string& command, std::ios_base::openmode mode)
+    {
+      buf_.open( (command_ = command), mode );
+    }
+
+  /** Waits for the associated process to finish and closes the pipe. */
+  template <typename C, typename T>
+    inline void
+    basic_pstream<C,T>::close()
+    {
+      buf_.close();
+    }
+
+  /**
+   * @see basic_pstreambuf::open()
+   * @return true if open() has been successfully called, false otherwise.
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_pstream<C,T>::is_open() const
+    {
+      return buf_.is_open();
+    }
+
+  /** @return a string containing the command used to initialise the stream. */
+  template <typename C, typename T>
+    inline const std::string&
+    basic_pstream<C,T>::command() const
+    {
+      return command_;
+    }
+
 
 #endif
 
 } // namespace redi
 
+/*
+ * rest of file contains additional doxygen comments...
+ */
+
+/**
+ * @def PSTREAMS_VERSION
+ * The value is @c ((major*0xff)+minor), where @c major is the number to
+ * the left of the decimal point and @c minor is the number to the right.
+ */
 
 /**
  * @mainpage
