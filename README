@@ -23,6 +23,12 @@ PStreams has only been tested with gcc so far, if you have problems (or
 better still - solutions) with PStreams and other compilers please let
 me know.
 
+To run the test program compile and run test_pstreams.cc
+This can be done with "make test_pstreams" if you have GNU or BSD make
+The Makefile doesn't work with Solaris make, and probably other versions
+of make.
+
+
 The PStream Buffer class
 ============================
 The pstreambuf used by the PStreams classes buffers all reads and writes
@@ -64,5 +70,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.7 2002/12/03 20:23:07 redi Exp $
+$Id: README,v 1.8 2002/12/14 19:19:49 redi Exp $
 
