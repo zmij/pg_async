@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.11 2002/01/07 20:35:32 redi Exp $
+/* $Id: pstream.h,v 1.12 2002/01/08 00:35:44 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -494,7 +494,7 @@ namespace redi
    * @param mode an I/O mode to convert.
    * @return one of "r", "w", "r+" or "" as a string.
    */
-  std::string
+  inline std::string
   openmode2str(std::ios_base::openmode mode)
   {
     using std::ios_base;
