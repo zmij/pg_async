@@ -20,18 +20,14 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 */
 
 
-// TODO test rpstream - this does nothing for the moment
-#define TEST_RPSTREAM 1
+// TODO test rpstream more
 
 
 // test eviscerated pstreams
 #define REDI_EVISCERATE_PSTREAMS 1
 
 #include "pstream.h"
-
-#if TEST_RPSTREAM
 #include "rpstream.h"
-#endif
 
 // include these after pstream.h to ensure it #includes everything it needs
 #include <iostream>
@@ -49,14 +45,11 @@ using namespace std;
 using namespace redi;
 
 // explicit instantiations of template classes
-// for some reason these must be fully qualified, even with using directive ?
 template class redi::pstreambuf;
 template class redi::ipstream;
 template class redi::opstream;
 template class redi::pstream;
-#if TEST_RPSTREAM
 template class redi::rpstream;
-#endif
 
 namespace  // anon
 {
@@ -74,11 +67,9 @@ namespace  // anon
     test_type(const iostream& s)
     { return 'b'; }
 
-#if TEST_RPSTREAM
     char
     test_type(const rpstream& s)
     { return 'x'; }
-#endif
 
     template <typename T>
     string
@@ -386,7 +377,6 @@ int main()
         check_fail(os << "bar\n");
     }
 
-#if TEST_RPSTREAM
     clog << "# Testing restricted pstream\n";
     {
         rpstream rs("tr a-z A-Z | sed 's/^/STDIN: /'");
@@ -396,7 +386,6 @@ int main()
         print_result(rs, s.size()>0);
         cout << "STDOUT: " << s << endl;
     }
-#endif
 
 #if REDI_EVISCERATE_PSTREAMS
     clog << "# Testing eviscerated pstream\n";
@@ -461,10 +450,6 @@ int main()
 
 #endif
     
-
-#if TEST_RPSTREAM
-#endif
-
 
     return 0;
 }
