@@ -53,7 +53,11 @@ These functions should be used with caution because mixing C++ and C I/O
 on the same stream may cause problems. The caller should be aware of the
 issues involved in using the stream buffer's FILE pointer (see your system's
 docs for the fdopen() function that is used by the pstreambuf).
+The fdopen() call to obtain a FILE* sets errno to ESPIPE because fdopen()
+tries to lseek() on the stream, which is not supported on pipes. This error
+is expected and does not cause a problem, so errno is set to zero before
+returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.4 2002/08/27 19:43:01 redi Exp $
+$Id: README,v 1.5 2002/08/30 16:36:44 redi Exp $
 
