@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.21 2004/10/17 16:07:32 redi Exp $
+# $Id: Makefile,v 1.22 2004/10/20 23:43:32 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -27,6 +27,8 @@ EXTRA_CXXFLAGS=
 CFLAGS=-std=c++98 -pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
+INSTALL_PREFIX=/usr/local
+
 SOURCES = pstream.h
 GENERATED_FILES = ChangeLog MANIFEST
 EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
@@ -34,7 +36,7 @@ EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
-VERS = 0.5.0
+VERS = 0.5.1
 
 all: docs $(GENERATED_FILES)
 
@@ -77,6 +79,10 @@ TODO : pstream.h mainpage.html test_pstreams.cc
 
 clean:
 	@rm -f  test_minimum test_pstreams
+
+install:
+	@install -d $(INSTALL_PREFIX)/include/pstreams
+	@install -Cv -m0644 pstream.h $(INSTALL_PREFIX)/include/pstreams
 
 .PHONY: TODO test ChangeLog
 
