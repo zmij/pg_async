@@ -506,7 +506,7 @@ int main()
     }
 
     {
-        string cmd = "ls /etc/motd /no/such/file";
+        string cmd = "ls /etc/hosts /no/such/file";
         ipstream is(cmd, pstreambuf::pstdout|pstreambuf::pstderr);
         FILE *in, *out, *err;
         size_t res = is.fopen(in, out, err);
