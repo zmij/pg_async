@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.68 2004/04/30 11:47:51 redi Exp $
+/* $Id: pstream.h,v 1.69 2004/04/30 18:32:19 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -1456,7 +1456,7 @@ namespace redi
       if (!empty_buffer())
         return traits_type::eof();
       else if (!traits_type::eq_int_type(c, traits_type::eof()))
-        return sputc(c);
+        return this->sputc(c);
       else
         return traits_type::not_eof(c);
     }
@@ -1488,7 +1488,7 @@ namespace redi
       {
         for (std::streamsize i = 0; i < n; ++i)
         {
-          if (traits_type::eq_int_type(sputc(s[i]), traits_type::eof()))
+          if (traits_type::eq_int_type(this->sputc(s[i]), traits_type::eof()))
             return i;
         }
         return n;
@@ -1669,7 +1669,7 @@ namespace redi
     , command_()
     , buf_()
     {
-      init(&buf_);
+      this->init(&buf_);
     }
 
   /**
@@ -1687,7 +1687,7 @@ namespace redi
     , command_(command)
     , buf_()
     {
-      init(&buf_);
+      this->init(&buf_);
       do_open(command, mode);
     }
    
@@ -1709,7 +1709,7 @@ namespace redi
     , command_(file)
     , buf_()
     {
-      init(&buf_);
+      this->init(&buf_);
       do_open(file, argv, mode);
     }
 
