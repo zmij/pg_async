@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.6 2001/12/15 19:03:58 redi Exp $
+/* $Id: pstream.h,v 1.7 2001/12/31 21:57:46 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001 Jonathan Wakely
 
@@ -115,6 +115,9 @@ namespace redi
         return this;
       }
 
+      const string&
+      command() const { return command_; }
+
     protected:
       int_type overflow(int_type c);
 
@@ -171,8 +174,10 @@ namespace redi
       { buf_.open(command, mode); }
 
       void
-      close()
-      { buf_.close(); }
+      close() { buf_.close(); }
+
+      const string&
+      command() const { return command_; }
 
     protected:
       streambuf_type buf_;
@@ -208,8 +213,10 @@ namespace redi
       { buf_.open(command, mode); }
 
       void
-      close()
-      { buf_.close(); }
+      close() { buf_.close(); }
+
+      const string&
+      command() const { return buf_.command(); }
 
     protected:
       streambuf_type buf_;
@@ -250,8 +257,10 @@ namespace redi
       { buf_.open(command, mode); }
 
       void
-      close()
-      { buf_.close(); }
+      close() { buf_.close(); }
+
+      const string&
+      command() const { return buf_.command(); }
 
     protected:
       streambuf_type buf_;
@@ -385,7 +394,7 @@ namespace redi
 } // namespace redi
 
 #elif GCC_BACK_COMPAT == 1
-// gcc 2.7 / 2.8 / 2.9x
+// gcc 2.7 / 2.8 / 2.9x / egcs
 //#elif __GNUC__ == 2 && __GNUC_MINOR__ >= 7
 
 #warning "PStreams needs an ISO C++ compliant compiler"
