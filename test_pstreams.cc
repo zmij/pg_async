@@ -44,36 +44,36 @@ using namespace std;
 using namespace redi;
 
 // explicit instantiations of template classes
-template class redi::pstreambuf;
+template class redi::basic_pstreambuf<char,std::char_traits<char> >;
 template class redi::pstream_common<char>;
-template class redi::ipstream;
-template class redi::opstream;
-template class redi::pstream;
-template class redi::rpstream;
+template class redi::basic_ipstream<char>;
+template class redi::basic_opstream<char>;
+template class redi::basic_pstream<char>;
+template class redi::basic_rpstream<char>;
 
 namespace  // anon
 {
     // helper functions for printing test results
 
     char
-    test_type(const istream& s)
+    test_type(istream const&)
     { return 'r'; }
 
     char
-    test_type(const ostream& s)
+    test_type(ostream const&)
     { return 'w'; }
 
     char
-    test_type(const iostream& s)
+    test_type(iostream const&)
     { return 'b'; }
 
     char
-    test_type(const rpstream& s)
+    test_type(rpstream const&)
     { return 'x'; }
 
     template <typename T>
     string
-    test_id(const T& s)
+    test_id(T const& s)
     {
         static int count = 0;
         ostringstream buf;
@@ -83,7 +83,7 @@ namespace  // anon
 
     template <typename T>
     void
-    print_result(const T& s, bool result)
+    print_result(T const& s, bool result)
     {
         clog << "Test " << setw(4) << test_id(s) << ": "
             << (result ? "Pass" : "Fail!")
@@ -92,7 +92,7 @@ namespace  // anon
 
     template <typename T>
     bool
-    check_pass(const T& s, bool expected = true)
+    check_pass(T const& s, bool expected = true)
     {
         bool res = s.good() == expected;
         print_result(s, res);
@@ -101,7 +101,7 @@ namespace  // anon
 
     template <typename T>
     bool
-    check_fail(const T& s) { return check_pass(s, false); }
+    check_fail(T const& s) { return check_pass(s, false); }
 
     // exit status of shell when command not found
 #if defined(__sun)
