@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.27 2002/04/29 21:27:48 redi Exp $
+/* $Id: pstream.h,v 1.28 2002/04/29 21:40:26 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -105,6 +105,12 @@ namespace redi
       /// Report whether the stream buffer has been initialised.
       bool
       is_open() const;
+
+#if REDI_EVISCERATE_PSTREAMS
+      /// Obtain FILE pointers for each of the process' standard streams.
+      size_t
+      fopen(FILE*& in, FILE*& out, FILE*& err);
+#endif
 
     protected:
       /// Transfer characters to the pipe when character buffer overflows.
@@ -228,6 +234,12 @@ namespace redi
       /// Return the command used to initialise the stream.
       const std::string&
       command() const;
+
+#if REDI_EVISCERATE_PSTREAMS
+      /// Obtain FILE pointers for each of the process' standard streams.
+      size_t
+      fopen(FILE*& in, FILE*& out, FILE*& err);
+#endif
 
     protected:
       std::string       command_;
@@ -1334,6 +1346,80 @@ namespace redi
     {
       return command_;
     }
+
+#if REDI_EVISCERATE_PSTREAMS
+  /**
+   * @def REDI_EVISCERATE_PSTREAMS
+   * If this macro has a non-zero value then certain internals of the
+   * @c basic_pstreambuf template class are exposed. In general this is
+   * a Bad Thing, as the internal implementation is largely undocumented
+   * and may be subject to change at any time, so this feature is only
+   * provided because it might make PStreams useful in situations where
+   * it is necessary to do Bad Things.
+   */
+
+  /**
+   * @warning  This function exposes the internals of the stream buffer and
+   *           should be used with caution. It is the caller's responsibility
+   *           to flush streams etc. in order to clear any buffered data.
+   *           The POSIX.1 function @c fdopen(3) is used to obtain the
+   *           @c FILE pointers from the streambuf's private file descriptor
+   *           members so consult your system's documentation for @c fdopen().
+   *
+   * @param  in   A FILE* that will refer to the process' stdin.
+   * @param  out  A FILE* that will refer to the process' stdout.
+   * @param  err  A FILE* that will refer to the process' stderr.
+   * @return A bitwise-or of zero or more of @c pstdin, @c pstdout, @c pstderr.
+   *
+   * For each open stream shared with the child process a @c FILE* is
+   * obtained and assigned to the corresponding parameter. For closed
+   * streams @c NULL is assigned to the parameter.
+   * The return value can be tested to see which parameters should be
+   * @c !NULL by masking with the corresponding @c pmode value.
+   */
+  template <typename C, typename T>
+    inline size_t
+    basic_pstreambuf<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    {
+      in = out = err = NULL;
+      pmode open_files = 0;
+      if (this->wpipe() > -1)
+      {
+        in = ::fdopen(this->wpipe(), "w");
+        open_files |= pstdin;
+      }
+      if (this->rpipe(rsrc_out) > -1) 
+      {
+        in = ::fdopen(this->rpipe(rsrc_out), "r");
+        open_files |= pstdout;
+      }
+      if (this->rpipe(rsrc_err) > -1)
+      {
+        in = ::fdopen(this->rpipe(rsrc_err), "r");
+        open_files |= pstderr;
+      }
+      return open_files;
+    }
+
+  /**
+   *  @warning This function exposes the internals of the stream buffer and
+   *  should be used with caution.
+   *
+   *  @param  in   A FILE* that will refer to the process' stdin.
+   *  @param  out  A FILE* that will refer to the process' stdout.
+   *  @param  err  A FILE* that will refer to the process' stderr.
+   *  @return A bitwise-or of zero or more of @c pstdin, @c pstdout, @c pstderr.
+   *  @see    basic_pstreambuf::fopen()
+   */
+  template <typename C, typename T>
+    inline size_t
+    pstream_base<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    {
+      return buf_.fopen(in, out, err);
+    }
+
+#endif
+
 
 } // namespace redi
 
