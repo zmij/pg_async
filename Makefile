@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.3 2002/01/07 11:36:54 redi Exp $
+# $Id: Makefile,v 1.4 2002/01/27 12:33:31 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -20,25 +20,45 @@
 
 CXX=g++3
 
+CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls
+CXXFLAGS=$(CFLAGS) -Woverloaded-virtual -Wenum-clash -Wtemplate-debugging
+
+SOURCES = pstream.h
+DOCS = pstreams.html
+EXTRA_DIST = AUTHORS COPYING ChangeLog INSTALL README TODO 
+
+DISTFILES= $(SOURCES) $(DOCS) $(EXTRA_DIST)
+
 all: test distro
 
-test: test_pstreams
-# redirect output to /dev/null so we only see test results
-	./$< >/dev/null
+test: test_pstreams test_bidip test_minimum
+	@echo -n "Testing whether popen() uses bidirectional pipe ... "
+	@./test_minimum >/dev/null
+	@./test_bidip >/dev/null && echo "Yes" || echo "No"
+	@./test_pstreams >/dev/null || echo "TEST EXITED WITH STATUS $?"
 
 test_pstreams: test_pstreams.cc pstream.h
 	$(CXX) $(CXXFLAGS) -g3 -o $@ $<
 
-distro: pstreams.tar.gz
+test_bidip: test_bidip.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+test_minimum: test_minimum.cc pstream.h
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+distro: docs pstreams.tar.gz
+
+docs: pstream.h
+	@doxygen Doxyfile
 
 ChangeLog:
 	@cvs2cl.pl
 
-pstreams.tar.gz: pstream.h pstreams.html COPYING TODO Makefile ChangeLog
+pstreams.tar.gz: $(DISTFILES)
 	@tar czf $@ $^
 
 TODO : pstream.h  pstreams.html test_pstreams.cc
 	@grep -nH TODO $^ | sed -e 's@ *// *@@' > $@
 
-.PHONY: TODO test distro ChangeLog
+.PHONY: TODO test distro ChangeLog docs
 
