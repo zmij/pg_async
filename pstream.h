@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.35 2002/08/19 00:36:40 redi Exp $
+/* $Id: pstream.h,v 1.36 2002/08/27 01:43:45 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -353,6 +353,28 @@ namespace redi
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
       { pbase_type::open(file, argv, mode); }
+
+      /**
+       * @brief Set streambuf to read from process' @c stdout.
+       * @return @c *this
+       */
+      basic_ipstream&
+      out()
+      {
+        buf_.read_err(false);
+        return *this;
+      }
+
+      /**
+       * @brief Set streambuf to read from process' @c stderr.
+       * @return @c *this
+       */
+      basic_ipstream&
+      err()
+      {
+        buf_.read_err(true);
+        return *this;
+      }
     };
 
 
@@ -439,28 +461,6 @@ namespace redi
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
       { pbase_type::open(file, argv, mode); }
-
-      /**
-       * @brief Set streambuf to read from process' @c stdout.
-       * @return @c *this
-       */
-      basic_opstream&
-      out()
-      {
-        buf_.read_err(false);
-        return *this;
-      }
-
-      /**
-       * @brief Set streambuf to read from process' @c stderr.
-       * @return @c *this
-       */
-      basic_opstream&
-      err()
-      {
-        buf_.read_err(true);
-        return *this;
-      }
     };
 
 
@@ -1423,18 +1423,24 @@ namespace redi
       size_t open_files = 0;
       if (this->wpipe() > -1)
       {
-        in = ::fdopen(this->wpipe(), "w");
-        open_files |= pstdin;
+        if (in = ::fdopen(this->wpipe(), "w"))
+        {
+            open_files |= pstdin;
+        }
       }
       if (this->rpipe(rsrc_out) > -1) 
       {
-        in = ::fdopen(this->rpipe(rsrc_out), "r");
-        open_files |= pstdout;
+        if (out = ::fdopen(this->rpipe(rsrc_out), "r"))
+        {
+            open_files |= pstdout;
+        }
       }
       if (this->rpipe(rsrc_err) > -1)
       {
-        in = ::fdopen(this->rpipe(rsrc_err), "r");
-        open_files |= pstderr;
+        if (err = ::fdopen(this->rpipe(rsrc_err), "r"))
+        {
+            open_files |= pstderr;
+        }
       }
       return open_files;
     }
