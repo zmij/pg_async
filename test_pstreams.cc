@@ -291,7 +291,9 @@ int main()
     {
         // test writing to bad command
         opstream ofail(badcmd);
-        check_fail(ofail<<"blahblah");
+        sleep(1);  // give shell time to try command and exit
+        // this would cause SIGPIPE: ofail<<"blahblah";
+        print_result(ofail, !ofail.is_open());
         // FAIL !!!
         // no way to tell if command fails, 
     }
