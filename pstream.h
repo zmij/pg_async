@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.87 2004/10/20 23:36:01 redi Exp $
+/* $Id: pstream.h,v 1.88 2004/10/21 00:17:09 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -957,7 +957,7 @@ namespace redi
    * @param   mode     a bitwise OR of one or more of @c out, @c in, @c err.
    * @return  NULL if the shell could not be started or the
    *          pipes could not be opened, @c this otherwise.
-   * @see     execlp(3)
+   * @see     <b>execlp</b>(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
@@ -1001,7 +1001,7 @@ namespace redi
   /**
    * @brief  Helper function to close a file descriptor.
    *
-   * Inspects @a filedes and calls @b close(3) if it has a non-negative value.
+   * Inspects @a fd and calls <b>close</b>(3) if it has a non-negative value.
    *
    * @param   fd  a file descriptor.
    * @relates basic_pstreambuf
@@ -1035,7 +1035,8 @@ namespace redi
    * Starts a new process by executing @a file with the arguments in
    * @a argv and opens pipes to the process with the specified @a mode.
    *
-   * By convention argv[0] should be the file name of the file being executed.
+   * By convention @c argv[0] should be the file name of the file being
+   * executed.
    * Will duplicate the actions of  the  shell  in searching for an
    * executable file if the specified file name does not contain a slash (/)
    * character.
@@ -1049,7 +1050,7 @@ namespace redi
    * @param   mode  a bitwise OR of one or more of @c out, @c in and @c err.
    * @return  NULL if a pipe could not be opened or if the program could
    *          not be executed, @c this otherwise.
-   * @see     execvp(3)
+   * @see     <b>execvp</b>(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
@@ -1533,8 +1534,7 @@ namespace redi
 
   /**
    * Called when the internal character buffer is not present or is full,
-   * to transfer the buffer contents to the pipe. For unbuffered streams
-   * this is called for every insertion.
+   * to transfer the buffer contents to the pipe.
    *
    * @param   c  a character to be written to the pipe.
    * @return  @c traits_type::not_eof(c) if @a c is equal to @c
@@ -1610,7 +1610,6 @@ namespace redi
    *
    * @return The first available character in the buffer,
    * or @c traits_type::eof() in case of failure.
-   * @see uflow()
    */
   template <typename C, typename T>
     typename basic_pstreambuf<C,T>::int_type
@@ -1679,7 +1678,7 @@ namespace redi
   /**
    * Writes up to @a n characters to the pipe from the buffer @a s.
    * This currently only works for fixed width character encodings where
-   * each character uses sizeof(char_type) bytes.
+   * each character uses @c sizeof(char_type) bytes.
    *
    * @param   s  character buffer.
    * @param   n  buffer length.
@@ -1695,7 +1694,7 @@ namespace redi
   /**
    * Reads up to @a n characters from the pipe to the buffer @a s.
    * This currently only works for fixed width character encodings where
-   * each character uses sizeof(char_type) bytes.
+   * each character uses @c sizeof(char_type) bytes.
    *
    * @param   s  character buffer.
    * @param   n  buffer length.
@@ -1908,9 +1907,10 @@ namespace redi
    * @warning  This function exposes the internals of the stream buffer and
    *           should be used with caution. It is the caller's responsibility
    *           to flush streams etc. in order to clear any buffered data.
-   *           The POSIX.1 function @c fdopen(3) is used to obtain the
+   *           The POSIX.1 function <b>fdopen</b>(3) is used to obtain the
    *           @c FILE pointers from the streambuf's private file descriptor
-   *           members so consult your system's documentation for @c fdopen().
+   *           members so consult your system's documentation for
+   *           <b>fdopen</b>(3).
    *
    * @param   in    A FILE* that will refer to the process' stdin.
    * @param   out   A FILE* that will refer to the process' stdout.
@@ -1922,6 +1922,8 @@ namespace redi
    * streams @c NULL is assigned to the parameter.
    * The return value can be tested to see which parameters should be
    * @c !NULL by masking with the corresponding @c pmode value.
+   *
+   * @see <b>fdopen</b>(3)
    */
   template <typename C, typename T>
     std::size_t
