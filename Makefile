@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.19 2004/03/28 13:27:31 redi Exp $
+# $Id: Makefile,v 1.20 2004/10/17 15:43:16 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -24,15 +24,16 @@ OPTIM=-g3
 EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=
 
-CFLAGS=-ansi -pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
+CFLAGS=-std=c++98 -pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
 SOURCES = pstream.h
-GENERATED_FILES = ChangeLog MANIFEST TODO 
-EXTRA_FILES = AUTHORS COPYING Doxyfile INSTALL Makefile README mainpage.html \
-              images/pstreams1.png
+GENERATED_FILES = ChangeLog MANIFEST
+EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README mainpage.html
 
-DIST_FILES= $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
+DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
+
+VERS = 0.5.0
 
 all: docs $(GENERATED_FILES)
 
@@ -46,16 +47,29 @@ test_pstreams: test_pstreams.cc pstream.h
 test_minimum: test_minimum.cc pstream.h
 	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) -o $@ $<
 
-MANIFEST:
-	@echo "$(DIST_FILES)" > $@
+MANIFEST: Makefile
+	@for i in $(DIST_FILES) ; do echo "pstreams-$(VERS)/$$i" ; done > $@
 
 docs: pstream.h mainpage.html
-	@ver=`sed -n -e 's:^#define *PSTREAMS_VERSION.*// *\([0-9\.]*\):\1:p' $<`;\
-	 perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $$ver\2/" mainpage.html
 	@doxygen Doxyfile
+
+mainpage.html: Makefile
+	@perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $(VERS)\2/" $@
 
 ChangeLog:
 	@cvs2cl.pl
+
+packages: pstreams-$(VERS).tar.gz pstreams-docs-$(VERS).tar.gz
+
+pstreams-$(VERS).tar.gz: pstream.h $(GENERATED_FILES)
+	@ln -s . pstreams-$(VERS)
+	@tar -czvf $@ `cat MANIFEST`
+	@rm pstreams-$(VERS)
+
+pstreams-docs-$(VERS).tar.gz: docs
+	@ln -s doc/html pstreams-docs-$(VERS)
+	@tar -czvhf $@ pstreams-docs-$(VERS)
+	@rm pstreams-docs-$(VERS)
 
 TODO : pstream.h mainpage.html test_pstreams.cc
 	@grep -nH TODO $^ | sed -e 's@ *// *@@' > $@
@@ -63,5 +77,5 @@ TODO : pstream.h mainpage.html test_pstreams.cc
 clean:
 	@rm -f  test_minimum test_pstreams
 
-.PHONY: TODO test docs MANIFEST ChangeLog
+.PHONY: TODO test ChangeLog
 

@@ -22,6 +22,10 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 // TODO test rpstream more
 
+// test for failures. test opening pstream with neither pstdin nor pstdout.
+// maybe set failbit if !(mode&(pstdin|pstdout|pstderr)) ?
+// test passing std::ios::binary and others (should have no effect)
+//
 
 // test eviscerated pstreams
 #define REDI_EVISCERATE_PSTREAMS 1
@@ -39,6 +43,10 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <sys/stat.h>
 //#include <fcntl.h>
 #include <errno.h>
+
+#define PSTREAMS_VERSION_MAJOR PSTREAMS_VERSION & 0xff00
+#define PSTREAMS_VERSION_MINOR PSTREAMS_VERSION & 0x00f0
+#define PSTREAMS_VERSION_PATCHLEVEL PSTREAMS_VERSION & 0x000f
 
 using namespace std;
 using namespace redi;

@@ -1,3 +1,75 @@
+PStreams README file
+====================
+
+Contents
+========
+Introduction
+Release notes for recent versions
+The PStream Buffer class
+Signalling and Termination
+The Good, the Bad and the Ugly
+
+
+Introduction
+============
+
+This is the README file for PStreams, a C++ utility for simple IOStream-based
+Inter-Process Communication. PStreams is a tool. Not the most efficient or
+flexible method of IPC, but fairly simple and IOStream-based, with all the
+advantages that provides. I hope you find it useful.
+
+PStreams is free software, see the file COPYING.LIB for copying permission.
+The latest version can be found at http://pstreams.sourceforge.net/ and
+frequently asked questions at http://pstreams.sourceforge.net/doc/faq.html
+The author can be contacted at pstreams@kayari.org
+
+To use the PStreams classes copy the required header files to somewhere
+your compiler can find them and #include them. The headers are commented
+so that API documentation to be generated using Doxygen
+(http://www.doxygen.org/)
+
+This file contains some notes on PStreams, but is quite incomplete. There may
+be some notes here that aren't covered in the API documentation, but see
+those docs for most questions about usage (or at least, how things _should_
+work).
+
+PStreams has mostly been tested with gcc so far, if you have problems (or
+better still - solutions) with PStreams and other compilers please let
+me know.
+
+To use PStreams with the alpha cxx compiler you must not use strict_ansi
+mode and define __USE_STD_IOSTREAM to use the standard IOStream classes.
+
+To run the test program compile and run test_pstreams.cc
+This can be done with "make test_pstreams" if you have GNU or BSD make
+The Makefile doesn't work with Solaris make, and probably other versions
+of make.
+
+
+Release notes for PStreams 0.5.0
+================================
+
+Version numbering changed to the GNU-style major.minor.patchlevel scheme.
+The PSTREAMS_VERSION macro has jumped to 0x0050, 1.0.0 will still be 0x0100.
+
+Because all names ending in _t are reserved by POSIX, the pstreambuf::fd_t
+typedef has been renamed to fd_type. The fd_t name is still available, but
+is deprecated and will be removed soon. If you've used that type in your
+code please change it to fd_type (which is a better name anyway).  There
+is also a new argv_type typedef for std::vector<std::string>, the type
+used to hold the argument list for a command. Thanks to Tommi Maekitalo
+for the argv_type suggestion.
+
+Added a FAQ, which is very incomplete.
+
+Thanks to Jez Bromley, Brett Williams, Danny Aizer and everyone else who
+has helped.
+
+The pstreambuf class will soon be split into separate process control and
+stream buffer classes, thanks to Angus Leeming.
+Possible Win32 version coming as well, thanks to Francis Andre.
+
+
 Release notes for PStreams 0.49
 ===============================
 
@@ -58,37 +130,6 @@ in touch to say they were using the code.
 Jon Wakely
 
 
-PStreams
-========
-
-This is the README file for PStreams, a C++ utility for simple IOStream-based
-Inter-Process Communication. PStreams is a tool. Not the most efficient or
-flexible method of IPC, but fairly simple and IOStream-based, with all the
-advantages that provides. I hope you find it useful.
-
-The latest version can be found at http://pstreams.sourceforge.net/
-The author can be contacted at pstreams@kayari.org
-
-To use the PStreams classes copy the required header files to somewhere
-your compiler can find them and #include them. The headers are commented
-so that API documentation to be generated using Doxygen
-(http://www.doxygen.org/)
-
-This file contains some notes on PStreams, but is very incomplete. There may
-be some notes here that aren't covered in the API documentation, but see
-those docs for most questions about usage (or at least, how things _should_
-work).
-
-PStreams has only been tested with gcc so far, if you have problems (or
-better still - solutions) with PStreams and other compilers please let
-me know.
-
-To run the test program compile and run test_pstreams.cc
-This can be done with "make test_pstreams" if you have GNU or BSD make
-The Makefile doesn't work with Solaris make, and probably other versions
-of make.
-
-
 The PStream Buffer class
 ============================
 The pstreambuf used by the PStreams classes buffers all reads and writes
@@ -130,5 +171,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.14 2004/06/11 00:08:12 redi Exp $
-
+$Id: README,v 1.15 2004/10/17 15:43:16 redi Exp $
+:vim: set tw=78
