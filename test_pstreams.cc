@@ -128,7 +128,7 @@ int main()
         // This should read the strings on stdin and print them on stdout
         // prefixed by "STDOUT: "
 
-        opstream os("sed 's/^./STDIN: &/' /dev/stdin /etc/resolv.conf");
+        opstream os("sed 's/^/STDIN: /' /dev/stdin /etc/resolv.conf");
         os << ".fnord.\n";
         str = "..fnord..\n";
         os << str;
@@ -143,7 +143,7 @@ int main()
 
         vector<string> argv;
         argv.push_back("sed");
-        argv.push_back("s/^./STDIN: &/");
+        argv.push_back("s/^/STDIN: /");
         opstream os("sed", argv);
 
         check_pass(os << "Magic Monkey\n");
@@ -155,7 +155,7 @@ int main()
         // This should read the strings on stdin and print them on stdout
         // prefixed by "STDIN: "
 
-        opstream sed("sed 's/^./STDIN: &/'");
+        opstream sed("sed 's/^/STDIN: /'");
         str = "Monkey Magic\n";
         for (string::const_iterator i = str.begin(); i!=str.end(); ++i)
             sed.put(*i);
@@ -191,7 +191,7 @@ int main()
     {
         // open after construction, then write
         opstream os;
-        os.open("sed 's/^./STDIN: &/'");
+        os.open("sed '/^/STDIN: /'");
         os << "Hello, world!\n";
         check_pass(os);
     }
