@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.16 2002/01/09 03:28:41 redi Exp $
+/* $Id: pstream.h,v 1.17 2002/01/13 05:01:16 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAM_H
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0010   // 0.16
+#define PSTREAMS_VERSION 0x0011   // 0.17
 
 // check whether to provide pstream
 // popen() needs to use bidirectional pipe
@@ -111,13 +111,19 @@ namespace redi
       int_type
       pbackfail(int_type c = traits_type::eof());
 
-      /// Extract a character from the pipe.
-      bool
-      read(int_type& c);
+      std::streamsize
+      write(char_type* s, std::streamsize n);
+
+      std::streamsize
+      read(char_type* s, std::streamsize n);
 
       /// Insert a character into the pipe.
       bool
-      write(int_type c);
+      write(char_type c);
+
+      /// Extract a character from the pipe.
+      bool
+      read(char_type& c);
 
     private:
       basic_pstreambuf(const basic_pstreambuf&);
@@ -334,7 +340,7 @@ namespace redi
     {
       if (!traits_type::eq_int_type(c, traits_type::eof()))
       {
-        if (!this->write(c))
+        if (!this->write(traits_type::to_char_type(c)))
           return traits_type::eof();
         else
           return c;
@@ -363,13 +369,15 @@ namespace redi
       }
       else
       {
-        int_type c;
+        char_type c;
 
         if (!this->read(c))
+        {
           return traits_type::eof();
+        }
         else
         {
-          char_buf_ = traits_type::to_char_type(c);
+          char_buf_ = c;
           return traits_type::to_int_type(c);
         }
       }
@@ -394,10 +402,12 @@ namespace redi
       }
       else
       {
-        int_type c;
+        char_type c;
 
         if (!this->read(c))
+        {
           return traits_type::eof();
+        }
         else
         {
           take_from_buf_ = true;
@@ -418,41 +428,20 @@ namespace redi
    */
   template <typename C, typename T>
     typename basic_pstreambuf<C,T>::int_type
-    basic_pstreambuf<C,T>::pbackfail(basic_pstreambuf<C,T>::int_type c)
+    basic_pstreambuf<C,T>::pbackfail(int_type c)
     {
       if (!take_from_buf_)
       {
         if (!traits_type::eq_int_type(c, traits_type::eof()))
+        {
           char_buf_ = traits_type::to_char_type(c); 
+        }
         take_from_buf_ = true;
         return traits_type::to_int_type(char_buf_);
       }
       else
       {
          return traits_type::eof();
-      }
-    }
-
-  /**
-   * Attempts to extract a character from the pipe and store it in @a c.
-   * Used by underflow().
-   *
-   * @param c a reference to hold the extracted character.
-   * @return true if a character could be extracted, false otherwise.
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_pstreambuf<C,T>::read(basic_pstreambuf<C,T>::int_type& c)
-    {
-      char_type tmp = traits_type::to_char_type(c);
-      if (file_ && (std::fread(&tmp, sizeof(char_type), 1, file_) == 1))
-      {
-        c = traits_type::to_int_type(tmp);
-        return true;
-      }
-      else
-      {
-        return false;
       }
     }
 
@@ -464,10 +453,51 @@ namespace redi
    */
   template <typename C, typename T>
     inline bool
-    basic_pstreambuf<C,T>::write(basic_pstreambuf<C,T>::int_type c)
+    basic_pstreambuf<C,T>::write(char_type c)
     {
-      char_type tmp = traits_type::to_char_type(c);
-      return (file_ && (std::fwrite(&tmp, sizeof(char_type), 1, file_) == 1));
+      return (this->write(&c, 1) == 1);
+    }
+
+  /**
+   * Attempts to extract a character from the pipe and store it in @a c.
+   * Used by underflow().
+   *
+   * @param c a reference to hold the extracted character.
+   * @return true if a character could be extracted, false otherwise.
+   */
+  template <typename C, typename T>
+    inline bool
+    basic_pstreambuf<C,T>::read(char_type& c)
+    {
+      return (this->read(&c, 1) == 1);
+    }
+
+  /**
+   * Writes up to @a n characters to the pipe from the buffer @a s.
+   *
+   * @param s character buffer.
+   * @param n buffer length.
+   * @return the number of characters written.
+   */
+  template <typename C, typename T>
+    inline std::streamsize
+    basic_pstreambuf<C,T>::write(char_type* s, std::streamsize n)
+    {
+      return (file_ ? std::fwrite(s, sizeof(char_type), n, file_) : 0);
+    }
+
+  /**
+   * Reads up to @a n characters from the pipe to the buffer @a s.
+   *
+   * @param s character buffer.
+   * @param n buffer length.
+   * @return the number of characters read.
+   */
+  template <typename C, typename T>
+    inline std::streamsize
+    basic_pstreambuf<C,T>::read(char_type* s, std::streamsize n)
+    {
+      return (file_ ? std::fread(s, sizeof(char_type), n, file_) : 0);
     }
 
 
