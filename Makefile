@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.6 2002/04/25 01:59:25 redi Exp $
+# $Id: Makefile,v 1.7 2002/04/26 01:23:36 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -23,7 +23,7 @@ CXX=g++3
 CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
-SOURCES = pstream.h
+SOURCES = pstream.h rpstream.h
 DOCS = pstreams.html
 EXTRA_DIST = AUTHORS COPYING ChangeLog INSTALL README TODO 
 
@@ -52,7 +52,7 @@ ChangeLog:
 pstreams.tar.gz: $(DISTFILES)
 	@tar czf $@ $^
 
-TODO : pstream.h  pstreams.html test_pstreams.cc
+TODO : pstream.h rpstream.h pstreams.html test_pstreams.cc
 	@grep -nH TODO $^ | sed -e 's@ *// *@@' > $@
 
 .PHONY: TODO test distro ChangeLog docs
