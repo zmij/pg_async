@@ -1,4 +1,4 @@
-/* $Id: pstream_compat.h,v 1.3 2003/04/28 10:57:41 redi Exp $
+/* $Id: pstream_compat.h,v 1.4 2004/03/30 11:14:51 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -33,7 +33,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #error \
     You must define either BACK_COMPAT or GCC_BACK_COMPAT to be 1 \
     to use this file. For gcc versions 2.7 to 2.9x (including egcs) \
-    define GCC_BACKCOMPAT = 1. For other compilers define BACK_COMPAT = 1 \
+    define GCC_BACK_COMPAT = 1. For other compilers define BACK_COMPAT = 1 \
     For ISO C++ conforming compilers use pstream.h instead.
 
 #elif GCC_BACK_COMPAT == 1
