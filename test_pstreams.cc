@@ -219,8 +219,8 @@ int main()
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
-        print_result(ps, ps.out());
-        print_result(ps, ps.err());
+        check_pass(ps.out());
+        check_pass(ps.err());
 
         string buf;
         while (getline(ps.out(), buf))
@@ -237,7 +237,7 @@ int main()
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
-        print_result(ps, ps);
+        check_pass(ps);
 
         ps << "12345\nfnord\n0000" << peof;
         // manip calls ps.rdbuf()->peof();
@@ -251,8 +251,7 @@ int main()
             cout << "STDOUT: " << buf << endl;
         } while (getline(ps.out(), buf));
 
-        print_result(ps, !(ps << "pipe closed, no fnord now"));
-        check_fail(ps);
+        check_fail(ps << "pipe closed, no fnord now");
     }
     // TODO - test child moves onto next file after peof on stdin
 
@@ -271,7 +270,7 @@ int main()
 
         pbuf->close();
         int e3 = pbuf->error();
-        print_result(ps, !(ps << "127 fail 127\n"));
+        check_fail(ps << "127 fail 127\n");
         print_result(ps, e1 == e3);
     }
 
@@ -359,19 +358,19 @@ int main()
     clog << "# Testing writing to closed stream\n";
 
     {
-        opstream os("sed 's/foo/FOO/'");
+        opstream os("tr a-z A-Z | sed 's/^/STDIN: /'");
         os << "foo\n";
         os.close();
         if (os << "bar\n")
             cout << "Wrote to closed stream" << endl;
-        print_result(os, !(os << "bar\n"));
+        check_fail(os << "bar\n");
     }
 
 #if REDI_EVISCERATE_PSTREAMS
     clog << "# Testing eviscerated pstream\n";
 
     {
-        opstream os("sed 's/.*/FNORD/'");
+        opstream os("tr a-z A-Z | sed 's/^/STDIN: /'");
         FILE *in, *out, *err;
         size_t res = os.fopen(in, out, err);
         print_result(os, res & pstreambuf::pstdin);
@@ -435,47 +434,6 @@ int main()
 #endif
 
 
-#if 0
-
-#ifdef _STREAM_COMPAT
-
-    // check fstreambase doesn't try to close() an attached fd
-    FILE* f = fopen("/tmp/poo", "a");
-    fprintf(f, "text\n");
-    fflush(f);
-    {
-        fstream fs;
-        fs.attach(fileno(f));
-        fs << "more text" << endl;
-    }
-    fprintf(f, "even more text\n");
-    fflush(f);
-    cout << "retval of fclose(): " << fclose(f) << endl;
-
-    // same check again, using only filedescs (no FILE*s)
-    int fd = open("/tmp/oops", O_CREAT|O_WRONLY, 0777);
-    clog << errno << ' ' << strerror(errno) << endl;
-    errno=0;
-    clog << write(fd, "TEXT\n", 5) << endl;
-    clog << errno << ' ' << strerror(errno) << endl;
-    errno=0;
-    fsync(fd);
-    {
-        ofstream fs(fd);
-        fs << "MORE TEXT" << endl;
-        clog << strerror(errno) << endl;
-        errno=0;
-    }
-    clog << write(fd, "EVEN MORE TEXT\n", 15) << endl;
-    clog << strerror(errno) << endl;
-    errno=0;
-    fsync(fd);
-    close(fd);
-#endif  // _STREAM_COMPAT
-
-#endif
-
     return 0;
 }
-
 
