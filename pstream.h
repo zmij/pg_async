@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.47 2002/10/22 00:56:33 redi Exp $
+/* $Id: pstream.h,v 1.48 2002/10/22 00:59:19 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -1252,24 +1252,13 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::read_err(bool readerr)
     {
-      bool ret = false;
-      if (readerr)
+      buf_read_src src = readerr ? rsrc_err : rsrc_out;
+      if (rpipe_[src]>=0)
       {
-        if (rpipe_[rsrc_err]>=0)
-        {
-          rsrc_ = rsrc_err;
-          ret = true;
-        }
+        rsrc_ = src;
+        return true;
       }
-      else
-      {
-        if (rpipe_[rsrc_out]>=0)
-        {
-          rsrc_ = rsrc_out;
-          ret = true;
-        }
-      }
-      return ret;
+      return false;
     }
 
 #if  BUFFERED
