@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.8 2002/01/07 11:33:09 redi Exp $
+/* $Id: pstream.h,v 1.9 2002/01/07 11:43:47 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001 Jonathan Wakely
 
@@ -327,10 +327,10 @@ namespace redi
     basic_pstreambuf<C,T>::write(basic_pstreambuf<C,T>::int_type c)
     {
       char_type tmp = traits_type::to_char_type(c);
-      return (file_ && (1 == std::fwrite(&tmp, sizeof(char_type), 1, file_)));
+      return (file_ && (std::fwrite(&tmp, sizeof(char_type), 1, file_) == 1));
     }
 
-  // TODO extend this to handle all modes and make non-member ?
+  // TODO extend openmode2str() to handle all modes and make non-member ?
   template <typename C, typename T>
     std::string
     basic_pstreambuf<C,T>::openmode2str(std::ios_base::openmode mode)
