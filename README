@@ -1,0 +1,13 @@
+PStreams version 0.12
+
+COPYING         - licensing information
+ChangeLog       - change history
+README          - this file
+TODO            - list of missing or incompete features
+pstream.h       - the library header
+pstreams.html   - HTML documentation
+
+The latest version can be found at http://pstreams.sourceforge.net/
+
+The author can be contacted at pstreams@kayari.org
+
