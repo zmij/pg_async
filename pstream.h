@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.74 2004/06/10 23:57:29 redi Exp $
+/* $Id: pstream.h,v 1.75 2004/06/11 08:36:11 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -1200,7 +1200,7 @@ namespace redi
 
         destroy_buffers(pstdin|pstdout|pstderr);
 
-        // close pipes before wait() so child gets SIGPIPE if still writing
+        // close pipes before wait() so child gets EOF/SIGPIPE
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
 
