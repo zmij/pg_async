@@ -1,6 +1,6 @@
-/* $Id: pstream.h,v 1.63 2004/03/19 15:56:42 redi Exp $
+/* $Id: pstream.h,v 1.64 2004/03/19 16:36:01 redi Exp $
 PStreams - POSIX Process I/O for C++
-Copyright (C) 2001,2002,2003 Jonathan Wakely
+Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
 This file is part of PStreams.
 
@@ -37,9 +37,11 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <ostream>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <cstring>
-#include <cerrno>
+#include <algorithm>    // for std::min()
+#include <cstring>      // for memcpy(), memmove() etc.
+#include <cerrno>       // for errno
+#include <cstddef>      // for size_t
+#include <cstdlib>      // for exit()
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
@@ -57,11 +59,8 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 // basic_pstream    -> BasicPStream
 // basic_rpstream   -> BasicRPStream
 
-
-
 /// The library version.
-#define PSTREAMS_VERSION 0x002b   // 0.43
-
+#define PSTREAMS_VERSION 0x002c   // 0.44
 
 /**
  *  @namespace redi
@@ -726,10 +725,6 @@ namespace redi
   typedef basic_rpstream<char> rpstream;
 
 
-  template <typename C, typename T>
-    std::basic_ostream<C,T>&
-    peof(std::basic_ostream<C,T>& s);
-
   /**
    * When inserted into an ouput pstream the manipulator calls 
    * basic_pstreambuf<C,T>::peof() to close the output pipe,
@@ -745,7 +740,7 @@ namespace redi
    *          use this manipulator and call basic_pstreambuf<C,T>::peof()
    *          directly.
    * @see     basic_pstreambuf<C,T>::peof(), basic_pstream<C,T>::rdbuf(),
-   *          basic_ipstream<C,T>::rdbuf(), basic_opstream<C,T>::rdbuf().
+   *          basic_opstream<C,T>::rdbuf().
    * @relates basic_pstreambuf
    */
   template <typename C, typename T>
@@ -1467,8 +1462,8 @@ namespace redi
     bool
     basic_pstreambuf<C,T>::empty_buffer()
     {
-      int count = this->pptr() - this->pbase();
-      std::streamsize written = write(wbuffer_, count);
+      const std::streamsize count = this->pptr() - this->pbase();
+      const std::streamsize written = this->write(this->wbuffer_, count);
       if (count > 0 && written == count)
       {
         this->pbump(-written);
@@ -1547,7 +1542,7 @@ namespace redi
 
 
   /**
-   * Attempts to insert @a c into the pipe. Used by overflow().
+   * Attempts to insert @a c into the pipe.
    *
    * @param   c  a character to insert.
    * @return  true if the character could be inserted, false otherwise.
@@ -1562,7 +1557,6 @@ namespace redi
 
   /**
    * Attempts to extract a character from the pipe and store it in @a c.
-   * Used by underflow().
    *
    * @param   c  a reference to hold the extracted character.
    * @return  true if a character could be extracted, false otherwise.
