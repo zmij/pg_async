@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.4 2002/07/24 21:06:03 redi Exp $
+/* $Id: rpstream.h,v 1.5 2002/09/21 21:44:54 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -100,7 +100,7 @@ namespace redi
    * standard input of the command.
    * It is not possible to read directly from an rpstream object, to use
    * an rpstream as in istream you must call either basic_rpstream::out()
-   * or basic_rpstream::err(). This is to prevent accidentally reads from
+   * or basic_rpstream::err(). This is to prevent accidental reads from
    * the wrong input source. If the rpstream was not opened with @c pmode
    * @c pstderr then the class cannot read the process' @c stderr, and
    * basic_rpstream::err() will return an istream that reads from the
