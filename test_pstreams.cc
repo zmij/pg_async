@@ -241,6 +241,7 @@ int main()
 
         ps << "12345\nfnord\n0000" << peof;
         // manip calls static_cast<pstreambuf*>(ps.rdbuf())->peof();
+        // safer to use ps.rdbuf()->peof() instead
 
         string buf;
         getline(ps.out(), buf);
@@ -293,9 +294,16 @@ int main()
         opstream ofail(badcmd);
         sleep(1);  // give shell time to try command and exit
         // this would cause SIGPIPE: ofail<<"blahblah";
-        print_result(ofail, !ofail.is_open());
+        // does not show failure: print_result(ofail, !ofail.is_open());
+#if PSTREAMS_WAIT
+        pstreambuf* buf = static_cast<pstreambuf*>(ofail.rdbuf());
+        print_result(ofail, buf->exited());
+        int status = buf->status();
+        print_result(ofail, WIFEXITED(status) && WEXITSTATUS(status)==127);
+#else
         // FAIL !!!
         // no way to tell if command fails, 
+#endif
     }
 
     {
