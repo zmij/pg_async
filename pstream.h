@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.28 2002/04/29 21:40:26 redi Exp $
+/* $Id: pstream.h,v 1.29 2002/04/29 22:58:48 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -51,7 +51,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /// The library version.
 #define PSTREAMS_VERSION 0x0023   // 0.35
 
-/// All PStreams classes are declared in namespace redi.
+/**
+ *  @namespace redi
+ *  @brief  All PStreams classes are declared in namespace redi.
+ *
+ *  Like the standard IOStreams, PStreams is a set of class templates,
+ *  taking a character type and traits type, but as with the standard
+ *  streams they are most likely to be used with @c char and the default
+ *  traits type, so typedefs for this most common case are provided.
+ *
+ *  The @c pstream_base class template is not intended to be used directly,
+ *  it is used internally to provide the common functionality for the
+ *  other stream classes.
+ */
 namespace redi
 {
   /// Class template for stream buffer.
@@ -59,7 +71,7 @@ namespace redi
     class basic_pstreambuf : public std::basic_streambuf<CharT, Traits>
     {
     public:
-      /// Type definitions for dependent types
+      // Type definitions for dependent types
       typedef CharT                             char_type;
       typedef Traits                            traits_type;
       typedef typename traits_type::int_type    int_type;
@@ -148,9 +160,6 @@ namespace redi
 #endif
 
     protected:
-      basic_pstreambuf(const basic_pstreambuf&);
-      basic_pstreambuf& operator=(const basic_pstreambuf&);
-
       /// Enumerated type to indicate whether stdout or stderr is to be read.
       enum buf_read_src { rsrc_out = 0, rsrc_err = 1 };
 
@@ -183,6 +192,9 @@ namespace redi
       close_fd_array(fd_t* filedes, size_t count);
 
     private:
+      basic_pstreambuf(const basic_pstreambuf&);
+      basic_pstreambuf& operator=(const basic_pstreambuf&);
+
       pid_t         ppid_;        // pid of process
       fd_t          wpipe_;       // pipe used to write to process' stdin
       fd_t          rpipe_[2];    // two pipes to read from, stdout and stderr
@@ -242,8 +254,8 @@ namespace redi
 #endif
 
     protected:
-      std::string       command_;
-      streambuf_type    buf_;
+      std::string       command_; ///< The command used to start the process.
+      streambuf_type    buf_;     ///< The stream buffer.
     };
 
 
