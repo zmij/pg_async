@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.85 2004/10/18 09:49:02 redi Exp $
+/* $Id: pstream.h,v 1.86 2004/10/20 14:36:35 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -78,6 +78,9 @@ namespace redi
     /// Type used to hold the arguments for a command.
     typedef std::vector<std::string>          argv_type;
 
+    /// Type used for file descriptors.
+    typedef int                               fd_type;
+
     static const pmode pstdin  = std::ios_base::out; ///< Write to stdin
     static const pmode pstdout = std::ios_base::in;  ///< Read from stdout
     static const pmode pstderr = std::ios_base::app; ///< Read from stderr
@@ -100,8 +103,6 @@ namespace redi
       typedef typename traits_type::int_type    int_type;
       typedef typename traits_type::off_type    off_type;
       typedef typename traits_type::pos_type    pos_type;
-      /// Type used for file descriptors.
-      typedef int                               fd_type;
       /** @deprecated use fd_type instead. */
       typedef fd_type                           fd_t;
 
@@ -1057,22 +1058,37 @@ namespace redi
     }
 
   /**
-   * @brief  Helper function to close an array of file descriptors.
+   * @brief  Helper function to close a file descriptor.
    *
-   * Inspects each of the @a count file descriptors in the array @a filedes
-   * and calls @c close() if they have a non-negative value.
-   * @param filedes an array of file descriptors
-   * @param count size of the array.
+   * Inspects @a filedes and calls @c ::close() if it has a non-negative value.
+   *
+   * @param   fd  a file descriptor.
    * @relates basic_pstreambuf
    */
   inline void
-  close_fd_array(int* filedes, std::size_t count)
+  close_fd(pstreams::fd_type& fd)
   {
-    for (std::size_t i = 0; i < count; ++i)
-      if (filedes[i] >= 0)
-        if (::close(filedes[i]) == 0)
-          filedes[i] = -1;
+    if (fd >= 0 && ::close(fd) == 0)
+      fd = -1;
   }
+
+  /**
+   * @brief  Helper function to close an array of file descriptors.
+   *
+   * Calls @c close_fd() on each member of the array.
+   * The length of the array is determined automatically by
+   * template argument deduction to avoid errors.
+   *
+   * @param   fds  an array of file descriptors.
+   * @relates basic_pstreambuf
+   */
+  template <int N>
+    inline void
+    close_fd_array(pstreams::fd_type (&fds)[N])
+    {
+      for (std::size_t i = 0; i < N; ++i)
+        close_fd(fds[i]);
+    }
 
   /**
    * Creates pipes as specified by @a mode and calls @c fork() to create
@@ -1099,15 +1115,13 @@ namespace redi
       // Three pairs of file descriptors, for pipes connected to the
       // process' stdin, stdout and stderr
       // (stored in a single array so close_fd_array() can close all at once)
-      const std::size_t nfd = 6;
-      fd_type fd[nfd] = { -1, -1, -1, -1, -1, -1 };
+      fd_type fd[] = { -1, -1, -1, -1, -1, -1 };
       fd_type* const pin = fd;
       fd_type* const pout = fd+2;
       fd_type* const perr = fd+4;
 
       // constants for read/write ends of pipe
-      const int RD = 0;
-      const int WR = 1;
+      enum { RD, WR };
 
       // N.B.
       // For the pstreambuf pin is an output stream and
@@ -1159,7 +1173,7 @@ namespace redi
             // couldn't fork for some reason
             error_ = errno;
             // close any open pipes
-            close_fd_array(fd, nfd);
+            close_fd_array(fd);
             break;
           }
           default :
@@ -1195,7 +1209,7 @@ namespace redi
       else
       {
         // close any pipes we opened before failure
-        close_fd_array(fd, nfd);
+        close_fd_array(fd);
       }
       return pid;
     }
@@ -1221,8 +1235,8 @@ namespace redi
         destroy_buffers(pstdin|pstdout|pstderr);
 
         // close pipes before wait() so child gets EOF/SIGPIPE
-        close_fd_array(&wpipe_, 1);
-        close_fd_array(rpipe_, 2);
+        close_fd(wpipe_);
+        close_fd_array(rpipe_);
 
         if (wait() == 1)
         {
@@ -1348,8 +1362,8 @@ namespace redi
             status_ = status;
             exited = 1;
             destroy_buffers(pstdin|pstdout|pstderr);
-            close_fd_array(&wpipe_, 1);
-            close_fd_array(rpipe_, 2);
+            close_fd(wpipe_);
+            close_fd_array(rpipe_);
             break;
         }
       }
@@ -1428,7 +1442,7 @@ namespace redi
     {
       sync();
       destroy_buffers(pstdin);
-      close_fd_array(&wpipe_, 1);
+      close_fd(wpipe_);
     }
 
   /**
