@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.79 2004/09/26 19:25:51 redi Exp $
+/* $Id: pstream.h,v 1.80 2004/10/01 19:00:43 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -261,7 +261,7 @@ namespace redi
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class pstream_common
     : virtual public std::basic_ios<CharT, Traits>
-    , public pstreams
+    , virtual public pstreams
     {
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
@@ -332,6 +332,7 @@ namespace redi
     class basic_ipstream
     : public std::basic_istream<CharT, Traits>
     , public pstream_common<CharT, Traits>
+    , virtual public pstreams
     {
       typedef std::basic_istream<CharT, Traits>     istream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
@@ -360,8 +361,8 @@ namespace redi
        * @param mode     the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
        */
-      basic_ipstream(const std::string& command, pmode mode = std::ios_base::in)
-      : istream_type(NULL), pbase_type(command, mode)
+      basic_ipstream(const std::string& command, pmode mode = pstdout)
+      : istream_type(NULL), pbase_type(command, mode|pstdout)
       { }
 
       /**
@@ -377,8 +378,8 @@ namespace redi
        */
       basic_ipstream( const std::string& file,
                       const argv_type& argv,
-                      pmode mode = std::ios_base::in )
-      : istream_type(NULL), pbase_type(file, argv, mode)
+                      pmode mode = pstdout )
+      : istream_type(NULL), pbase_type(file, argv, mode|pstdout)
       { }
 
       /**
@@ -400,9 +401,9 @@ namespace redi
        * @see   do_open(const std::string&, pmode)
        */
       void
-      open(const std::string& command, pmode mode = std::ios_base::in)
+      open(const std::string& command, pmode mode = pstdout)
       {
-        this->do_open(command, mode);
+        this->do_open(command, mode|pstdout);
       }
 
       /**
@@ -419,9 +420,9 @@ namespace redi
       void
       open( const std::string& file,
             const argv_type& argv,
-            pmode mode = std::ios_base::in )
+            pmode mode = pstdout )
       {
-        this->do_open(file, argv, mode);
+        this->do_open(file, argv, mode|pstdout);
       }
 
       /**
@@ -461,6 +462,7 @@ namespace redi
     class basic_opstream
     : public std::basic_ostream<CharT, Traits>
     , public pstream_common<CharT, Traits>
+    , virtual public pstreams
     {
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
@@ -489,9 +491,8 @@ namespace redi
        * @param mode     the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
        */
-      basic_opstream( const std::string& command,
-                      pmode mode = std::ios_base::out )
-      : ostream_type(NULL), pbase_type(command, mode)
+      basic_opstream(const std::string& command, pmode mode = pstdin)
+      : ostream_type(NULL), pbase_type(command, mode|pstdin)
       { }
 
       /**
@@ -507,8 +508,8 @@ namespace redi
        */
       basic_opstream( const std::string& file,
                       const argv_type& argv,
-                      pmode mode = std::ios_base::out )
-      : ostream_type(NULL), pbase_type(file, argv, mode)
+                      pmode mode = pstdin )
+      : ostream_type(NULL), pbase_type(file, argv, mode|pstdin)
       { }
 
       /**
@@ -525,9 +526,9 @@ namespace redi
        * @see   do_open(const std::string&, pmode)
        */
       void
-      open(const std::string& command, pmode mode = std::ios_base::out)
+      open(const std::string& command, pmode mode = pstdin)
       {
-        this->do_open(command, mode);
+        this->do_open(command, mode|pstdin);
       }
 
       /**
@@ -540,9 +541,9 @@ namespace redi
       void
       open( const std::string& file,
             const argv_type& argv,
-            pmode mode = std::ios_base::out )
+            pmode mode = pstdin)
       {
-        this->do_open(file, argv, mode);
+        this->do_open(file, argv, mode|pstdin);
       }
     };
 
@@ -564,6 +565,7 @@ namespace redi
     class basic_pstream
     : public std::basic_iostream<CharT, Traits>
     , public pstream_common<CharT, Traits>
+    , virtual public pstreams
     {
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
@@ -593,7 +595,7 @@ namespace redi
        * @see   do_open(const std::string&, pmode)
        */
       basic_pstream( const std::string& command,
-                     pmode mode = std::ios_base::in|std::ios_base::out )
+                     pmode mode = pstdout|pstdin )
       : iostream_type(NULL), pbase_type(command, mode)
       { }
 
@@ -610,7 +612,7 @@ namespace redi
        */
       basic_pstream( const std::string& file,
                      const argv_type& argv,
-                     pmode mode = std::ios_base::in|std::ios_base::out )
+                     pmode mode = pstdout|pstdin )
       : iostream_type(NULL), pbase_type(file, argv, mode)
       { }
 
@@ -628,8 +630,7 @@ namespace redi
        * @see   do_open(const std::string&, pmode)
        */
       void
-      open( const std::string& command,
-            pmode mode = std::ios_base::in|std::ios_base::out )
+      open(const std::string& command, pmode mode = pstdout|pstdin)
       {
         this->do_open(command, mode);
       }
@@ -644,7 +645,7 @@ namespace redi
       void
       open( const std::string& file,
             const argv_type& argv,
-            pmode mode = std::ios_base::in|std::ios_base::out )
+            pmode mode = pstdout|pstdin )
       {
         this->do_open(file, argv, mode);
       }
@@ -699,6 +700,7 @@ namespace redi
     : public std::basic_ostream<CharT, Traits>
     , private std::basic_istream<CharT, Traits>
     , private pstream_common<CharT, Traits>
+    , virtual public pstreams
     {
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
       typedef std::basic_istream<CharT, Traits>     istream_type;
@@ -728,8 +730,7 @@ namespace redi
        * @param mode the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
        */
-      basic_rpstream( const std::string& command,
-                      pmode mode = std::ios_base::in|std::ios_base::out )
+      basic_rpstream(const std::string& command, pmode mode = pstdout|pstdin)
       : ostream_type(NULL) , istream_type(NULL) , pbase_type(command, mode)
       { }
 
@@ -746,7 +747,7 @@ namespace redi
        */
       basic_rpstream( const std::string& file,
                       const argv_type& argv,
-                      pmode mode = std::ios_base::in|std::ios_base::out )
+                      pmode mode = pstdout|pstdin )
       : ostream_type(NULL), istream_type(NULL), pbase_type(file, argv, mode)
       { }
 
@@ -763,8 +764,7 @@ namespace redi
        * @see   do_open(const std::string&, pmode)
        */
       void
-      open( const std::string& command,
-            pmode mode = std::ios_base::in|std::ios_base::out )
+      open(const std::string& command, pmode mode = pstdout|pstdin)
       {
         this->do_open(command, mode);
       }
@@ -783,7 +783,7 @@ namespace redi
       void
       open( const std::string& file,
             const argv_type& argv,
-            pmode mode = std::ios_base::in|std::ios_base::out )
+            pmode mode = pstdout|pstdin )
       {
         this->do_open(file, argv, mode);
       }
