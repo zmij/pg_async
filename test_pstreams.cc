@@ -467,6 +467,30 @@ int main()
         check_fail(out.seekp(0, std::ios_base::beg));
     }
 
+    clog << "# Testing read position tracked correctly\n";
+    {
+        ipstream in("echo 'abc' >&2 && echo '123'", all3streams);
+        string s;
+        s += in.out().get();
+        s += in.err().get();
+        s += in.out().get();
+        s += in.err().get();
+        s += in.out().get();
+        s += in.err().get();
+
+        const string s_expected = "1a2b3c";
+        cout << s << " == " << s_expected << endl;
+        print_result(in, s == s_expected);
+
+        print_result(in, in.out().get() == '\n');
+        print_result(in, in.err().get() == '\n');
+
+        char c;
+        check_fail(in.out().get(c));
+        in.clear(); // clear EOF
+        check_fail(in.err().get(c));
+    }
+
 #if REDI_EVISCERATE_PSTREAMS
     clog << "# Testing eviscerated pstream\n";
 
@@ -530,7 +554,7 @@ int main()
 
 #endif
 
-    std::cerr << "# Testing resources freed correctly\n";
+    clog << "# Testing resources freed correctly\n";
 
     {
         ipstream in("hostname");
