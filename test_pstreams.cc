@@ -43,6 +43,22 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 using namespace std;
 using namespace redi;
 
+#if 0
+// specialise basic_pstreambuf<char>::sync() to add a delay, allowing
+// terminated processes to finish exiting, making it easier to detect
+// possible writes to closed pipes (which would raise SIGPIPE and exit).
+template <>
+    int
+    basic_pstreambuf<char>::sync()
+    {
+        std::cout.flush();  // makes terminated process clean up faster.
+        sleep(5);
+        std::cout.flush();  // makes terminated process clean up faster.
+        return !exited() && empty_buffer() ? 0 : -1;
+    }
+#endif
+
+
 // explicit instantiations of template classes
 template class redi::basic_pstreambuf<char>;
 template class redi::pstream_common<char>;
@@ -248,7 +264,7 @@ int main()
     {
         // test input on bidirectional pstream
         // and test child moves onto next file after peof on stdin
-        const string cmd = "grep fnord -- - /etc/hosts";
+        const string cmd = "grep fnord -- /etc/hosts -";
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -262,7 +278,7 @@ int main()
 
         do
         {
-            print_result(ps, buf.find("fnord"));
+            print_result(ps, buf.find("fnord") != std::string::npos);
             cout << "STDOUT: " << buf << endl;
         } while (getline(ps.out(), buf));
 
@@ -274,6 +290,8 @@ int main()
         const string cmd = "grep 127 -- -";
         pstream ps(cmd, all3streams);
 
+        ps << "fnord";  // write some output to buffer
+
         pstreambuf* pbuf = ps.rdbuf();
 
         const int e1 = pbuf->error();
@@ -282,11 +300,42 @@ int main()
         const int e2 = pbuf->error();
         print_result(ps, e1 == e2);
 
+        sleep(3);  // allow time for child process to exit completely
+
+        // close() will call sync(), which shouldn't flush buffer after kill()
         pbuf->close();
 
         const int e3 = pbuf->error();
         check_fail(ps << "127 fail 127\n");
         print_result(ps, e1 == e3);
+    }
+
+    {
+        // test killing and checking for exit
+        const string cmd = "grep '^127' -- -";
+        pstream ps(cmd, all3streams);
+
+        print_result(ps, ps.is_open());
+        check_pass(ps.out());
+        check_pass(ps.err());
+
+        ps.rdbuf()->kill();
+        ::sleep(3);
+        print_result(ps, ps.is_open());
+        print_result(ps, ps.rdbuf()->exited());
+        print_result(ps, !ps.is_open());
+
+#if 0
+        string buf;
+        while (getline(ps.out(), buf))
+            cout << "STDOUT: " << buf << endl;
+        check_fail(ps);
+        ps.clear();
+        while (getline(ps.err(), buf))
+            cout << "STDERR: " << buf << endl;
+        check_fail(ps);
+        ps.clear();
+#endif
     }
 
 
@@ -482,7 +531,45 @@ int main()
     }
 
 #endif
-    
+
+    std::cerr << "# Testing resources freed correctly\n";
+
+    {
+        ipstream in("hostname");
+
+        ::sleep(3);  // wait for process to exit
+
+        in.rdbuf()->exited();  // test for exit, destroy buffers
+
+        // check no open files except for stdin, stdout, stderr
+        int next_fd = dup(0);
+        print_result(in, next_fd == 3);
+        ::close(next_fd);
+    }
+
+    {
+        pstream p("cat", all3streams);
+
+        ::sleep(3);  // wait for process to exit
+        p.rdbuf()->exited();  // test for exit, destroy buffers
+
+        // check no open files except for stdin, stdout, stderr
+        int next_fd = dup(0);
+        print_result(p, next_fd == 3);
+        ::close(next_fd);
+
+        // now close and reopen and check again
+
+        p.close();
+
+        p.open("cat", all3streams);
+        ::sleep(3);  // wait for process to exit
+        p.rdbuf()->exited();  // test for exit, destroy buffers
+
+        next_fd = dup(0);
+        print_result(p, next_fd == 3);
+        ::close(next_fd);
+    }
 
     return 0;
 }
