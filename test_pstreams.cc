@@ -338,6 +338,28 @@ int main()
         ps.clear();
     }
 
+    clog << "# Testing pstreambuf::exited()" << endl;
+    {
+        // test streambuf::exited() works sanely
+        const string cmd = "cat";
+        opstream ps;
+        pstreambuf* pbuf = ps.rdbuf();
+
+        print_result(ps, !pbuf->exited());
+
+        ps.open(cmd);
+        print_result(ps, ps.is_open());
+        print_result(ps, !pbuf->exited());
+        ps.close();
+        print_result(ps, pbuf->exited());
+
+        ps.open(cmd);
+        print_result(ps, ps.is_open());
+        print_result(ps, !pbuf->exited());
+        ps.close();
+        print_result(ps, pbuf->exited());
+    }
+
 
     clog << "# Testing behaviour with bad commands" << endl;
 
