@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.41 2002/08/27 19:54:25 redi Exp $
+/* $Id: pstream.h,v 1.42 2002/08/30 16:27:57 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -35,11 +35,9 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <streambuf>
 #include <istream>
 #include <ostream>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <cerrno>
-#include <cstring>
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
@@ -49,7 +47,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0026   // 0.38
+#define PSTREAMS_VERSION 0x0027   // 0.39
 
 /**
  *  @namespace redi
@@ -109,6 +107,7 @@ namespace redi
       /// Close the stream buffer.
       basic_pstreambuf*
       close();
+      // TODO - provide alternative ways to close, different waitpid() args
 
       /// Change active input source.
       bool
@@ -187,10 +186,6 @@ namespace redi
       char_type&
       char_buf();
 
-      /// Close an array of file descriptors.
-      static void
-      close_fd_array(fd_t* filedes, size_t count);
-
     private:
       basic_pstreambuf(const basic_pstreambuf&);
       basic_pstreambuf& operator=(const basic_pstreambuf&);
@@ -201,7 +196,8 @@ namespace redi
       char_type     char_buf_[2];
       bool          take_from_buf_[2];
       /// Index into rpipe_[] to indicate active source for read operations
-      buf_read_src   rsrc_;
+      buf_read_src  rsrc_;
+      int           error_;       // hold errno if fork() or exec() fails
     };
 
   /// Class template for common base class.
@@ -687,16 +683,13 @@ namespace redi
             ::execlp("sh", "sh", "-c", command.c_str(), 0);
 
             // can only reach this point if exec() failed
-            int error = errno;
-            // TODO use exceptions not cerr, don't #include iostream & cstring
-            std::cerr << "sh: " << std::strerror(error) << '\n';
 
             // parent can get exit code from waitpid()
-            std::exit(error);
+            std::exit(errno);
           }
           case -1 :
           {
-            // couldn't fork, error already handled
+            // couldn't fork, error already handled in pstreambuf::fork()
             break;
           }
           default :
@@ -743,29 +736,23 @@ namespace redi
             char** arg_v = new char*[argv.size()+1];
             for (size_t i = 0; i < argv.size(); ++i)
             {
-#if 0
-              arg_v[i] = new char[argv[i].size()+1];
-              argv[i].copy(arg_v[i], std::string::npos);
-              arg_v[i][argv[i].size()] = 0;
-#else
-              arg_v[i] = const_cast<char*>(argv[i].c_str());
-#endif
+              const std::string& src = argv[i];
+              char*& dest = arg_v[i];
+              dest = new char[src.size()+1];
+              dest[ src.copy(dest, src.size()) ] = 0;
             }
             arg_v[argv.size()] = 0;
 
             ::execvp(file.c_str(), arg_v);
 
             // can only reach this point if exec() failed
-            int error = errno;
-            // TODO use exceptions not cerr, don't #include iostream & cstring
-            std::cerr << file << ": " << std::strerror(error) << '\n';
 
             // parent can get exit code from waitpid()
-            std::exit(error);
+            std::exit(errno);
           }
           case -1 :
           {
-            // couldn't fork, error already handled
+            // couldn't fork, error already handled in pstreambuf::fork()
             break;
           }
           default :
@@ -778,6 +765,22 @@ namespace redi
       }
       return ret;
     }
+
+  /**
+   * @brief  Helper function to close an array of file descriptors.
+   * Inspects each of the @a count file descriptors in the array @a filedes
+   * and calls @c close() if they have a non-negative value.
+   * @param filedes an array of file descriptors
+   * @param count size of the array.
+   */
+  inline void
+  close_fd_array(int* filedes, size_t count)
+  {
+    for (size_t i = 0; i < count; ++i)
+      if (filedes[i] >= 0)
+        if (::close(filedes[i]) == 0)
+          filedes[i] = -1;
+  }
 
   /**
    * Creates pipes as specified by @a mode and calls @c fork() to create
@@ -819,7 +822,6 @@ namespace redi
       if (pstdin_ok || pstdout_ok || pstderr_ok)
       {
         pid = ::fork();
-        int error = errno;
         switch (pid)
         {
           case 0 :
@@ -832,7 +834,7 @@ namespace redi
             if (*pin >= 0)
             {
               ::close(pin[WR]);
-              ::dup2(pin[RD], STDIN_FILENO)>=0;
+              ::dup2(pin[RD], STDIN_FILENO);
               ::close(pin[RD]);
             }
             if (*pout >= 0)
@@ -851,10 +853,10 @@ namespace redi
           }
           case -1 :
           {
-            // TODO use exceptions not cerr, don't #include iostream & cstring
-            std::cerr << "Cannot fork: " << std::strerror(error) << '\n';
-            // couldn't fork for some reason, close any open pipes
-            basic_pstreambuf<C,T>::close_fd_array(fd, 6);
+            // couldn't fork for some reason
+            error_ = errno;
+            // close any open pipes
+            close_fd_array(fd, 6);
             break;
           }
           default :
@@ -889,11 +891,9 @@ namespace redi
       }
       else
       {
-        //int error = errno;
-        // TODO report error to cerr ?
-
+        error_ = errno;
         // close any pipes we opened before failure
-        basic_pstreambuf<C,T>::close_fd_array(fd, 6);
+        close_fd_array(fd, 6);
       }
       return pid;
     }
@@ -909,18 +909,16 @@ namespace redi
       basic_pstreambuf<C,T>* ret = NULL;
       if (this->is_open())
       {
-        basic_pstreambuf<C,T>::close_fd_array(&wpipe_, 1);
-        basic_pstreambuf<C,T>::close_fd_array(rpipe_, 2);
-        wpipe_ = rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
+        close_fd_array(&wpipe_, 1);
+        close_fd_array(rpipe_, 2);
 
-        int status;
-        if (::waitpid(ppid_, &status, WNOHANG) == ppid_)
+        if (::waitpid(ppid_, &error_, 0) == ppid_)
         {
           ppid_ = 0;
           ret = this;
         }
         // TODO handle errors from waitpid()
-        // int exit_status = WEXITSTATUS(status);
+        // int exit_status = WEXITSTATUS(error_);
       }
       return ret;
     }
@@ -1233,21 +1231,6 @@ namespace redi
       return char_buf_[rsrc_];
     }
 
-  /**
-   * Inspects each of the @a count file descriptors in the array @a filedes
-   * and calls @c close() if they have a non-negative value.
-   * @param filedes an array of file descriptors
-   * @param count size of the array.
-   */
-  template <typename C, typename T>
-    inline void
-    basic_pstreambuf<C,T>::close_fd_array(fd_t* filedes, size_t count)
-    {
-      for (size_t i = 0; i < count; ++i)
-        if (filedes[i] >= 0)
-          ::close(filedes[i]);
-    }
-
 
   /*
    * member definitions for pstream_base
@@ -1474,3 +1457,4 @@ namespace redi
 
 #endif  // REDI_PSTREAM_H
 
+// vim: ts=2 sw=2 expandtab
