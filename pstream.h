@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.12 2002/01/08 00:35:44 redi Exp $
+/* $Id: pstream.h,v 1.13 2002/01/08 01:35:06 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -201,7 +201,7 @@ namespace redi
        * @param mode the I/O mode to use when opening the pipe.
        * @see open()
        */
-      basic_ipstream(const std::string& command, std::ios_base::openmode mode = ios_base::in)
+      basic_ipstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::in)
       : istream_type(NULL), command_(command), buf_()
       {
         this->init(&buf_);
@@ -523,8 +523,6 @@ namespace redi
     {
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef streambuf_type::string                string;
-      typedef streambuf_type::ios_base              ios_base;
 
     public:
       /**
@@ -543,7 +541,7 @@ namespace redi
        * @param mode the I/O mode to use when opening the pipe.
        * @see open()
        */
-      basic_pstream(const string& command, ios_base::openmode mode = ios_base::in|ios_base::out)
+      basic_pstream(const std::string& command, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out)
       : iostream_type(NULL), command_(command), buf_()
       {
         this->init(&buf_);
@@ -562,7 +560,7 @@ namespace redi
        * @see basic_pstreambuf::open()
        */
       void
-      open(const string& command, ios_base::openmode mode = ios_base::in|ios_base::out)
+      open(const std::string& command, std::ios_base::openmode mode = std::ios_base::in|std::ios_base::out)
       { buf_.open((command_=command), mode); }
 
       /**
@@ -584,11 +582,11 @@ namespace redi
        * @brief Return the command used to initialise the stream.
        * @return a string containing the command used to initialise the stream.
        */
-      const string&
+      const std::string&
       command() const { return command_; }
 
     private:
-      string command_;
+      std::string command_;
       streambuf_type buf_;
     };
 
