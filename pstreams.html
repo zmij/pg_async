@@ -1,7 +1,7 @@
 
 <!-- start of included file -->
 
-<!-- $Id: pstreams.html,v 1.8 2002/04/20 20:33:52 redi Exp $ -->
+<!-- $Id: pstreams.html,v 1.9 2002/04/24 23:23:33 redi Exp $ -->
 
 <div><a name='top'></a></div>
 <table width='100%'>
@@ -31,7 +31,7 @@ write a solution that would work with standard-conforming C++ libraries.
 (The <code>pfstream</code> classes were based on the old AT&amp;T-style
 IOStreams and relied on <a href='http://gcc.gnu.org/'>GCC</a>-specific
 libraries.)</p>
-<p>My aim is to provide class templates in the style of the standard IOStreams
+<p>The aim is to provide class templates in the style of the standard IOStreams
 that can be used with any standard-conforming compiler on a POSIX platform.
 This involves writing a <code>streambuf</code> class that uses
 <code>fork()</code> and the <code>exec</code> family of functions to
@@ -47,7 +47,7 @@ between systems. Some systems use bidirectional pipes, allowing reading
 and writing on the same stream, but this is not supported everywhere.
 Because PStreams doesn't use <code>popen()</code> but re-implements it
 at a lower level, bidirectional I/O is available on all systems.</li>
-<li>Reading from the process' <code>stdout</code>. Input PStreams can read
+<li>Reading from the process' <code>stderr</code>. Input PStreams can read
 from the process' <code>stderr</code> as well as <code>stdout</code>.</li>
 <li>More flexible interface. In addition to handling a shell command in
 the same way as <code>popen()</code> the PStreams classes can open a process
@@ -56,17 +56,30 @@ specified by a filename and a vector of arguments, similar to the
 </ul>
 <p>The library is available under the <a href='http://www.gnu.org/'>GNU</a>
 <a href='http://www.gnu.org/licenses/gpl.txt'>General Public License</a>
+<p>To help improve PStreams see the
+<a href="http://sf.net/projects/pstreams/">SourceForge project page</a>.</p>
 
 <p>&nbsp;</p>
 <h2><a name='status'>Current status</a></h2>
-<p>Version 0.21</p>
+<p>Version 0.32</p>
 <p>Working <code>ipstream</code> and <code>opstream</code> classes for
 ISO C++-compliant compilers.
-New implementation of the stream buffer class, <code>pstreambuf</code>,
-that doesn't use <code>popen()</code>. The stream buffer uses up to three
+The stream buffer class, <code>pstreambuf</code>, doesn't use
+<code>popen()</code>. It uses up to three
 pipes shared with the associated process, giving access to any combination
 of the process' <code>stdin</code>, <code>stdout</code> and <code>stderr</code>
 streams.</p>
+<p>Another class, <code>rpstream</code> (Restricted PStream) is similar to
+<code>pstream</code> except that the child process' <code>stdout</code>
+and/or <code>stderr</code> cannot be read directly from an
+<code>rpstream</code>. To read from the process you must call either
+<code>rpstream::out()</code> or <code>rpstream::err()</code> to obtain a
+reference to an <code>istream</code> that reads from the process' 
+corresponding output stream. This class is not as well tested as the others
+(i.e. it's hardly tested at all).</p>
+<p>The PStreams classes do not currently do any buffering.
+This means that a call to <code>write(2)</code> or <code>read(2)</code>
+is made for every character, I doubt this is very efficient!</p>
 <p>No code-conversion is performed on multi-byte character streams.
 It should be possible to use the PStream classes templatized with character
 types other than <code>char</code> (e.g. <code>basic_pstream&lt;int&gt;</code>)
@@ -75,12 +88,10 @@ programmer's responsibility to interpret the resulting character strings.
 Since the classes are intended to be used to read/write data between
 processes, which will usually share an internal character representation,
 rather than to/from files, this behaviour should be sufficient.</p>
-<p>The PStreams classes do not currently do any buffering.
-This means that a call to <code>write(2)</code> or <code>read(2)</code>
-is made for every character, I doubt this is very efficient!</p>
 <p>For non-ISO C++-compliant compilers there are alternative versions of
 all classes.
-These use non-standard extensions found in the old streams
+<em>These alternative versions are unsupported and not under development!</em>
+They use non-standard extensions found in some old IOStream implementations
 (such as attaching an <code>fstream</code>'s buffer to a file descriptor with
 <code>fstreambase::attach(int fd)</code>) that may not be available on some
 systems.
@@ -114,8 +125,8 @@ while (in &gt;&gt; str) {
 </code></pre>
 <p>The  command  argument  is  a pointer to a null-terminated
 string containing a shell command line.  This  command  is
-passed  to  /bin/sh  using the -c flag; interpretation, if
-any, is performed by the shell.</p>
+passed  to  /bin/sh  using the -c flag; Alias and wildcard interpretation,
+if any, is performed by the shell.</p>
 <p>Alternatively, the process can be started with a vector of arguments:</p>
 <pre><code>
 // remove some files, capturing any error messages
@@ -129,21 +140,35 @@ argv.push_back("./fnord/");
 redi::ipstream in("rm", argv, pstreambuf::pstderr);
 std::string errmsg;
 while (std::getline(in, errmsg)) {
-    errors.push_back(ermsg);
+    errors.push_back(errmsg);
 }
 </code></pre>
-<p>If the file argument doesn't contain a slash then the actions of the shell
-will be duplicated in searching for an executable shell in <code>PATH</code>.
+<p>If this form of initialisation is used and the file argument doesn't
+contain a slash then the actions of the shell
+will be duplicated in searching for an executable in <code>PATH</code>.
 The shell will not interpret the other arguments, so wildcard expansion will
 not take place if this interface is used.</p>
+<p>If an <code>rpstream</code> was used in the example above it would be
+necessary to replace the while condition like so:</p>
+<pre><code>
+while (std::getline(in<strong>::err()</strong>, errmsg)) {
+    errors.push_back(errmsg);
+}
+</code></pre>
+<p>This form can also be used with the unrestricted <code>pstream</code>
+and <code>ipstream</code> classes, but it is not strictly necessary.</p>
+<p><a href='#top'>top</a></p>
 
 <p>&nbsp;</p>
 <h2><a name='download'>Download</a></h2>
-<p>The "library" currently consists of a single header file,
-<a href='pstream.h'>pstream.h</a>, which defines the PStreams classes
-in the <code>redi</code> namespace.</p>
-<p>The backward-compatible (i.e. non-standard) PStreams classes are in the
-file <a href='pstream_compat.h'>pstream_compat.h</a>.</p>
+<p>The "library" currently consists of a two header files,
+<a href='pstream.h'>pstream.h</a>, which defines the basic PStreams
+class templates in the <code>redi</code> namespace, and
+<a href='rpstream.h'>rpstream.h</a> which adds the <code>rpstream</code>
+Restriceted PStream class template.</p>
+<p>The backward-compatible (non-standard, unsupported, probably don't even
+work) PStreams classes are in the file
+<a href='pstream_compat.h'>pstream_compat.h</a>.</p>
 <p><a href='#top'>top</a></p>
 
 <p>&nbsp;</p>
@@ -166,13 +191,18 @@ Per Bothner et al. for the <code>pfstream</code> classes in the old libg++.
 <address>
 <p>Please send comments, suggestions, bugfixes, patches, cakes, pies etc. to
 pstreams&nbsp;at&nbsp;redi&nbsp;dot&nbsp;uklinux&nbsp;dot&nbsp;net
-<br />This page last updated on $Date: 2002/04/20 20:33:52 $
+<br />This page last updated on $Date: 2002/04/24 23:23:33 $
 <br />Copyright &copy; 2001,2002 Jonathan Wakely</p>
 </address>
 <p>
+<a href="http://sourceforge.net"><img
+src="http://sourceforge.net/sflogo.php?group_id=48695&type=1"
+alt="SourceForge Logo" border="0"></a>
+&nbsp;
 <a href="http://validator.w3.org/check/referer"><img
   src="http://www.w3.org/Icons/valid-html40"
   alt="Valid HTML 4.0!" height="31" width="88"></a>
+&nbsp;
 <a href="http://jigsaw.w3.org/css-validator/"><img
   style="border:0;width:88px;height:31px"
   src="http://jigsaw.w3.org/css-validator/images/vcss" 

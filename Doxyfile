@@ -51,7 +51,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = pstream.h
+INPUT                  = pstream.h rpstream.h
 FILE_PATTERNS          = 
 RECURSIVE              = 
 EXCLUDE                = 

@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.20 2002/04/21 01:40:30 redi Exp $
+/* $Id: pstream.h,v 1.21 2002/04/24 23:23:33 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAM_H
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0016   // 0.22
+#define PSTREAMS_VERSION 0x0020   // 0.32
 
 #include <ios>
 #include <streambuf>
@@ -177,35 +177,35 @@ namespace redi
       enum { rsrc_out = 0, rsrc_err = 1 } rsrc_;
     };
 
-
-  /// Class template for Input PStreams.
+  /// Class template for common base class.
   template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class basic_ipstream : public std::basic_istream<CharT, Traits>
+    class pstream_base : virtual public std::basic_ios<CharT, Traits>
     {
-      typedef std::basic_istream<CharT, Traits>     istream_type;
+      typedef std::basic_ios<CharT, Traits>         base_class_type;
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
       typedef typename streambuf_type::pmode        pmode;
 
     public:
       /// Default constructor.
-      basic_ipstream();
+      pstream_base();
 
       /// Constructor that initialises the stream by starting a process.
-      basic_ipstream(const std::string& command, pmode mode = std::ios_base::in);
+      pstream_base(const std::string& command, pmode mode);
 
       /// Constructor that initialises the stream by starting a process.
-      basic_ipstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in);
+      pstream_base(const std::string& file, const std::vector<std::string>& argv, pmode mode);
 
       /// Destructor
-      ~basic_ipstream() { }
+      virtual
+      ~pstream_base() { }
 
       /// Start a process.
-      void
-      open(const std::string& command, pmode mode = std::ios_base::in);
+      virtual void
+      open(const std::string& command, pmode mode);
 
       /// Start a process.
-      void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in);
+      virtual void
+      open(const std::string& file, const std::vector<std::string>& argv, pmode mode);
 
       /// Close the pipe.
       void
@@ -219,181 +219,343 @@ namespace redi
       const std::string&
       command() const;
 
-    private:
+      /**
+       * @brief Set streambuf to read from process' @c stdout.
+       *
+       * This is a pure virtual function and must be overriden by a derived
+       * class in order to use classes of type pstream_base.
+       *
+       * @return The return type is std::basic_ios so that a derived class
+       *         can return any type derived from basic_ios.
+       */
+      virtual base_class_type&
+      out() =0;
+
+      /**
+       * @brief Set streambuf to read from process' @c stderr.
+       *
+       * This is a pure virtual function and must be overriden by a derived
+       * class in order to use classes of type pstream_base.
+       *
+       * @return The return type is std::basic_ios so that a derived class
+       *         can return any type derived from basic_ios.
+       */
+      virtual base_class_type&
+      err() =0;
+
+    protected:
       std::string       command_;
       streambuf_type    buf_;
     };
 
 
-  /// Class template for Output PStreams.
+  /**
+   * @class basic_ipstream
+   * @brief Class template for Input PStreams.
+   *
+   * Reading from an ipstream reads the command's standard output and/or
+   * standard error (depending on how the ipstream is opened)
+   * and the command's standard input is the same as that of the process
+   * that created the object, unless altered by the command itself.
+   */
+
   template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class basic_opstream : public std::basic_ostream<CharT, Traits>
+    class basic_ipstream
+    : public std::basic_istream<CharT, Traits>
+    , public pstream_base<CharT, Traits>
     {
-      typedef std::basic_ostream<CharT, Traits>     ostream_type;
-      typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef typename streambuf_type::pmode        pmode;
+      typedef std::basic_istream<CharT, Traits>     istream_type;
+      typedef typename pstream_base::streambuf_type streambuf_type;
+      typedef typename pstream_base::pmode          pmode;
 
     public:
-      /// Default constructor.
-      basic_opstream();
+      /// Default constructor, creates an uninitialised stream.
+      basic_ipstream()
+      : istream_type(NULL), pstream_base()
+      {}
 
-      /// Constructor that initialises the stream by starting a process.
-      basic_opstream(const std::string& command, pmode mode = std::ios_base::out);
+      /**
+       * @brief Constructor that initialises the stream by starting a process.
+       *
+       * Initialises the stream buffer by calling open() with the supplied
+       * arguments.
+       *
+       * @param command a string containing a shell command.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see open()
+       */
+      basic_ipstream(const std::string& command, pmode mode = std::ios_base::in)
+      : istream_type(NULL), pstream_base(command, mode)
+      {}
 
-      /// Constructor that initialises the stream by starting a process.
-      basic_opstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out);
+      /**
+       * @brief Constructor that initialises the stream by starting a process.
+       *
+       * Initialises the stream buffer by calling open() with the supplied
+       * arguments.
+       *
+       * @param file a string containing the pathname of a program to execute.
+       * @param argv a vector of argument strings passed to the new program.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see open()
+       */
+      basic_ipstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
+      : istream_type(NULL), pstream_base(file, argv, mode)
+      {}
 
-      /// Destructor
+      /**
+       * @brief Destructor
+       *
+       * Closes the stream and waits for the child to exit.
+       */
+      ~basic_ipstream()
+      {}
+
+      /**
+       * @brief Start a process.
+       *
+       * Starts a new process by passing @a command to the shell
+       * and opens a pipe to the process with the specified @a mode.
+       *
+       * @param command a string containing a shell command.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see pstream_base::open()
+       */
+      void
+      open(const std::string& command, pmode mode = std::ios_base::in)
+      { pstream_base::open(command, mode); }
+
+      /**
+       * @brief Start a process.
+       *
+       * Starts a new process by executing @a file with the arguments in
+       * @a argv and opens pipes to the process as given by @a mode.
+       *
+       * @param file a string containing the pathname of a program to execute.
+       * @param argv a vector of argument strings passed to the new program.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see pstream_base::open()
+       */
+      void
+      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
+      { pstream_base::open(command, argv, mode); }
+
+    private:
+      // pstream_base::out() and pstream_base::err() are private and undefined
+      // for ipstream.They don't make any sense. Trying to call them will
+      // result in a compilation error.
+      basic_ipstream&
+      out();
+
+      basic_ipstream&
+      err();
+    };
+
+
+  /**
+   * @class basic_opstream
+   * @brief Class template for Output PStreams.
+   * 
+   * Writing to an open opstream writes to the standard input of the command;
+   * the command's standard output is the same as that of the process that
+   * created the pstream object, unless altered by the command itself.
+   */
+
+  template <typename CharT, typename Traits = std::char_traits<CharT> >
+    class basic_opstream
+    : public std::basic_ostream<CharT, Traits>
+    , public pstream_base<CharT, Traits>
+    {
+      typedef std::basic_ostream<CharT, Traits>     ostream_type;
+      typedef typename pstream_base::streambuf_type streambuf_type;
+      typedef typename pstream_base::pmode          pmode;
+
+    public:
+      /// Default constructor, creates an uninitialised stream.
+      basic_opstream()
+      : ostream_type(NULL), pstream_base()
+      {}
+
+      /**
+       * @brief Constructor that initialises the stream by starting a process.
+       *
+       * Initialises the stream buffer by calling open() with the supplied
+       * arguments.
+       *
+       * @param command a string containing a shell command.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see open()
+       */
+      basic_opstream(const std::string& command, pmode mode = std::ios_base::out)
+      : ostream_type(NULL), pstream_base(command, mode)
+      {}
+
+      /**
+       * @brief Constructor that initialises the stream by starting a process.
+       *
+       * Initialises the stream buffer by calling open() with the supplied
+       * arguments.
+       *
+       * @param file a string containing the pathname of a program to execute.
+       * @param argv a vector of argument strings passed to the new program.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see open()
+       */
+      basic_opstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
+      : ostream_type(NULL), pstream_base(command, argv, mode)
+      {}
+
+      /**
+       * @brief Destructor
+       *
+       * Closes the stream and waits for the child to exit.
+       */
       ~basic_opstream() { }
 
-      /// Start a process.
+      /**
+       * @brief Start a process.
+       * @param command a string containing a shell command.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see pstream_base::open(const std::string&, pmode)
+       */
       void
-      open(const std::string& command, pmode mode = std::ios_base::out);
+      open(const std::string& command, pmode mode = std::ios_base::out)
+      { pstream_base::open(command, mode); }
 
-      /// Start a process.
+      /**
+       * @brief Start a process.
+       * @param file a string containing the pathname of a program to execute.
+       * @param argv a vector of argument strings passed to the new program.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see pstream_base::open(const std::string&, const std::vector<std::string>&, pmode)
+       */
       void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out);
+      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
+      { pstream_base::open(command, argv, mode); }
 
-      /// Close the pipe.
-      void
-      close();
+      /**
+       * @brief Set streambuf to read from process' @c stdout.
+       * @return @c *this
+       */
+      virtual basic_opstream&
+      out()
+      { buf_.read_err(false); return *this; }
 
-      /// Report whether the stream's buffer has been initialised.
-      bool
-      is_open() const;
-
-      /// Return the command used to initialise the stream.
-      const std::string&
-      command() const;
-
-      /// Set streambuf to read from process' @c stdout.
-      basic_opstream&
-      out();
-
-      /// Set streambuf to read from process' @c stderr.
-      basic_opstream&
-      err();
-
-    private:
-      std::string       command_;
-      streambuf_type    buf_;
+      /**
+       * @brief Set streambuf to read from process' @c stderr.
+       * @return @c *this
+       */
+      virtual basic_opstream&
+      err()
+      { buf_.read_err(true); return *this; }
     };
 
 
-  /// Class template for Bidirectional PStreams.
+  /**
+   * @class basic_pstream
+   * @brief Class template for Bidirectional PStreams.
+   *
+   * Writing to a pstream opened with @c pmode @c pstdin writes to the
+   * standard input of the command.
+   * Reading from a pstream opened with @c pmode @c pstdout and/or @c pstderr
+   * reads the command's standard output and/or standard error.
+   * Any of the process' @c stdin, @c stdout or @c stderr that is not
+   * connected to the pstream (as specified by the @c pmode)
+   * will be the same as the process that created the pstream object,
+   * unless altered by the command itself.
+   */
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_pstream : public std::basic_iostream<CharT, Traits>
+    : public std::basic_iostream<CharT, Traits>
+    , public pstream_base<CharT, Traits>
     {
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
-      typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef typename streambuf_type::pmode        pmode;
+      typedef typename pstream_base::streambuf_type streambuf_type;
+      typedef typename pstream_base::pmode          pmode;
 
     public:
-      /// Default constructor.
-      basic_pstream();
+      /// Default constructor, creates an uninitialised stream.
+      basic_pstream()
+      : iostream_type(NULL), pstream_base()
+      {}
 
-      /// Constructor that initialises the stream by starting a process.
-      basic_pstream(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
+      /**
+       * @brief Constructor that initialises the stream by starting a process.
+       *
+       * Initialises the stream buffer by calling open() with the supplied
+       * arguments.
+       *
+       * @param command a string containing a shell command.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see open(const std::string&, pmode)
+       */
+      basic_pstream(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out)
+      : iostream_type(NULL), pstream_base(command, mode)
+      {}
 
-      /// Constructor that initialises the stream by starting a process.
-      basic_pstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
+      /**
+       * @brief Constructor that initialises the stream by starting a process.
+       *
+       * Initialises the stream buffer by calling open() with the supplied
+       * arguments.
+       *
+       * @param file a string containing the pathname of a program to execute.
+       * @param argv a vector of argument strings passed to the new program.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see open(const std::string&, const std::vector<std::string>&, pmode)
+       */
+      basic_pstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
+      : ostream_type(NULL), pstream_base(command, argv, mode)
+      {}
 
-      /// Destructor
+      /**
+       * @brief Destructor
+       *
+       * Closes the stream and waits for the child to exit.
+       */
       ~basic_pstream() { }
 
-      /// Start a process.
+      /**
+       * @brief Start a process.
+       * @param command a string containing a shell command.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see pstream_base::open(const std::string&, pmode)
+       */
       void
       open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
 
-      /// Start a process.
+      /**
+       * @brief Start a process.
+       * @param file a string containing the pathname of a program to execute.
+       * @param argv a vector of argument strings passed to the new program.
+       * @param mode the I/O mode to use when opening the pipe.
+       * @see pstream_base::open(const std::string&, const std::vector<std::string>&, pmode)
+       */
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
 
-      /// Close the pipe.
-      void
-      close();
-
-      /// Report whether the stream's buffer has been initialised.
-      bool
-      is_open() const;
-
-      /// Return the command used to initialise the stream.
-      const std::string&
-      command() const;
-
-      /// Set streambuf to read from process' @c stdout.
+      /**
+       * @brief Set streambuf to read from process' @c stdout.
+       * @return @c *this
+       */
       basic_pstream&
-      out();
+      out()
+      {
+        buf_.read_err(false);
+        return *this;
+      }
 
-      /// Set streambuf to read from process' @c stderr.
+      /**
+       * @brief Set streambuf to read from process' @c stderr.
+       * @return @c *this
+       */
       basic_pstream&
-      err();
-
-    private:
-      std::string       command_;
-      streambuf_type    buf_;
+      err()
+      {
+        buf_.read_err(true);
+        return *this;
+      }
     };
-
-
-#ifdef RPSTREAM
-  /// Class template for Restricted PStreams.
-  template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class basic_rpstream
-    : public std::basic_ostream<CharT, Traits>
-    , private std::basic_istream<CharT, Traits>
-    {
-      typedef std::basic_ostream<CharT, Traits>     ostream_type;
-      typedef std::basic_istream<CharT, Traits>     istream_type;
-      typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef typename streambuf_type::pmode        pmode;
-
-    public:
-      /// Default constructor.
-      basic_rpstream();
-
-      /// Constructor that initialises the stream by starting a process.
-      basic_rpstream(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
-
-      /// Constructor that initialises the stream by starting a process.
-      basic_rpstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
-
-      /// Destructor
-      ~basic_rpstream() { }
-
-      /// Start a process.
-      void
-      open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
-
-      /// Start a process.
-      void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
-
-      /// Close the pipe.
-      void
-      close();
-
-      /// Report whether the stream's buffer has been initialised.
-      bool
-      is_open() const;
-
-      /// Return the command used to initialise the stream.
-      const std::string&
-      command() const;
-
-      /// Obtain a reference to an ostream that reads the process' @c stdout
-      istream_type&
-      out();
-
-      /// Obtain a reference to an ostream that reads the process' @c stderr
-      istream_type&
-      err();
-
-    private:
-      std::string       command_;
-      streambuf_type    buf_;
-    };
-#endif
-
 
 
   /// Type definition for common template specialisation.
@@ -404,13 +566,11 @@ namespace redi
   typedef basic_opstream<char> opstream;
   /// Type definition for common template specialisation.
   typedef basic_pstream<char> pstream;
-#ifdef RPSTREAM
-  /// Type definition for common template specialisation.
-  typedef basic_rpstream<char> rpstream;
-#endif
 
 
-  // member definitions for pstreambuf
+  /*
+   * member definitions for pstreambuf
+   */
 
   /**
    * @class basic_pstreambuf
@@ -632,8 +792,8 @@ namespace redi
       // For the pstreambuf pin is an output stream and
       // pout and perr are input streams.
 
-      if ( (mode&pstdin && ::pipe(pin)==0)
-          || (mode&pstdout && ::pipe(pout)==0)
+      if ( (mode&pstdout && ::pipe(pin)==0)
+          || (mode&pstdin && ::pipe(pout)==0)
           || (mode&pstderr && ::pipe(perr)==0) )
       {
         pid = ::fork();
@@ -1055,25 +1215,28 @@ namespace redi
     }
 
 
-  // member definitions for basic_ipstream
+  /*
+   * member definitions for pstream_base
+   */
 
   /**
-   * @class basic_ipstream
-   * Reading from an ipstream reads the command's standard output and/or
-   * standard error (depending on how the ipstream is opened)
-   * and the command's standard input is the same as that of the process
-   * that created the object, unless altered by the command itself.
+   * @class pstream_base
+   * Abstract Base Class providiong common functionality for basic_ipsteam,
+   * basic_opstream and basic_pstream. pstream_base manages the pstreambuf
+   * which should be used by derived classes to initialise an IOStream
+   * class, which will shares a std::basic_ios virtual base class with the
+   * pstream_base.
    */
 
   /** Creates an uninitialised stream. */
   template <typename C, typename T>
     inline
-    basic_ipstream<C,T>::basic_ipstream()
-    : istream_type(NULL)
+    pstream_base<C,T>::pstream_base()
+    : std::basic_ios<C,T>(NULL)
     , command_()
     , buf_()
     {
-      this->init(&buf_);
+      this->init(&buf);
     }
 
   /**
@@ -1086,12 +1249,12 @@ namespace redi
    */
   template <typename C, typename T>
     inline
-    basic_ipstream<C,T>::basic_ipstream(const std::string& command, pmode mode)
-    : istream_type(NULL)
+    pstream_base<C,T>::pstream_base(const std::string& command, pmode mode)
+    : std::basic_ios<C,T>(NULL)
     , command_(command)
     , buf_()
     {
-      this->init(&buf_);
+      this->init(&buf);
       this->open(command_, mode);
     }
    
@@ -1106,8 +1269,8 @@ namespace redi
    */
   template <typename C, typename T>
     inline
-    basic_ipstream<C,T>::basic_ipstream(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    : istream_type(NULL)
+    pstream_base<C,T>::pstream_base(const std::string& file, const std::vector<std::string>& argv, pmode mode)
+    : std::basic_ios<C,T>(NULL)
     , command_(file)
     , buf_()
     {
@@ -1125,7 +1288,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline void
-    basic_ipstream<C,T>::open(const std::string& command, pmode mode)
+    pstream_base<C,T>::open(const std::string& command, pmode mode)
     {
       if (!buf_.open((command_=command), (mode|std::ios_base::in)))
         this->setstate(std::ios_base::failbit);
@@ -1142,7 +1305,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline void
-    basic_ipstream<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
+    pstream_base<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     {
       if (!buf_.open((command_=file), argv, (mode|std::ios_base::in)))
         this->setstate(std::ios_base::failbit);
@@ -1151,7 +1314,7 @@ namespace redi
   /** Waits for the associated process to finish and closes the pipe. */
   template <typename C, typename T>
     inline void
-    basic_ipstream<C,T>::close()
+    pstream_base<C,T>::close()
     {
       if (!buf_.close())
         this->setstate(std::ios_base::failbit);
@@ -1163,7 +1326,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline bool
-    basic_ipstream<C,T>::is_open() const
+    pstream_base<C,T>::is_open() const
     {
       return buf_.is_open();
     }
@@ -1171,458 +1334,10 @@ namespace redi
   /** @return a string containing the command used to initialise the stream. */
   template <typename C, typename T>
     inline const std::string&
-    basic_ipstream<C,T>::command() const
+    pstream_base<C,T>::command() const
     {
       return command_;
     }
-
-
-  // member definitions for basic_opstream
-
-  /**
-   * @class basic_opstream
-   * 
-   * Writing to an open opstream writes to the standard input of the command;
-   * the command's standard output is the same as that of the process that
-   * created the pstream object, unless altered by the command itself.
-   */
-
-  /** Creates an uninitialised stream. */
-  template <typename C, typename T>
-    inline
-    basic_opstream<C,T>::basic_opstream()
-    : ostream_type(NULL)
-    , command_()
-    , buf_()
-    {
-      this->init(&buf_);
-    }
-
-  /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
-   *
-   * @param command a string containing a shell command.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see open()
-   */
-  template <typename C, typename T>
-    inline
-    basic_opstream<C,T>::basic_opstream(const std::string& command, pmode mode)
-    : ostream_type(NULL)
-    , command_(command)
-    , buf_()
-    {
-      this->init(&buf_);
-      this->open(command_, mode);
-    }
-
-  /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
-   *
-   * @param file a string containing the pathname of a program to execute.
-   * @param argv a vector of argument strings passed to the new program.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see open()
-   */
-  template <typename C, typename T>
-    inline
-    basic_opstream<C,T>::basic_opstream(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    : ostream_type(NULL)
-    , command_(file)
-    , buf_()
-    {
-      this->init(&buf_);
-      this->open(file, argv, mode);
-    }
-
-  /**
-   * Starts a new process by passing @a command to the shell
-   * and opens a pipe to the process with the specified @a mode.
-   *
-   * @param command a string containing a shell command.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see basic_pstreambuf::open()
-   */
-  template <typename C, typename T>
-    inline void
-    basic_opstream<C,T>::open(const std::string& command, pmode mode)
-    {
-      if (!buf_.open((command_=command), (mode|std::ios_base::out)))
-        this->setstate(std::ios_base::failbit);
-    }
-
-  /**
-   * Starts a new process by executing @a file with the arguments in
-   * @a argv and opens pipes to the process as given by @a mode.
-   *
-   * @param file a string containing the pathname of a program to execute.
-   * @param argv a vector of argument strings passed to the new program.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see basic_pstreambuf::open()
-   */
-  template <typename C, typename T>
-    inline void
-    basic_opstream<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    {
-      if (!buf_.open((command_=file), argv, (mode|std::ios_base::out)))
-        this->setstate(std::ios_base::failbit);
-    }
-
-
-  /** Waits for the associated process to finish and closes the pipe. */
-  template <typename C, typename T>
-    inline void
-    basic_opstream<C,T>::close()
-    {
-      if (!buf_.close())
-        this->setstate(std::ios_base::failbit);
-    }
-
-  /**
-   * @see basic_pstreambuf::open()
-   * @return true if open() has been successfully called, false otherwise.
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_opstream<C,T>::is_open() const
-    {
-      return buf_.is_open();
-    }
-
-  /** @return a string containing the command used to initialise the stream. */
-  template <typename C, typename T>
-    inline const std::string&
-    basic_opstream<C,T>::command() const
-    {
-      return command_;
-    }
-
-  /** @return @c *this */
-  template <typename C, typename T>
-    inline basic_opstream<C,T>&
-    basic_opstream<C,T>::out()
-    {
-      buf_.read_err(false);
-      return *this;
-    }
-
-  /** @return @c *this */
-  template <typename C, typename T>
-    inline basic_opstream<C,T>&
-    basic_opstream<C,T>::err()
-    {
-      buf_.read_err(true);
-      return *this;
-    }
-
-
-
-  // member definitions for basic_pstream
-
-  /**
-   * @class basic_pstream
-   * Writing to a pstream opened with @c pmode @c pstdin writes to the
-   * standard input of the command.
-   * Reading from a pstream opened with @c pmode @c pstdout and/or @c pstderr
-   * reads the command's standard output and/or standard error.
-   * Any of the process' @c stdin, @c stdout or @c stderr that is not
-   * connected to the pstream (as specified by the @c pmode)
-   * will be the same as the process that created the pstream object,
-   * unless altered by the command itself.
-   */
-
-  /**
-   * Creates an uninitialised stream.
-   */
-  template <typename C, typename T>
-    basic_pstream<C,T>::basic_pstream()
-    : iostream_type(NULL)
-    , command_()
-    , buf_()
-    {
-      this->init(&buf_);
-    }
-
-  /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
-   * @param command a string containing a shell command.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see open()
-   */
-  template <typename C, typename T>
-    basic_pstream<C,T>::basic_pstream(const std::string& command, pmode mode)
-    : iostream_type(NULL)
-    , command_(command)
-    , buf_()
-    {
-      this->init(&buf_);
-      this->open(command_, mode);
-    }
-
-  /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
-   *
-   * @param file a string containing the pathname of a program to execute.
-   * @param argv a vector of argument strings passed to the new program.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see open()
-   */
-  template <typename C, typename T>
-    inline
-    basic_pstream<C,T>::basic_pstream(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    : iostream_type(NULL)
-    , command_(file)
-    , buf_()
-    {
-      this->init(&buf_);
-      this->open(file, argv, mode);
-    }
-
-  /**
-   * Starts a new process by passing @a command to the shell
-   * and opens a pipe to the process with the specified @a mode.
-   * @param command a string containing a shell command.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see basic_pstreambuf::open()
-   */
-  template <typename C, typename T>
-    inline void
-    basic_pstream<C,T>::open(const std::string& command, pmode mode)
-    {
-      if (!buf_.open((command_=command), mode))
-        this->setstate(std::ios_base::failbit);
-    }
-
-  /**
-   * Starts a new process by executing @a file with the arguments in
-   * @a argv and opens pipes to the process as given by @a mode.
-   *
-   * @param file a string containing the pathname of a program to execute.
-   * @param argv a vector of argument strings passed to the new program.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see basic_pstreambuf::open()
-   */
-  template <typename C, typename T>
-    inline void
-    basic_pstream<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    {
-      if (!buf_.open((command_=file), argv, mode))
-        this->setstate(std::ios_base::failbit);
-    }
-
-  /** Waits for the associated process to finish and closes the pipe. */
-  template <typename C, typename T>
-    inline void
-    basic_pstream<C,T>::close()
-    {
-      if (!buf_.close())
-        this->setstate(std::ios_base::failbit);
-    }
-
-  /**
-   * @see basic_pstreambuf::open()
-   * @return true if open() has been successfully called, false otherwise.
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_pstream<C,T>::is_open() const
-    {
-      return buf_.is_open();
-    }
-
-  /** @return a string containing the command used to initialise the stream. */
-  template <typename C, typename T>
-    inline const std::string&
-    basic_pstream<C,T>::command() const
-    {
-      return command_;
-    }
-
-  /** @return @c *this */
-  template <typename C, typename T>
-    inline basic_pstream<C,T>&
-    basic_pstream<C,T>::out()
-    {
-      buf_.read_err(false);
-      return *this;
-    }
-
-  /** @return @c *this */
-  template <typename C, typename T>
-    inline basic_pstream<C,T>&
-    basic_pstream<C,T>::err()
-    {
-      buf_.read_err(true);
-      return *this;
-    }
-
-#ifdef RPSTREAM
-  // TODO document RPSTREAMS better
-
-  // member definitions for basic_rpstream
-
-  /**
-   * @class basic_rpstream
-   * Writing to an rpstream opened with @c pmode @c pstdin writes to the
-   * standard input of the command.
-   * It is not possible to read directly from an rpstream object, to use
-   * an rpstream as in istream you must call either basic_rpstream::out()
-   * or basic_rpstream::err(). This is to prevent accidentally reads from
-   * the wrong input source. If the rpstream was not opened with @c pmode
-   * @c pstderr then the class cannot read the process' @c stderr, and
-   * basic_rpstream::err() will return an istream that reads from the
-   * process' @c stdout, and vice versa.
-   * Reading from an rpstream opened with @c pmode @c pstdout and/or @c pstderr
-   * reads the command's standard output and/or standard error.
-   * Any of the process' @c stdin, @c stdout or @c stderr that is not
-   * connected to the pstream (as specified by the @c pmode)
-   * will be the same as the process that created the pstream object,
-   * unless altered by the command itself.
-   */
-
-  /**
-   * Creates an uninitialised stream.
-   */
-  template <typename C, typename T>
-    basic_rpstream<C,T>::basic_rpstream()
-    : ostream_type(NULL)
-    , istream_type(NULL)
-    , command_()
-    , buf_()
-    {
-      this->init(&buf_);  // calls shared basic_ios virtual base class
-    }
-
-  /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
-   *
-   * @param command a string containing a shell command.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see open()
-   */
-  template <typename C, typename T>
-    basic_rpstream<C,T>::basic_rpstream(const std::string& command, pmode mode)
-    : ostream_type(NULL)
-    , istream_type(NULL)
-    , command_(command)
-    , buf_()
-    {
-      this->init(&buf_);  // calls shared basic_ios virtual base class
-      this->open(command_, mode);
-    }
-
-  /**
-   * Initialises the stream buffer by calling open() with the supplied
-   * arguments.
-   *
-   * @param file a string containing the pathname of a program to execute.
-   * @param argv a vector of argument strings passed to the new program.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see open()
-   */
-  template <typename C, typename T>
-    inline
-    basic_rpstream<C,T>::basic_rpstream(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    : ostream_type(NULL)
-    , istream_type(NULL)
-    , command_(file)
-    , buf_()
-    {
-      this->init(&buf_);  // calls shared basic_ios virtual base class
-      this->open(file, argv, mode);
-    }
-
-  /**
-   * Starts a new process by passing @a command to the shell
-   * and opens a pipe to the process with the specified @a mode.
-   * @param command a string containing a shell command.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see basic_rpstreambuf::open()
-   */
-  template <typename C, typename T>
-    inline void
-    basic_rpstream<C,T>::open(const std::string& command, pmode mode)
-    {
-      if (!buf_.open((command_=command), mode))
-      {
-        this->setstate(std::ios_base::failbit);
-      }
-    }
-
-   /**
-   * Starts a new process by executing @a file with the arguments in
-   * @a argv and opens pipes to the process as given by @a mode.
-   *
-   * @param file a string containing the pathname of a program to execute.
-   * @param argv a vector of argument strings passed to the new program.
-   * @param mode the I/O mode to use when opening the pipe.
-   * @see basic_pstreambuf::open()
-   */
-  template <typename C, typename T>
-    inline void
-    basic_rpstream<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
-    {
-      if (!buf_.open((command_=file), argv, mode))
-      {
-        this->setstate(std::ios_base::failbit);
-      }
-    }
-
- /** Waits for the associated process to finish and closes the pipe. */
-  template <typename C, typename T>
-    inline void
-    basic_rpstream<C,T>::close()
-    {
-      if (!buf_.close())
-      {
-        this->setstate(std::ios_base::failbit);
-      }
-    }
-
-  /**
-   * @see basic_rpstreambuf::open()
-   * @return true if open() has been successfully called, false otherwise.
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_rpstream<C,T>::is_open() const
-    {
-      return buf_.is_open();
-    }
-
-  /** @return a string containing the command used to initialise the stream. */
-  template <typename C, typename T>
-    inline const std::string&
-    basic_rpstream<C,T>::command() const
-    {
-      return command_;
-    }
-
-  /** @return @c *this */
-  template <typename C, typename T>
-    inline typename basic_rpstream<C,T>::istream_type&
-    basic_rpstream<C,T>::out()
-    {
-      buf_.read_err(false);
-      return *this;
-    }
-
-  /** @return @c *this */
-  template <typename C, typename T>
-    inline typename basic_rpstream<C,T>::istream_type&
-    basic_rpstream<C,T>::err()
-    {
-      buf_.read_err(true);
-      return *this;
-    }
-#endif  // RPSTREAM
-
-
 
 } // namespace redi
 
