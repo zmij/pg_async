@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.62 2004/02/04 22:56:07 redi Exp $
+/* $Id: pstream.h,v 1.63 2004/03/19 15:56:42 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003 Jonathan Wakely
 
@@ -60,7 +60,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x002a   // 0.42
+#define PSTREAMS_VERSION 0x002b   // 0.43
 
 
 /**
@@ -1444,7 +1444,7 @@ namespace redi
     {
       if (n < this->epptr() - this->pptr())
       {
-        memcpy(this->pptr(), s, n * sizeof(char_type));
+        std::memcpy(this->pptr(), s, n * sizeof(char_type));
         this->pbump(n);
         return n;
       }
@@ -1527,11 +1527,11 @@ namespace redi
     bool
     basic_pstreambuf<C,T>::fill_buffer()
     {
-      int npb = std::min(this->gptr()-this->eback(), static_cast<int>(pbsz));
+      const std::streamsize npb = std::min(std::streamsize(this->gptr()-this->eback()), static_cast<std::streamsize>(pbsz));
 
       std::memmove(rbuffer()+pbsz-npb, this->gptr()-npb, npb*sizeof(char_type));
 
-      std::streamsize rc = read(rbuffer() + pbsz, bufsz - pbsz);
+      const std::streamsize rc = read(rbuffer() + pbsz, bufsz - pbsz);
 
       if (rc > 0)
       {
