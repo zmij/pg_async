@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.9 2002/07/24 21:06:03 redi Exp $
+# $Id: Makefile,v 1.10 2002/07/24 23:00:21 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -26,12 +26,13 @@ CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
 SOURCES = pstream.h rpstream.h
-DOCS = pstreams.html
-EXTRA_DIST = AUTHORS COPYING ChangeLog INSTALL README TODO 
+GENERATED_FILES = ChangeLog MANIFEST TODO 
+EXTRA_FILES = AUTHORS COPYING Doxyfile INSTALL Makefile README mainpage.html \
+              images/pstreams1.png
 
-DISTFILES= $(SOURCES) $(DOCS) $(EXTRA_DIST)
+DIST_FILES= $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
-all: test distro
+all: docs $(GENERATED_FILES)
 
 test: test_pstreams test_minimum
 	@: ./test_minimum >/dev/null
@@ -43,7 +44,8 @@ test_pstreams: test_pstreams.cc pstream.h
 test_minimum: test_minimum.cc pstream.h
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-distro: docs pstreams.tar.gz
+MANIFEST:
+	@echo "$(DIST_FILES)" > $@
 
 docs: pstream.h
 	@doxygen Doxyfile
@@ -51,11 +53,8 @@ docs: pstream.h
 ChangeLog:
 	@cvs2cl.pl
 
-pstreams.tar.gz: $(DISTFILES)
-	@tar czf $@ $^
-
-TODO : pstream.h rpstream.h pstreams.html test_pstreams.cc
+TODO : pstream.h rpstream.h mainpage.html test_pstreams.cc
 	@grep -nH TODO $^ | sed -e 's@ *// *@@' > $@
 
-.PHONY: TODO test distro ChangeLog docs
+.PHONY: TODO test docs MANIFEST ChangeLog
 
