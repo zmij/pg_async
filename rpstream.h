@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.8 2003/02/27 17:29:43 redi Exp $
+/* $Id: rpstream.h,v 1.9 2003/02/27 17:51:40 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -126,7 +126,6 @@ namespace redi
     , istream_type(NULL)
     , pbase_type()
     {
-      this->init(&buf_);  // calls shared std::basic_ios virtual base class
     }
 
   /**
@@ -143,7 +142,6 @@ namespace redi
     , istream_type(NULL)
     , pbase_type(command, mode)
     {
-      this->init(&buf_);
     }
 
   /**
@@ -162,7 +160,6 @@ namespace redi
     , istream_type(NULL)
     , pbase_type(file, argv, mode)
     {
-      this->init(&buf_);
     }
 
   /**
