@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.75 2004/06/11 08:36:11 redi Exp $
+/* $Id: pstream.h,v 1.76 2004/09/20 23:41:03 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -262,9 +262,6 @@ namespace redi
     {
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-
-      /// Type used to specify how to connect to the process.
-      typedef typename streambuf_type::pmode        pmode;
 
       /// Default constructor.
       pstream_common();
@@ -1848,21 +1845,21 @@ namespace redi
       std::size_t open_files = 0;
       if (wpipe() > -1)
       {
-        if (in = ::fdopen(wpipe(), "w"))
+        if ((in = ::fdopen(wpipe(), "w")))
         {
             open_files |= pstdin;
         }
       }
       if (rpipe(rsrc_out) > -1)
       {
-        if (out = ::fdopen(rpipe(rsrc_out), "r"))
+        if ((out = ::fdopen(rpipe(rsrc_out), "r")))
         {
             open_files |= pstdout;
         }
       }
       if (rpipe(rsrc_err) > -1)
       {
-        if (err = ::fdopen(rpipe(rsrc_err), "r"))
+        if ((err = ::fdopen(rpipe(rsrc_err), "r")))
         {
             open_files |= pstderr;
         }
