@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.5 2002/04/20 20:33:52 redi Exp $
+# $Id: Makefile,v 1.6 2002/04/25 01:59:25 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -21,7 +21,7 @@
 CXX=g++3
 
 CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls
-CXXFLAGS=$(CFLAGS) -Woverloaded-virtual -Wenum-clash -Wtemplate-debugging
+CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
 SOURCES = pstream.h
 DOCS = pstreams.html
