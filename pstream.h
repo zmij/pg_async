@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.58 2003/03/14 16:19:36 redi Exp $
+/* $Id: pstream.h,v 1.59 2003/07/17 23:39:09 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003 Jonathan Wakely
 
@@ -25,7 +25,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
  * @author Jonathan Wakely
  *
  * Defines classes redi::ipstream, redi::opstream, redi::pstream
- * and, conditionally, redi::rpstream.
+ * and redi::rpstream.
  */
 
 #ifndef REDI_PSTREAM_H
@@ -736,7 +736,7 @@ namespace redi
    * causing the child process to receive the End Of File indicator
    * on subsequent reads from its @c stdin stream.
    * 
-   * @brief  Manipulator to close the pipe connected to the process' stdin.
+   * @brief   Manipulator to close the pipe connected to the process' stdin.
    * @param   s  An output PStream class.
    * @return  The stream object the manipulator was invoked on.
    * @warning The effect of this manipulator is undefined if it is used
@@ -746,6 +746,7 @@ namespace redi
    *          directly.
    * @see     basic_pstreambuf<C,T>::peof(), basic_pstream<C,T>::rdbuf(),
    *          basic_ipstream<C,T>::rdbuf(), basic_opstream<C,T>::rdbuf().
+   * @relates basic_pstreambuf
    */
   template <typename C, typename T>
     std::basic_ostream<C,T>&
@@ -997,10 +998,12 @@ namespace redi
 
   /**
    * @brief  Helper function to close an array of file descriptors.
+   *
    * Inspects each of the @a count file descriptors in the array @a filedes
    * and calls @c close() if they have a non-negative value.
    * @param filedes an array of file descriptors
    * @param count size of the array.
+   * @relates basic_pstreambuf
    */
   inline void
   close_fd_array(int* filedes, size_t count)
@@ -1321,8 +1324,8 @@ namespace redi
 
 
   /**
-   *  return  True if the associated process has exited, false otherwise.
-   *  see     basic_pstreambuf<C,T>::close()
+   *  @return  True if the associated process has exited, false otherwise.
+   *  @see     basic_pstreambuf<C,T>::close()
    */
   template <typename C, typename T>
     inline bool
@@ -1334,9 +1337,9 @@ namespace redi
 
 
   /**
-   *  return  The exit status of the child process, or -1 if close()
+   *  @return  The exit status of the child process, or -1 if close()
    *          has not yet been called to wait for the child to exit.
-   *  see     basic_pstreambuf<C,T>::close()
+   *  @see     basic_pstreambuf<C,T>::close()
    */
   template <typename C, typename T>
     inline int
@@ -1346,7 +1349,7 @@ namespace redi
     }
 
   /**
-   *  return  The error code of the most recently failed operation, or zero.
+   *  @return  The error code of the most recently failed operation, or zero.
    */
   template <typename C, typename T>
     inline int
@@ -1356,10 +1359,10 @@ namespace redi
     }
 
   /**
-   * closes the output pipe, causing the child process to receive the
-   * End Of File indicator on subsequent reads from its @c stdin stream.
+   *  Closes the output pipe, causing the child process to receive the
+   *  End Of File indicator on subsequent reads from its @c stdin stream.
    *
-   * @return  peof() returns no value.
+   *  @return  peof() returns no value.
    */
   template <typename C, typename T>
     inline void
@@ -1389,8 +1392,8 @@ namespace redi
    * Toggle the stream used for reading. If @a readerr is @c true then the
    * process' @c stderr output will be used for subsequent extractions, if
    * @a readerr is false the the process' stdout will be used.
-   * @param readerr @c true to read @c stderr, @c false to read @c stdout.
-   * @return @c true if the requested stream is open and will be used for
+   * @param   readerr  @c true to read @c stderr, @c false to read @c stdout.
+   * @return  @c true if the requested stream is open and will be used for
    * subsequent extractions, @c false otherwise.
    */
   template <typename C, typename T>
@@ -1411,8 +1414,8 @@ namespace redi
    * to transfer the buffer contents to the pipe. For unbuffered streams
    * this is called for every insertion.
    *
-   * @param c a character to be written to the pipe
-   * @return @c traits_type::not_eof(c) if @a c is equal to @c
+   * @param   c  a character to be written to the pipe
+   * @return  @c traits_type::not_eof(c) if @a c is equal to @c
    * traits_type::eof(). Otherwise returns @a c if @a c can be written
    * to the pipe, or @c traits_type::eof() if not.
    */
@@ -1548,9 +1551,9 @@ namespace redi
   /**
    * Attempts to insert @a c into the pipe. Used by overflow().
    *
-   * @param c a character to insert.
-   * @return true if the character could be inserted, false otherwise.
-   * @see write(char_type* s, std::streamsize n)
+   * @param   c  a character to insert.
+   * @return  true if the character could be inserted, false otherwise.
+   * @see     write(char_type* s, std::streamsize n)
    */
   template <typename C, typename T>
     inline bool
@@ -1563,9 +1566,9 @@ namespace redi
    * Attempts to extract a character from the pipe and store it in @a c.
    * Used by underflow().
    *
-   * @param c a reference to hold the extracted character.
-   * @return true if a character could be extracted, false otherwise.
-   * @see read(char_type* s, std::streamsize n)
+   * @param   c  a reference to hold the extracted character.
+   * @return  true if a character could be extracted, false otherwise.
+   * @see     read(char_type* s, std::streamsize n)
    */
   template <typename C, typename T>
     inline bool
@@ -1579,9 +1582,9 @@ namespace redi
    * This currently only works for fixed width character encodings where
    * each character uses sizeof(char_type) bytes.
    *
-   * @param s character buffer.
-   * @param n buffer length.
-   * @return the number of characters written.
+   * @param   s  character buffer.
+   * @param   n  buffer length.
+   * @return  the number of characters written.
    */
   template <typename C, typename T>
     inline std::streamsize
@@ -1595,9 +1598,9 @@ namespace redi
    * This currently only works for fixed width character encodings where
    * each character uses sizeof(char_type) bytes.
    *
-   * @param s character buffer.
-   * @param n buffer length.
-   * @return the number of characters read.
+   * @param   s  character buffer.
+   * @param   n  buffer length.
+   * @return  the number of characters read.
    */
   template <typename C, typename T>
     inline std::streamsize
