@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.51 2002/10/22 23:23:53 redi Exp $
+/* $Id: pstream.h,v 1.52 2002/11/08 02:51:51 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -37,6 +37,8 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <ostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cstring>
 #include <cerrno>
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
@@ -58,7 +60,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0029   // 0.41
+#define PSTREAMS_VERSION 0x002a   // 0.42
 
 
 /**
@@ -76,9 +78,26 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
  */
 namespace redi
 {
+  /// Common base class providing constants and typenames.
+  struct pstreams
+  {
+    /// Type used to specify how to connect to the process
+    typedef std::ios_base::openmode           pmode;
+
+    static const pmode pstdin  = std::ios_base::out; ///< Write to stdin
+    static const pmode pstdout = std::ios_base::in;  ///< Read from stdout
+    static const pmode pstderr = std::ios_base::app; ///< Read from stderr
+
+  protected:
+    static const size_t bufsz = 32;
+    static const size_t pbsz  = 2;
+  };
+
   /// Class template for stream buffer.
   template <typename CharT, typename Traits>
-    class basic_pstreambuf : public std::basic_streambuf<CharT, Traits>
+    class basic_pstreambuf
+    : public std::basic_streambuf<CharT, Traits>
+    , public pstreams
     {
     public:
       // Type definitions for dependent types
@@ -89,12 +108,6 @@ namespace redi
       typedef typename traits_type::pos_type    pos_type;
       /// Type used for file descriptors
       typedef int                               fd_t;
-      /// Type used to specify how to connect to the process
-      typedef std::ios_base::openmode           pmode;
-
-      static const pmode pstdin  = std::ios_base::out; ///< Write to stdin
-      static const pmode pstdout = std::ios_base::in;  ///< Read from stdout
-      static const pmode pstderr = std::ios_base::app; ///< Read from stderr
 
       /// Default constructor.
       basic_pstreambuf();
@@ -161,24 +174,18 @@ namespace redi
 
       /// Transfer characters from the pipe when the character buffer is empty.
       int_type
-      uflow();
-
-      /// Transfer characters from the pipe when the character buffer is empty.
-      int_type
       underflow();
 
       /// Make a character available to be returned by the next extraction.
       int_type
       pbackfail(int_type c = traits_type::eof());
 
-#if BUFFERED
       /// Write any buffered characters to the stream.
       int
       sync();
 
       std::streamsize
       xsputn(const char_type* s, std::streamsize n);
-#endif
 
       /// Insert a character into the pipe.
       bool
@@ -188,7 +195,6 @@ namespace redi
       bool
       read(char_type& c);
 
-#if BUFFERED
       /// Insert a sequence of characters into the pipe.
       std::streamsize
       write(char_type* s, std::streamsize n);
@@ -196,7 +202,6 @@ namespace redi
       /// Extract a sequence of characters from the pipe.
       std::streamsize
       read(char_type* s, std::streamsize n);
-#endif
 
     protected:
       /// Enumerated type to indicate whether stdout or stderr is to be read.
@@ -222,19 +227,25 @@ namespace redi
       fd_t&
       rpipe(buf_read_src which);
 
-      /// Return the state of the active input buffer.
-      bool&
-      take_from_buf();
+      void
+      create_buffers(pmode mode);
 
-      /// Return the character buffer for the active input pipe.
-      char_type&
-      char_buf();
+      void
+      destroy_buffers(pmode mode);
 
-#if BUFFERED
-      /// Writes out any buffered characters.
+      /// Writes buffered characters to the process' stdin pipe..
       bool
       empty_buffer();
-#endif
+
+      bool
+      fill_buffer();
+
+      /// Return the active input buffer
+      char_type*
+      rbuffer();
+
+      buf_read_src
+      switch_read_buffer(buf_read_src);
 
     private:
       basic_pstreambuf(const basic_pstreambuf&);
@@ -246,23 +257,20 @@ namespace redi
       pid_t         ppid_;        // pid of process
       fd_t          wpipe_;       // pipe used to write to process' stdin
       fd_t          rpipe_[2];    // two pipes to read from, stdout and stderr
-      char_type     char_buf_[2];
-      bool          take_from_buf_[2];
+      char_type*                wbuffer_;
+      char_type*                rbuffer_[2];
+      char_type*                rbufstate_[3];
       /// Index into rpipe_[] to indicate active source for read operations
       buf_read_src  rsrc_;
       int           status_;      // hold exit status of child process
       int           error_;       // hold errno if fork() or exec() fails
-
-#if BUFFERED
-      static const size_t bufsz_ = 0x40;
-      char_type           wbuffer_[bufsz_];
-      // char_type           rbuffer_[bufSize][2];
-#endif
     };
 
   /// Class template for common base class.
   template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class pstream_common : virtual public std::basic_ios<CharT, Traits>
+    class pstream_common
+    : virtual public std::basic_ios<CharT, Traits>
+    , public pstreams
     {
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
@@ -693,12 +701,14 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf()
     : ppid_(0)
     , wpipe_(-1)
+    , wbuffer_(0)
     , rsrc_(rsrc_out)
     , status_(-1)
     , error_(0)
     {
       init_rbuffers();
     }
+
 
   /**
    * Initialises the stream buffer by calling open() with the supplied
@@ -713,6 +723,7 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf(const std::string& command, pmode mode)
     : ppid_(0)
     , wpipe_(-1)
+    , wbuffer_(0)
     , rsrc_(rsrc_out)
     , status_(-1)
     , error_(0)
@@ -735,6 +746,7 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     : ppid_(0)
     , wpipe_(-1)
+    , wbuffer_(0)
     , rsrc_(rsrc_out)
     , status_(-1)
     , error_(0)
@@ -801,10 +813,8 @@ namespace redi
             switch (wait(true))
             {
               case 0 :
-#if BUFFERED
-                // activate buffer
-                setp(wbuffer_, wbuffer_ + bufsz_);
-#endif
+                // activate buffers
+                create_buffers(mode);
                 ret = this;
                 break;
               case 1:
@@ -817,10 +827,8 @@ namespace redi
                 break;
             }
 #else
-#if BUFFERED
-            // activate buffer
-            setp(wbuffer_, wbuffer_ + bufsz_);
-#endif
+            // activate buffers
+            create_buffers(mode);
             ret = this;
 #endif
           }
@@ -891,10 +899,8 @@ namespace redi
             switch (wait(true))
             {
               case 0 :
-#if BUFFERED
-                // activate buffer
-                setp(wbuffer_, wbuffer_ + bufsz_);
-#endif
+                // activate buffers
+                create_buffers(mode);
                 ret = this;
                 break;
               case 1:
@@ -907,10 +913,8 @@ namespace redi
                 break;
             }
 #else
-#if BUFFERED
-            // activate buffer
-            setp(wbuffer_, wbuffer_ + bufsz_);
-#endif
+            // activate buffers
+            create_buffers(mode);
             ret = this;
 #endif
           }
@@ -941,13 +945,14 @@ namespace redi
    * the child's PID and the opened pipes and the child process replaces
    * its standard streams with the opened pipes.
    * 
-   * If an error occurs the error code will be set to one of the possile errors
-   * for @c pipe() or @c fork(). See your system's documentation for these error codes.
+   * If an error occurs the error code will be set to one of the possile
+   * errors for @c pipe() or @c fork().
+   * See your system's documentation for these error codes.
    *
-   * @param   mode  an OR of pmodes specifying which of the child's standard streams
-   *                to connect to.
-   * @return  On success the PID of the child is returned in the parent's context
-   *          and zero is returned in the child's context.
+   * @param   mode  an OR of pmodes specifying which of the child's
+   *                standard streams to connect to.
+   * @return  On success the PID of the child is returned in the parent's
+   *          context and zero is returned in the child's context.
    *          On error -1 is returned and the error code is set appropriately.
    */
   template <typename C, typename T>
@@ -1076,9 +1081,7 @@ namespace redi
       if (is_open())
       {
         sync();
-#if BUFFERED
-        setp(NULL, NULL);
-#endif
+        destroy_buffers(pstdin|pstdout|pstderr);
 
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
@@ -1100,10 +1103,81 @@ namespace redi
     basic_pstreambuf<C,T>::init_rbuffers()
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
-#if BUFFERED
-#else
-      take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
-#endif
+      rbuffer_[rsrc_out] = rbuffer_[rsrc_err] = 0;
+      rbufstate_[0] = rbufstate_[1] = rbufstate_[2] = 0;
+    }
+
+
+  template <typename C, typename T>
+    void
+    basic_pstreambuf<C,T>::create_buffers(pmode mode)
+    {
+      if (mode & pstdin)
+      {
+        delete[] wbuffer_;
+        wbuffer_ = new char_type[bufsz];
+        setp(wbuffer_, wbuffer_ + bufsz);
+      }
+      if (mode & pstdout)
+      {
+        delete[] rbuffer_[rsrc_out];
+        rbuffer_[rsrc_out] = new char_type[bufsz];
+        if (rsrc_ == rsrc_out)
+          setg(rbuffer_[rsrc_out] + pbsz, rbuffer_[rsrc_out] + pbsz,
+              rbuffer_[rsrc_out] + pbsz);
+      }
+      if (mode & pstderr)
+      {
+        delete[] rbuffer_[rsrc_err];
+        rbuffer_[rsrc_err] = new char_type[bufsz];
+        if (rsrc_ == rsrc_err)
+          setg(rbuffer_[rsrc_err] + pbsz, rbuffer_[rsrc_err] + pbsz,
+              rbuffer_[rsrc_err] + pbsz);
+      }
+    }
+
+
+  template <typename C, typename T>
+    void
+    basic_pstreambuf<C,T>::destroy_buffers(pmode mode)
+    {
+      if (mode & pstdin)
+      {
+        setp(0, 0);
+        delete[] wbuffer_;
+        wbuffer_ = 0;
+      }
+      if (mode & pstdout)
+      {
+        if (rsrc_ == rsrc_out)
+          setg(0, 0, 0);
+        delete[] rbuffer_[rsrc_out];
+        rbuffer_[rsrc_out] = 0;
+      }
+      if (mode & pstderr)
+      {
+        if (rsrc_ == rsrc_err)
+          setg(0, 0, 0);
+        delete[] rbuffer_[rsrc_err];
+        rbuffer_[rsrc_err] = 0;
+      }
+    }
+
+  template <typename C, typename T>
+    typename basic_pstreambuf<C,T>::buf_read_src
+    basic_pstreambuf<C,T>::switch_read_buffer(buf_read_src src)
+    {
+      if (rsrc_ != src)
+      {
+        char_type* tmpbufstate[3];
+        tmpbufstate[0] = eback();
+        tmpbufstate[1] = gptr();
+        tmpbufstate[2] = egptr();
+        setg(rbufstate_[0], rbufstate_[1], rbufstate_[2]);
+        for (size_t i = 0; i < 3; ++i)
+          rbufstate_[i] = tmpbufstate[i];
+      }
+      return rsrc_;
     }
 
 
@@ -1220,6 +1294,7 @@ namespace redi
     basic_pstreambuf<C,T>::peof()
     {
       sync();
+      destroy_buffers(pstdin);
       close_fd_array(&wpipe_, 1);
     }
 
@@ -1259,7 +1334,6 @@ namespace redi
       return false;
     }
 
-#if  BUFFERED
   /**
    * Called when the internal character buffer is not present or is full,
    * to transfer the buffer contents to the pipe. For unbuffered streams
@@ -1330,69 +1404,10 @@ namespace redi
       return false;
     }
 
-#else
-  /**
-   * Called when the internal character buffer is not present or is full,
-   * to transfer the buffer contents to the pipe. For unbuffered streams
-   * this is called for every insertion.
-   *
-   * @param c a character to be written to the pipe
-   * @return @c traits_type::not_eof(c) if @a c is equal to @c
-   * traits_type::eof(). Otherwise returns @a c if @a c can be written
-   * to the pipe, or @c traits_type::eof() if not.
-   */
-  template <typename C, typename T>
-    typename basic_pstreambuf<C,T>::int_type
-    basic_pstreambuf<C,T>::overflow(int_type c)
-    {
-      if (!traits_type::eq_int_type(c, traits_type::eof()))
-      {
-        if (!write(traits_type::to_char_type(c)))
-          return traits_type::eof();
-        else
-          return c;
-      }
-      return traits_type::not_eof(c);
-    }
-#endif
 
   /**
-   * Called when the internal character buffer is not present or is empty,
-   * to re-fill the buffer from the pipe. Behaves like underflow() but also
-   * increments the next pointer to the get area, so repeated calls will
-   * return a different character each time.
-   *
-   * @return The next available character in the buffer,
-   * or @c traits_type::eof() in case of failure.
-   * @see underflow()
-   */
-  template <typename C, typename T>
-    typename basic_pstreambuf<C,T>::int_type
-    basic_pstreambuf<C,T>::uflow()
-    {
-      if (take_from_buf())
-      {
-        take_from_buf() = false;
-        return traits_type::to_int_type(char_buf());
-      }
-      else
-      {
-        char_type c;
-
-        if (!read(c))
-          return traits_type::eof();
-        else
-        {
-          char_buf() = c;
-          return traits_type::to_int_type(c);
-        }
-      }
-    }
-
-  /**
-   * Called when the internal character buffer is not present or is empty,
-   * to re-fill the buffer from the pipe. For unbuffered streams this is
-   * called for every extraction.
+   * Called when the internal character buffer is is empty, to re-fill it
+   * from the pipe.
    *
    * @return The first available character in the buffer,
    * or @c traits_type::eof() in case of failure.
@@ -1402,30 +1417,16 @@ namespace redi
     typename basic_pstreambuf<C,T>::int_type
     basic_pstreambuf<C,T>::underflow()
     {
-      if (take_from_buf())
-      {
-        return traits_type::to_int_type(char_buf());
-      }
+      if (gptr() < egptr() || fill_buffer())
+        return traits_type::to_int_type(*gptr());
       else
-      {
-        char_type c;
-
-        if (!read(c))
-          return traits_type::eof();
-        else
-        {
-          take_from_buf() = true;
-          char_buf() = c;
-          return traits_type::to_int_type(c);
-        }
-      }
+        return traits_type::eof();
     }
+
 
   /**
    * Attempts to make @a c available as the next character to be read by
-   * @c sgetc(), or if @a c is equal to @c traits_type::eof() then
-   * the previous character in the sequence is made the next available
-   * (at least, I think that's the intention?!)
+   * @c sgetc().
    *
    * @param   c   a character to make available for extraction.
    * @return  @a c if the character can be made available,
@@ -1435,23 +1436,43 @@ namespace redi
     typename basic_pstreambuf<C,T>::int_type
     basic_pstreambuf<C,T>::pbackfail(int_type c)
     {
-      if (!take_from_buf())
+      if (gptr() != eback())
       {
+        gbump(-1);
         if (!traits_type::eq_int_type(c, traits_type::eof()))
-        {
-          char_buf() = traits_type::to_char_type(c); 
-        }
-        take_from_buf() = true;
-        return traits_type::to_int_type(char_buf());
+          *gptr() = traits_type::to_char_type(c);
+        return traits_type::not_eof(c);
+      }
+      else
+         return traits_type::eof();
+    }
+
+  /**
+   * @return  true if the buffer was filled, false otherwise.
+   */
+  template <typename C, typename T>
+    bool
+    basic_pstreambuf<C,T>::fill_buffer()
+    {
+      int npb = std::min(gptr()-eback(), static_cast<int>(pbsz));
+
+      std::memmove(rbuffer()+pbsz-npb, gptr()-npb, npb*sizeof(char_type));
+
+      std::streamsize rc = read(rbuffer() + pbsz, bufsz - pbsz);
+
+      if (rc > 0)
+      {
+        setg(rbuffer()+pbsz-npb, rbuffer()+pbsz, rbuffer()+pbsz+rc);
+        return true;
       }
       else
       {
-         return traits_type::eof();
+        setg(0, 0, 0);
+        return false;
       }
     }
 
 
-#if BUFFERED
   /**
    * Attempts to insert @a c into the pipe. Used by overflow().
    *
@@ -1512,46 +1533,7 @@ namespace redi
     {
       return (rpipe() >= 0 ? ::read(rpipe(), s, n * sizeof(char_type)) : 0);
     }
-#else
-  /**
-   * Attempts to insert @a c into the pipe. Used by overflow().
-   * This currently only works for fixed width character encodings where
-   * each character uses sizeof(char_type) bytes.
-   *
-   * @param   c   a character to insert.
-   * @return  true if the character could be inserted, false otherwise.
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_pstreambuf<C,T>::write(char_type c)
-    {
-      if (wpipe() >= 0)
-      {
-        return (::write(wpipe(), &c, sizeof(char_type)) == sizeof(char_type));
-      }
-      return false;
-    }
 
-  /**
-   * Attempts to extract a character from the pipe and store it in @a c.
-   * Used by underflow().
-   * This currently only works for fixed width character encodings where
-   * each character uses sizeof(char_type) bytes.
-   *
-   * @param   c   a reference to hold the extracted character.
-   * @return  true if a character could be extracted, false otherwise.
-   */
-  template <typename C, typename T>
-    inline bool
-    basic_pstreambuf<C,T>::read(char_type& c)
-    {
-      if (rpipe() >= 0)
-      {
-        return (::read(rpipe(), &c, sizeof(char_type)) == sizeof(char_type));
-      }
-      return false;
-    }
-#endif
 
   /** @return a reference to the output file descriptor */
   template <typename C, typename T>
@@ -1577,22 +1559,13 @@ namespace redi
       return rpipe_[which];
     }
 
-  /** @return a reference to the state of the active input character buffer */
+  /** @return a pointer to the start of the active input buffer area. */
   template <typename C, typename T>
-    inline bool&
-    basic_pstreambuf<C,T>::take_from_buf()
+    inline typename basic_pstreambuf<C,T>::char_type*
+    basic_pstreambuf<C,T>::rbuffer()
     {
-      return take_from_buf_[rsrc_];
+      return rbuffer_[rsrc_];
     }
-
-  /** @return a reference to the active input character buffer */
-  template <typename C, typename T>
-    inline typename basic_pstreambuf<C,T>::char_type&
-    basic_pstreambuf<C,T>::char_buf()
-    {
-      return char_buf_[rsrc_];
-    }
-
 
 
   /*
