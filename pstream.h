@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.42 2002/08/30 16:27:57 redi Exp $
+/* $Id: pstream.h,v 1.43 2002/09/09 00:26:41 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -41,6 +41,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
+#include <signal.h>     // for kill()
 
 
 // TODO add buffering to pstreambuf
@@ -109,6 +110,14 @@ namespace redi
       close();
       // TODO - provide alternative ways to close, different waitpid() args
 
+      /// Send a signal to the process.
+      basic_pstreambuf*
+      kill(int signal = SIGTERM);
+
+      /// Close the pipe connected to the process' stdin.
+      void
+      peof();
+
       /// Change active input source.
       bool
       read_err(bool readerr = true);
@@ -122,6 +131,14 @@ namespace redi
       size_t
       fopen(FILE*& in, FILE*& out, FILE*& err);
 #endif
+
+      /// Return the exit status of the process.
+      int
+      status() const;
+
+      /// Return the error number for the most recent failed operation.
+      int
+      error() const;
 
     protected:
       /// Transfer characters to the pipe when character buffer overflows.
@@ -197,6 +214,7 @@ namespace redi
       bool          take_from_buf_[2];
       /// Index into rpipe_[] to indicate active source for read operations
       buf_read_src  rsrc_;
+      int           status_;      // hold exit status of child process
       int           error_;       // hold errno if fork() or exec() fails
     };
 
@@ -582,6 +600,33 @@ namespace redi
   typedef basic_pstream<char> pstream;
 
 
+  template <typename C, typename T>
+    std::basic_ostream<C,T>&
+    peof(std::basic_ostream<C,T>& s);
+
+  /**
+   * When inserted into an ouput pstream the manipulator calls 
+   * @c basic_pstreambuf<C,T>::peof() to close the output pipe,
+   * causing the child process to receive the End Of File indicator
+   * on subsequent reads from its @c stdin stream.
+   * 
+   * @brief  Manipulator to close the pipe connected to the process' stdin.
+   * @param   s  An output PStream class.
+   * @return  The stream object the manipulator was invoked on.
+   * @warning The effect of using this manipulator with a non-PStreams
+   *          stream is undefined.
+   * @see     basic_pstreambuf<C,T>::peof()
+   */
+  template <typename C, typename T>
+    std::basic_ostream<C,T>&
+    peof(std::basic_ostream<C,T>& s)
+    {
+      static_cast<basic_pstreambuf<C,T>*>(s.rdbuf())->peof();
+      //dynamic_cast<basic_pstreambuf<C,T>*>(s.rdbuf())->peof();
+      return s;
+    }
+
+
   /*
    * member definitions for pstreambuf
    */
@@ -598,6 +643,8 @@ namespace redi
     : ppid_(0)
     , wpipe_(-1)
     , rsrc_(rsrc_out)
+    , status_(-1)
+    , error_(0)
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
@@ -617,6 +664,8 @@ namespace redi
     : ppid_(0)
     , wpipe_(-1)
     , rsrc_(rsrc_out)
+    , status_(-1)
+    , error_(0)
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
@@ -638,6 +687,8 @@ namespace redi
     : ppid_(0)
     , wpipe_(-1)
     , rsrc_(rsrc_out)
+    , status_(-1)
+    , error_(0)
     {
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
@@ -662,10 +713,10 @@ namespace redi
    * function will always succeed unless resource limits (such as
    * memory usage, or number of processes or open files) are exceeded.
    *
-   * @param command a string containing a shell command.
-   * @param mode a bitwise OR of one or more of @c out, @c in and @c err.
+   * @param  command  a string containing a shell command.
+   * @param  mode     a bitwise OR of one or more of @c out, @c in and @c err.
    * @return NULL if the shell could not be started or the
-   * pipes could not be opened, pointer to self otherwise.
+   *         pipes could not be opened, pointer to self otherwise.
    */
   template <typename C, typename T>
     inline basic_pstreambuf<C,T>*
@@ -695,8 +746,16 @@ namespace redi
           default :
           {
             // this is the parent process
-            if (this->is_open()) // should be true now
-              ret = this;
+#if 0
+            if (this->wait(WNOHANG) > 0)
+            {
+              // child exited already
+              this->sync();
+              close_fd_array(&wpipe_, 1);
+              close_fd_array(rpipe_, 2);
+            }
+#endif
+            ret = this;
           }
         }
       }
@@ -758,8 +817,17 @@ namespace redi
           default :
           {
             // this is the parent process
-            if (this->is_open()) // should be true now
-              ret = this;
+#if 0
+            if (this->wait(WNOHANG) > 0)
+            {
+            {
+              // child exited already
+              this->sync();
+              close_fd_array(&wpipe_, 1);
+              close_fd_array(rpipe_, 2);
+            }
+#endif
+            ret = this;
           }
         }
       }
@@ -786,12 +854,16 @@ namespace redi
    * Creates pipes as specified by @a mode and calls @c fork() to create
    * a new process. If the fork is successful the parent process stores
    * the child's PID and the opened pipes and the child process replaces
-   * its standard streams with the opeoened pipes.
+   * its standard streams with the opened pipes.
+   * 
+   * If an error occurs the error code will be set to one of the possile errors
+   * for @c pipe() or @c fork(). See your system's documentation for these error codes.
    *
-   * @param mode a pmode specifying which of the child's standard streams
-   * to connect to.
-   * @return -1 on failure, otherwise the PID of the child in the parent's
-   * context, 0 in the child's context.
+   * @param   mode  an OR of pmodes specifying which of the child's standard streams
+   *                to connect to.
+   * @return  On success the PID of the child is returned in the parent's context
+   *          and zero is returned in the child's context.
+   *          On error -1 is returned and the error code is set appropriately.
    */
   template <typename C, typename T>
     pid_t
@@ -815,11 +887,20 @@ namespace redi
       // For the pstreambuf pin is an output stream and
       // pout and perr are input streams.
 
-      bool pstdin_ok = (mode&pstdin && ::pipe(pin)==0);
-      bool pstdout_ok = (mode&pstdout && ::pipe(pout)==0);
-      bool pstderr_ok = (mode&pstderr && ::pipe(perr)==0);
+      if (!error_ && mode&pstdin && ::pipe(pin))
+      {
+        error_ = errno;
+      }
+      if (!error_ && mode&pstdout && ::pipe(pout))
+      {
+        error_ = errno;
+      }
+      if (!error_ && mode&pstderr && ::pipe(perr))
+      {
+        error_ = errno;
+      }
 
-      if (pstdin_ok || pstdout_ok || pstderr_ok)
+      if (!error_)
       {
         pid = ::fork();
         switch (pid)
@@ -891,16 +972,20 @@ namespace redi
       }
       else
       {
-        error_ = errno;
         // close any pipes we opened before failure
         close_fd_array(fd, 6);
       }
       return pid;
     }
 
+
   /**
-   * Waits for the associated process to finish and closes the pipe.
-   * @return pointer to self or @c NULL if @c pclose() fails.
+   * Closes all pipes and waits for the associated process to finish.
+   * If an error occurs the error code will be set to one of the possible errors
+   * for @c waitpid(). See your system's documentation for these errors.
+   *
+   * @return  pointer to self on successful close or @c NULL if there is no
+   *          process to close or if an error occurs.
    */
   template <typename C, typename T>
     inline basic_pstreambuf<C,T>*
@@ -909,18 +994,128 @@ namespace redi
       basic_pstreambuf<C,T>* ret = NULL;
       if (this->is_open())
       {
+        this->sync();
+
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
 
-        if (::waitpid(ppid_, &error_, 0) == ppid_)
+#if 0
+        this->wait(0);
+#else
+        int status = 0;
+        int pid = ::waitpid(ppid_, &status, 0);
+        if (pid == ppid_)
         {
           ppid_ = 0;
+          status_ = status;
           ret = this;
         }
-        // TODO handle errors from waitpid()
-        // int exit_status = WEXITSTATUS(error_);
+        else if (pid == -1)
+        {
+          error_ = errno;
+        }
+        // else pid == 0
+#endif
       }
       return ret;
+    }
+
+
+#if 0
+  template <typename C, typename T>
+    inline int
+    basic_pstreambuf<C,T>::wait(bool nohang = false)
+    {
+      int exited = 0;
+      if (this->is_open())
+      {
+        int status;
+        int pid = ::waitpid(ppid_, &status, nohang ? WNOHANG : 0);
+        if (pid == ppid_)
+        {
+          // process exited
+          ppid_ = 0;
+          status_ = status;
+          exited = 1;
+        }
+        else if (pid == -1)
+        {
+          error_ = errno;
+          exited = -1;
+        }
+        // else nohang was true and process has not exited
+      }
+      return exited;
+    }
+#endif
+
+
+  /**
+   * Sends the specified signal to the process.
+   * The signal can be used to kill a child process that would not exit
+   * otherwise.
+   * 
+   * If an error occurs the error code will be set to one of the possible errors
+   * for @c kill(). See your system's documentation for these errors.
+   *
+   * @param  signal  A signal to send to the child process.
+   * @return pointer to self or @c NULL if @c kill() fails. See your system's
+   * documentation for @c kill() for possible errors.
+   */
+  template <typename C, typename T>
+    inline basic_pstreambuf<C,T>*
+    basic_pstreambuf<C,T>::kill(int signal)
+    {
+      basic_pstreambuf<C,T>* ret = NULL;
+      if (this->is_open())
+      {
+        if (::kill(ppid_, signal))
+        {
+          error_ = errno;
+        }
+        else
+        {
+          ret = this;
+        }
+      }
+      return ret;
+    }
+
+
+  /**
+   *  return  The exit status of the child process, or -1 if close()
+   *          has not yet been called to wait for the child to exit.
+   *  see     basic_pstreambuf<C,T>::close()
+   */
+  template <typename C, typename T>
+    inline int
+    basic_pstreambuf<C,T>::status() const
+    {
+      return status_;
+    }
+
+  /**
+   *  return  The error code of the most recently failed operation, or zero.
+   */
+  template <typename C, typename T>
+    inline int
+    basic_pstreambuf<C,T>::error() const
+    {
+      return error_;
+    }
+
+  /**
+   * closes the output pipe, causing the child process to receive the
+   * End Of File indicator on subsequent reads from its @c stdin stream.
+   *
+   * @return  peof() returns no value.
+   */
+  template <typename C, typename T>
+    inline void
+    basic_pstreambuf<C,T>::peof()
+    {
+      this->sync();
+      close_fd_array(&wpipe_, 1);
     }
 
   /**
@@ -935,7 +1130,6 @@ namespace redi
     basic_pstreambuf<C,T>::is_open() const
     {
       return bool(ppid_>0);
-      //return (wpipe_>=0 || rpipe_[rsrc_out]>=0 || rpipe_[rsrc_err]>=0);
     }
 
   /**
