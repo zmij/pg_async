@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.72 2004/06/10 14:15:34 redi Exp $
+/* $Id: pstream.h,v 1.73 2004/06/10 15:21:53 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -49,7 +49,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0030   // 0.48
+#define PSTREAMS_VERSION 0x0031   // 0.49 (version 1.0 will be 0x0100)
 
 /**
  *  @namespace redi
@@ -1288,6 +1288,7 @@ namespace redi
         this->setg(rbufstate_[0], rbufstate_[1], rbufstate_[2]);
         for (size_t i = 0; i < 3; ++i)
           rbufstate_[i] = tmpbufstate[i];
+        rsrc_ = src;
       }
       return rsrc_;
     }
@@ -1441,7 +1442,7 @@ namespace redi
       buf_read_src src = readerr ? rsrc_err : rsrc_out;
       if (rpipe_[src]>=0)
       {
-        rsrc_ = src;
+        switch_read_buffer(src);
         return true;
       }
       return false;

@@ -1,4 +1,4 @@
-Release notes for PStreams HEAD
+Release notes for PStreams 0.49
 ===============================
 
 Seek operations on the streams are not supported. Trying to seek on a
@@ -7,6 +7,14 @@ a call to std::basic_ios::clear() to clear the stream state and allow
 further I/O to take place. This behaviour is analogous to calling
 std::fseek() on a pipe, which always fails and sets errno to ESPIPE
 ("Illegal seek").
+
+Fixed memory and file descriptor leaks that occurred if wait() reported
+the process had exited without close() having been called. Writing to
+process that has already exited no longer raises SIGPIPE.
+
+Fixed a serious bug where switching between reading stdout and stderr
+didn't update the streambuf's read position to point into the correct
+buffer.
 
 
 Release notes for PStreams 0.48
@@ -117,5 +125,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.12 2004/05/21 11:52:51 redi Exp $
+$Id: README,v 1.13 2004/06/10 15:21:53 redi Exp $
 
