@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.37 2002/08/27 02:07:35 redi Exp $
+/* $Id: pstream.h,v 1.38 2002/08/27 02:11:00 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -49,7 +49,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0024   // 0.36
+#define PSTREAMS_VERSION 0x0025   // 0.37
 
 /**
  *  @namespace redi
