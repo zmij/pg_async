@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.7 2001/12/31 21:57:46 redi Exp $
+/* $Id: pstream.h,v 1.8 2002/01/07 11:33:09 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001 Jonathan Wakely
 
@@ -85,11 +85,11 @@ namespace redi
 
     public:
       basic_pstreambuf()
-      : command_(), file_(0), take_from_buf_(false)
+      : file_(0), take_from_buf_(false)
       { }
 
       basic_pstreambuf(const string& command, ios_base::openmode mode)
-      : command_(command), file_(0), take_from_buf_(false)
+      : file_(0), take_from_buf_(false)
       { this->open(command, mode_); }
 
       ~basic_pstreambuf() { this->close(); }
@@ -101,6 +101,8 @@ namespace redi
       open(const string& command, ios_base::openmode mode)
       {
         file_ = ::popen(command.c_str(), openmode2str(mode).c_str());
+        // TODO Document that there is no way to tell if command ran OK.
+        // If command fails a non-NULL FILE* is still returned.
         return is_open() ? this : NULL;
       }
 
@@ -114,9 +116,6 @@ namespace redi
         }
         return this;
       }
-
-      const string&
-      command() const { return command_; }
 
     protected:
       int_type overflow(int_type c);
@@ -138,7 +137,6 @@ namespace redi
       basic_pstreambuf(const basic_pstreambuf&);
       basic_pstreambuf& operator=(const basic_pstreambuf&);
 
-      string command_;
       FILE* file_;
       char_type char_buf_;
       bool take_from_buf_;
@@ -154,14 +152,14 @@ namespace redi
 
     public:
       basic_ipstream()
-      : istream_type(NULL), buf_()
+      : istream_type(NULL), command_(), buf_()
       { this->init(&buf_); }
 
       basic_ipstream(const string& command, ios_base::openmode mode = ios_base::in)
-      : istream_type(NULL), buf_()
+      : istream_type(NULL), command_(command), buf_()
       {
         this->init(&buf_);
-        this->open(command, mode);
+        this->open(command_, mode);
       }
 
       ~basic_ipstream() { }
@@ -171,7 +169,7 @@ namespace redi
 
       void
       open(const string& command, ios_base::openmode mode = ios_base::in)
-      { buf_.open(command, mode); }
+      { buf_.open((command_=command), mode); }
 
       void
       close() { buf_.close(); }
@@ -180,6 +178,7 @@ namespace redi
       command() const { return command_; }
 
     protected:
+      string command_;
       streambuf_type buf_;
     };
 
@@ -193,14 +192,14 @@ namespace redi
 
     public:
       basic_opstream()
-      : ostream_type(NULL), buf_()
+      : ostream_type(NULL), command_(), buf_()
       { this->init(&buf_); }
 
       basic_opstream(const string& command, ios_base::openmode mode = ios_base::out)
-      : ostream_type(NULL), buf_()
+      : ostream_type(NULL), command_(command), buf_()
       {
         this->init(&buf_);
-        this->open(command, mode);
+        this->open(command_, mode);
       }
 
       ~basic_opstream() { }
@@ -210,65 +209,22 @@ namespace redi
 
       void
       open(const string& command, ios_base::openmode mode = ios_base::out)
-      { buf_.open(command, mode); }
+      { buf_.open((command_=command), mode); }
 
       void
       close() { buf_.close(); }
 
       const string&
-      command() const { return buf_.command(); }
+      command() const { return command_; }
 
     protected:
+      string command_;
       streambuf_type buf_;
     };
 
   // typedefs for common template parameters
   typedef basic_ipstream<char> ipstream;
   typedef basic_opstream<char> opstream;
-
-#if REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE
-  template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class basic_pstream : public std::basic_iostream<CharT, Traits>
-    {
-      typedef std::basic_iostream<CharT, Traits>    iostream_type;
-      typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef streambuf_type::string                string;
-      typedef streambuf_type::ios_base              ios_base;
-
-    public:
-      basic_ipstream()
-      : iostream_type(NULL), buf_()
-      { this->init(&buf_); }
-
-      basic_ipstream(const string& command, ios_base::openmode mode = ios_base::in|ios_base::out)
-      : iostream_type(NULL), buf_()
-      {
-        this->init(&buf_);
-        this->open(command, mode);
-      }
-
-      ~basic_ipstream() { }
-
-      bool
-      is_open() const { return buf_.is_open(); }
-
-      void
-      open(const string& command, ios_base::openmode mode = ios_base::in|ios_base::out)
-      { buf_.open(command, mode); }
-
-      void
-      close() { buf_.close(); }
-
-      const string&
-      command() const { return buf_.command(); }
-
-    protected:
-      streambuf_type buf_;
-    };
-
-  typedef basic_pstream<char> pstream;
-
-#endif
 
   // member definitions for pstreambuf
 
@@ -355,7 +311,7 @@ namespace redi
     basic_pstreambuf<C,T>::read(basic_pstreambuf<C,T>::int_type& c)
     {
       char_type tmp = traits_type::to_char_type(c);
-      if (1 == std::fread(&tmp, sizeof(char_type), 1, file_))
+      if (file_ && (std::fread(&tmp, sizeof(char_type), 1, file_) == 1))
       {
         c = traits_type::to_int_type(tmp);
         return true;
@@ -371,7 +327,7 @@ namespace redi
     basic_pstreambuf<C,T>::write(basic_pstreambuf<C,T>::int_type c)
     {
       char_type tmp = traits_type::to_char_type(c);
-      return (1 == std::fwrite(&tmp, sizeof(char_type), 1, file_));
+      return (file_ && (1 == std::fwrite(&tmp, sizeof(char_type), 1, file_)));
     }
 
   // TODO extend this to handle all modes and make non-member ?
@@ -390,6 +346,51 @@ namespace redi
       else
         return "";
     }
+
+#if REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE
+  template <typename CharT, typename Traits = std::char_traits<CharT> >
+    class basic_pstream : public std::basic_iostream<CharT, Traits>
+    {
+      typedef std::basic_iostream<CharT, Traits>    iostream_type;
+      typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
+      typedef streambuf_type::string                string;
+      typedef streambuf_type::ios_base              ios_base;
+
+    public:
+      basic_ipstream()
+      : iostream_type(NULL), command_(), buf_()
+      { this->init(&buf_); }
+
+      basic_ipstream(const string& command, ios_base::openmode mode = ios_base::in|ios_base::out)
+      : iostream_type(NULL), command_(command), buf_()
+      {
+        this->init(&buf_);
+        this->open(command_, mode);
+      }
+
+      ~basic_ipstream() { }
+
+      bool
+      is_open() const { return buf_.is_open(); }
+
+      void
+      open(const string& command, ios_base::openmode mode = ios_base::in|ios_base::out)
+      { buf_.open((command_=command), mode); }
+
+      void
+      close() { buf_.close(); }
+
+      const string&
+      command() const { return command_; }
+
+    protected:
+      string command_;
+      streambuf_type buf_;
+    };
+
+  typedef basic_pstream<char> pstream;
+
+#endif
 
 } // namespace redi
 
