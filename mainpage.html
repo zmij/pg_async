@@ -1,9 +1,8 @@
 
 <!-- start of included file -->
 
-<!-- $Id: pstreams.html,v 1.14 2002/04/27 03:18:34 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.1 2002/04/27 03:51:46 redi Exp $ -->
 
-<div><a name='top'></a></div>
 <table width='100%'>
 <tbody>
 <tr>
@@ -20,22 +19,6 @@
 re-implementation of the POSIX.2 functions <code>popen(3)</code> and
 <code>pclose(3)</code>, using IOStreams to read from and write to the
 opened process.</p>
-<p>The inspiration for this project came from seeing a
-<!-- a href='http://gcc.gnu.org/ml/libstdc++/2001-11/msg00107.html' -->message<!-- /a -->
-on the <a href='http://gcc.gnu.org/libstdc++/'>libstdc++-v3</a> mailing list
-asking what had happened to the <code>pfstream</code> classes that came
-with libstdc++-v2.
-Because I'd used a similar C++ wrapper for <code>popen()</code> where I work,
-and because I want to learn about Standard IOStreams, I decided to try to
-write a solution that would work with standard-conforming C++ libraries.
-(The <code>pfstream</code> classes were based on the old AT&amp;T-style
-IOStreams and relied on <a href='http://gcc.gnu.org/'>GCC</a>-specific
-libraries.)</p>
-<p>The aim is to provide class templates in the style of the standard IOStreams
-that can be used with any standard-conforming compiler on a POSIX platform.
-This involves writing a <code>streambuf</code> class that uses
-<code>fork()</code> and the <code>exec</code> family of functions to
-create a new process.</p>
 <p>The advantages over the standard <code>popen()</code> function are:
 <ul>
 <li>Standard C++ interface. PStreams classes can be used in any code that
@@ -88,30 +71,10 @@ programmer's responsibility to interpret the resulting character strings.
 Since the classes are intended to be used to read/write data between
 processes, which will usually share an internal character representation,
 rather than to/from files, this behaviour should be sufficient.</p>
-<p>For non-ISO C++-compliant compilers there are alternative versions of
-all classes.
-<em>These alternative versions are unsupported and not under development!</em>
-They use non-standard extensions found in some old IOStream implementations
-(such as attaching an <code>fstream</code>'s buffer to a file descriptor with
-<code>fstreambase::attach(int fd)</code>) that may not be available on some
-systems.
-For GCC 2.7/2.8/2.9x/egcs these classes are functional, but are
-implemented using <code>fstream</code> and provide no more functionality
-than the <code>pfstream</code> classes provided with libg++.
-For all other compilers these classes have never even been compiled, let
-alone tested, so use them at your own risk.
-<br />The non-compliant versions are defined in the pstream_compat.h file
-and can be used by defining <code>BACK_COMPAT</code>
-(or <code>GCC_BACK_COMPAT</code> for the libg++ versions)
-to be <code>1</code>.
-<br />Instantiating the backward-compatible <code>ipstream</code> or
-<code>opstream</code>
-currently sets <code>errno</code> to <code>ESPIPE</code> because the
-<code>fstreambase</code> tries to seek to the end of the stream, which
-is not allowed for pipes. <code>errno</code> is reset by the classes.</p>
+
 <p>&nbsp;</p>
 <h2><a name='usage'>Usage</a></h2>
-<p class='note'>Please refer to the doxygen-generated documentation,
+<p>Please refer to the doxygen-generated documentation,
 accessible through the links at the top of the page.</p>
 <p>Using the PStreams classes is similar to using a <code>std::fstream</code>,
 except that a shell command is given rather than a filename:</p>
@@ -157,56 +120,6 @@ while (std::getline(in<strong>.err()</strong>, errmsg)) {
 </code></pre>
 <p>This form can also be used with the unrestricted <code>pstream</code>
 and <code>ipstream</code> classes, but it is not strictly necessary.</p>
-<p><a href='#top'>top</a></p>
-
-<p>&nbsp;</p>
-<h2><a name='download'>Download</a></h2>
-<p>Latest version: <a href='pstreams.tar.gz'>pstreams.tar.gz</a></p>
-<p>Older, <code>popen()</code>-based version:
-<a href='pstreams-0.17.tar.gz'>pstreams-0.17.tar.gz</a></p>
-<p>The backward-compatible (non-standard, unsupported, probably don't even
-work) PStreams classes are in the file
-<a href='pstream_compat.h'>pstream_compat.h</a>.</p>
-<p><a href='#top'>top</a></p>
-
-<p>&nbsp;</p>
-<h2><a name='credits'>Credits</a></h2>
-<p>
-Angelika langer &amp; Klaus Kreft for the invaluable examples in their book
-<cite>Standard C++ IOStreams and Locales</cite>.
-<br>
-John Levon for comments and advice on the interface design.
-<br>
-Philippe Elie who wrote the <code>ChildReader</code> class for the
-<a href="http://oprofile.sf.net">OProfile</a> project, which was a good
-starting point when replacing <code>popen()</code> with hand-rolled
-fork/exec code.
-<br>
-Per Bothner et al. for the <code>pfstream</code> classes in the old libg++.
-</p>
-<p><a href='#top'>top</a></p>
-
-<hr>
-<address>
-<p>Please send comments, suggestions, bugfixes, patches, cakes, pies etc. to
-pstreams&nbsp;at&nbsp;redi&nbsp;dot&nbsp;uklinux&nbsp;dot&nbsp;net
-<br />This page last updated on $Date: 2002/04/27 03:18:34 $
-<br />Copyright &copy; 2001,2002 Jonathan Wakely</p>
-</address>
-<p>
-<a href="http://sourceforge.net"><img
-src="http://sourceforge.net/sflogo.php?group_id=48695&type=1"
-alt="SourceForge Logo" border="0"></a>
-&nbsp;
-<a href="http://validator.w3.org/check/referer"><img
-  src="http://www.w3.org/Icons/valid-html40"
-  alt="Valid HTML 4.0!" height="31" width="88"></a>
-&nbsp;
-<a href="http://jigsaw.w3.org/css-validator/"><img
-  style="border:0;width:88px;height:31px"
-  src="http://jigsaw.w3.org/css-validator/images/vcss" 
-  alt="Valid CSS!"></a>
-</p>
 
 <!-- end of included file -->
 

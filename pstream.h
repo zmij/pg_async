@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.24 2002/04/26 01:16:47 redi Exp $
+/* $Id: pstream.h,v 1.25 2002/04/27 03:51:46 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // TODO add buffering to pstreambuf
 
+// TODO add member to streambuf to expose a FILE* (comment to discourage use)
 
 /// All PStreams classes are declared in namespace redi.
 namespace redi
@@ -1325,8 +1326,8 @@ namespace redi
 } // namespace redi
 
 /**
- * @mainpage Pstreams Library
- * @htmlinclude pstreams.html
+ * @mainpage Pstreams Reference
+ * @htmlinclude mainpage.html
  */
 
 #endif  // REDI_PSTREAM_H
