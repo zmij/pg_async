@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.7 2002/10/22 01:30:27 redi Exp $
+/* $Id: rpstream.h,v 1.8 2003/02/27 17:29:43 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -52,9 +52,13 @@ namespace redi
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
       typedef std::basic_istream<CharT, Traits>     istream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
-      typedef typename pbase_type::pmode            pmode;
+
+      using pbase_type::buf_;  // declare name in this scope
 
     public:
+      /// Type used to specify how to connect to the process
+      typedef typename pbase_type::pmode            pmode;
+
       /// Default constructor, creates an uninitialised stream.
       basic_rpstream();
 

@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.52 2002/11/08 02:51:51 redi Exp $
+/* $Id: pstream.h,v 1.53 2003/02/27 17:29:42 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -347,6 +347,8 @@ namespace redi
       typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
+      using pbase_type::buf_;  // declare name in this scope
+
     public:
       /// Type used to specify how to connect to the process
       typedef typename pbase_type::pmode            pmode;
@@ -464,6 +466,8 @@ namespace redi
       typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
+      using pbase_type::buf_;  // declare name in this scope
+
     public:
       /// Type used to specify how to connect to the process
       typedef typename pbase_type::pmode            pmode;
@@ -553,6 +557,8 @@ namespace redi
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::streambuf_type   streambuf_type;
+
+      using pbase_type::buf_;  // declare name in this scope
 
     public:
       /// Type used to specify how to connect to the process
