@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.2 2002/04/25 02:00:32 redi Exp $
+/* $Id: rpstream.h,v 1.3 2002/04/25 02:12:50 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -33,10 +33,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "pstream.h"
 
 // Check the PStreams version.
-#if PSTREAMS_VERSION < 0x0021
-//#error This version of rpstream.h is incompatible with your pstream.h
-//#error Please use pstream.h v0.33 or higher.
-#endif
+// #if PSTREAMS_VERSION < 0x0022
+// #error This version of rpstream.h is incompatible with your pstream.h
+// #error Please use pstream.h v0.34 or higher.
+// #endif
 
 
 // All PStreams classes are declared in namespace redi.

@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.22 2002/04/25 02:00:32 redi Exp $
+/* $Id: pstream.h,v 1.23 2002/04/25 02:12:50 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAM_H
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0021   // 0.33
+#define PSTREAMS_VERSION 0x0022   // 0.34
 
 #include <ios>
 #include <streambuf>
@@ -650,6 +650,7 @@ namespace redi
 
             // can only reach this point if exec() failed
             int error = errno;
+            // TODO use exceptions, not cerr, don't #include <iostream>
             std::cerr << "sh: " << strerror(error) << '\n';
 
             // parent can get exit code from waitpid()
@@ -718,6 +719,7 @@ namespace redi
 
             // can only reach this point if exec() failed
             int error = errno;
+            // TODO use exceptions, not cerr, don't #include <iostream>
             std::cerr << file << ": " << strerror(error) << '\n';
 
             // parent can get exit code from waitpid()
@@ -772,8 +774,8 @@ namespace redi
       // For the pstreambuf pin is an output stream and
       // pout and perr are input streams.
 
-      if ( (mode&pstdout && ::pipe(pin)==0)
-          || (mode&pstdin && ::pipe(pout)==0)
+      if ( (mode&pstdin && ::pipe(pin)==0)
+          || (mode&pstdout && ::pipe(pout)==0)
           || (mode&pstderr && ::pipe(perr)==0) )
       {
         pid = ::fork();
@@ -806,6 +808,7 @@ namespace redi
           }
           case -1 :
           {
+            // TODO use exceptions, not cerr, don't #include <iostream>
             std::cerr << "Cannot fork: " << strerror(error) << '\n';
             // couldn't fork for some reason, close any open pipes
             basic_pstreambuf<C,T>::fdclose(fd, 6);
