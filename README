@@ -16,6 +16,11 @@ Fixed a serious bug where switching between reading stdout and stderr
 didn't update the streambuf's read position to point into the correct
 buffer.
 
+Jez Bromley has found that the eviscerated PStreams can not be used with
+the alpha's native cxx compiler in strict_ansi mode. To workaround this
+don't use strict_ansi and define __USE_STD_IOSTREAM to get the standard
+IOStream classes.
+
 
 Release notes for PStreams 0.48
 ===============================
@@ -125,5 +130,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.13 2004/06/10 15:21:53 redi Exp $
+$Id: README,v 1.14 2004/06/11 00:08:12 redi Exp $
 
