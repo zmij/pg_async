@@ -22,6 +22,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 // TODO test rpstream more
 // TODO test whether error_ cleared after successful open().
+// TODO more tests for vector open()
 
 // test for failures. test opening pstream with neither pstdin nor pstdout.
 // maybe set failbit if !(mode&(pstdin|pstdout|pstderr)) ?
@@ -252,7 +253,13 @@ int main()
 
     {
         // test reading from bidirectional pstream
+
+#ifdef __sun
+        // Solaris' grep doesn't like "--" and "-"
+        const string cmd = "grep '^127' /etc/hosts /no/such/file /dev/stdin";
+#else
         const string cmd = "grep '^127' -- /etc/hosts /no/such/file -";
+#endif
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -275,7 +282,13 @@ int main()
     {
         // test input on bidirectional pstream
         // and test child moves onto next file after peof on stdin
+
+#ifdef __sun
+        // Solaris' grep doesn't like "--" and "-"
+        const string cmd = "grep fnord /etc/hosts /dev/stdin";
+#else
         const string cmd = "grep fnord -- /etc/hosts -";
+#endif
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -379,6 +392,10 @@ int main()
         // check is_open() works 
         ipstream is(badcmd);
         // print_result(is, !is.is_open());  // XXX cannot pass this test!
+#ifdef __sun
+        // fail next test if OS slow to terminate child process, need sleep(1)
+        sleep(1);
+#endif
         print_result(is, is.rdbuf()->exited() && !is.is_open());
     }
 
@@ -605,6 +622,7 @@ int main()
 #endif
 
     clog << "# Testing resources freed correctly\n";
+    // TODO repeat tests for vector open()
 
     {
         ipstream in("hostname");
