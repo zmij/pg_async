@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.77 2004/09/24 23:38:37 redi Exp $
+/* $Id: pstream.h,v 1.78 2004/09/26 19:12:16 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -80,8 +80,8 @@ namespace redi
     static const pmode pstderr = std::ios_base::app; ///< Read from stderr
 
   protected:
-    static const std::size_t bufsz = 32; ///< Size of pstreambuf buffers.
-    static const std::size_t pbsz  = 2;  ///< Number of putback characters kept.
+    enum { bufsz = 32 };  ///< Size of pstreambuf buffers.
+    enum { pbsz  = 2 };   ///< Number of putback characters kept.
   };
 
   /// Class template for stream buffer.
