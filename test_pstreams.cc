@@ -220,17 +220,19 @@ int main()
 
     clog << "# Testing bidirectional PStreams\n";
 
-    pstreambuf::pmode all3streams =
-        pstreambuf::pstdin|pstreambuf::pstdout|pstreambuf::pstderr;
+    pstreams::pmode all3streams =
+        pstreams::pstdin|pstreams::pstdout|pstreams::pstderr;
 
     {
-        // test output on bidirectional pstream
-        string cmd = "grep ^127 -- /etc/hosts /no/such/file";
+        // test reading from bidirectional pstream
+        string cmd = "grep '^127' -- /etc/hosts /no/such/file -";
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
         check_pass(ps.out());
         check_pass(ps.err());
+
+        ps << "127721\n" << peof;
 
         string buf;
         while (getline(ps.out(), buf))
@@ -241,30 +243,12 @@ int main()
             cout << "STDERR: " << buf << endl;
         check_fail(ps);
         ps.clear();
-
-        /* XXX FreeBSD exits here, in dtor
-         * need to check if pipe still open before sync'ing
-         *
-Program received signal SIGPIPE, Broken pipe.
-0x2818f944 in write () from /usr/lib/libc.so.4
-(gdb) bt
-#0  0x2818f944 in write () from /usr/lib/libc.so.4
-#1  0x0804ef62 in redi::basic_pstreambuf<char, std::char_traits<char> >::write(char*, int) (this=0xbfbff7ac, s=0x805c000 "", n=-1077939064) at pstream.h:1600
-#2  0x0804f5f4 in redi::basic_pstreambuf<char, std::char_traits<char> >::empty_buffer() (this=0xbfbff7ac) at pstream.h:1506
-#3  0x0804ee41 in redi::basic_pstreambuf<char, std::char_traits<char> >::sync() (this=0xbfbff7ac) at pstream.h:1469
-#4  0x0804e91f in redi::basic_pstreambuf<char, std::char_traits<char> >::close() (this=0xbfbff7ac) at pstream.h:1196
-#5  0x0804e617 in ~basic_pstreambuf (this=0xbfbff7ac) at pstream.h:918
-#6  0x0804fdfa in ~pstream_common (this=0xbfbff7a4, __vtt_parm=0x8054ae0)
-#7  0x08051791 in ~basic_pstream (this=0xbfbff798)
-#8  0x0804c14a in main () at test_pstreams.cc:241
-#9  0x0804ae36 in _start ()
-         *
-         */
     }
 
     {
-        // test input on bidirectional pstream and test peof manip
-        string cmd = "grep fnord -- /dev/stdin";
+        // test input on bidirectional pstream
+        // and test child moves onto next file after peof on stdin
+        string cmd = "grep fnord -- - /etc/hosts";
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -278,13 +262,12 @@ Program received signal SIGPIPE, Broken pipe.
 
         do
         {
-            print_result(ps, buf == "fnord");
+            print_result(ps, buf.find("fnord"));
             cout << "STDOUT: " << buf << endl;
         } while (getline(ps.out(), buf));
 
         check_fail(ps << "pipe closed, no fnord now");
     }
-    // TODO - test child moves onto next file after peof on stdin
 
     {
         // test signals
