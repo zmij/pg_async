@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.86 2004/10/20 14:36:35 redi Exp $
+/* $Id: pstream.h,v 1.87 2004/10/20 23:36:01 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -46,13 +46,14 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <sys/wait.h>   // for waitpid()
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
 #include <signal.h>     // for kill()
+#include <fcntl.h>      // for fcntl()
 #if REDI_EVISCERATE_PSTREAMS
-#include <stdio.h>       // for FILE, fdopen()
+# include <stdio.h>     // for FILE, fdopen()
 #endif
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0050   // 0.5.0
+#define PSTREAMS_VERSION 0x0051   // 0.5.1
 
 /**
  *  @namespace redi
@@ -103,7 +104,7 @@ namespace redi
       typedef typename traits_type::int_type    int_type;
       typedef typename traits_type::off_type    off_type;
       typedef typename traits_type::pos_type    pos_type;
-      /** @deprecated use fd_type instead. */
+      /** @deprecated use pstreams::fd_type instead. */
       typedef fd_type                           fd_t;
 
       /// Default constructor.
@@ -942,9 +943,15 @@ namespace redi
    * Starts a new process by passing @a command to the shell
    * and opens pipes to the process with the specified @a mode.
    *
+   * Will duplicate the actions of  the  shell  in searching for an
+   * executable file if the specified file name does not contain a slash (/)
+   * character.
+   *
    * There is no way to tell whether the shell command succeeded, this
    * function will always succeed unless resource limits (such as
    * memory usage, or number of processes or open files) are exceeded.
+   * This means is_open() will return true even if @a command cannot
+   * be executed.
    *
    * @param   command  a string containing a shell command.
    * @param   mode     a bitwise OR of one or more of @c out, @c in, @c err.
@@ -956,111 +963,45 @@ namespace redi
     basic_pstreambuf<C,T>*
     basic_pstreambuf<C,T>::open(const std::string& command, pmode mode)
     {
+#if 0
+      const std::string argv[] = { "sh", "-c", command };
+      return this->open("sh", std::vector<std::string>(argv, argv+3), mode);
+#else
       basic_pstreambuf<C,T>* ret = NULL;
 
       if (!is_open())
       {
         switch(fork(mode))
         {
-          case 0 :
-          {
-            // this is the new process, exec command
-            ::execlp("sh", "sh", "-c", command.c_str(), (void*)NULL);
+        case 0 :
+          // this is the new process, exec command
+          ::execlp("sh", "sh", "-c", command.c_str(), (void*)NULL);
 
-            // can only reach this point if exec() failed
+          // can only reach this point if exec() failed
 
-            // parent can get exit code from waitpid()
-            ::_exit(errno);
-            // using std::exit() would make static dtors run twice
-          }
-          case -1 :
-          {
-            // couldn't fork, error already handled in pstreambuf::fork()
-            break;
-          }
-          default :
-          {
-            // this is the parent process
-            // activate buffers
-            create_buffers(mode);
-            ret = this;
-          }
+          // parent can get exit code from waitpid()
+          ::_exit(errno);
+          // using std::exit() would make static dtors run twice
+
+        case -1 :
+          // couldn't fork, error already handled in pstreambuf::fork()
+          break;
+
+        default :
+          // this is the parent process
+          // activate buffers
+          create_buffers(mode);
+          ret = this;
         }
       }
       return ret;
-    }
-
-  /**
-   * Starts a new process by executing @a file with the arguments in
-   * @a argv and opens pipes to the process with the specified @a mode.
-   *
-   * By convention argv[0] should be the file name of the file being executed.
-   * Will duplicate the actions of  the  shell  in searching for an
-   * executable file if the specified file name does not contain a slash (/)
-   * character.
-   *
-   * @param   file  a string containing the pathname of a program to execute.
-   * @param   argv  a vector of argument strings passed to the new program.
-   * @param   mode  a bitwise OR of one or more of @c out, @c in and @c err.
-   * @return  NULL if a pipe could not be opened or if the program could
-   *          not be executed, @c this otherwise.
-   * @see     execvp(3)
-   */
-  template <typename C, typename T>
-    basic_pstreambuf<C,T>*
-    basic_pstreambuf<C,T>::open( const std::string& file,
-                                 const argv_type& argv,
-                                 pmode mode )
-    {
-      basic_pstreambuf<C,T>* ret = NULL;
-
-      if (!is_open())
-      {
-        switch(fork(mode))
-        {
-          case 0 :
-          {
-            // this is the new process, exec command
-
-            char** arg_v = new char*[argv.size()+1];
-            for (std::size_t i = 0; i < argv.size(); ++i)
-            {
-              const std::string& src = argv[i];
-              char*& dest = arg_v[i];
-              dest = new char[src.size()+1];
-              dest[ src.copy(dest, src.size()) ] = '\0';
-            }
-            arg_v[argv.size()] = NULL;
-
-            ::execvp(file.c_str(), arg_v);
-
-            // can only reach this point if exec() failed
-
-            // parent can get exit code from waitpid()
-            ::_exit(errno);
-            // using std::exit() would make static dtors run twice
-          }
-          case -1 :
-          {
-            // couldn't fork, error already handled in pstreambuf::fork()
-            break;
-          }
-          default :
-          {
-            // this is the parent process
-            // activate buffers
-            create_buffers(mode);
-            ret = this;
-          }
-        }
-      }
-      return ret;
+#endif
     }
 
   /**
    * @brief  Helper function to close a file descriptor.
    *
-   * Inspects @a filedes and calls @c ::close() if it has a non-negative value.
+   * Inspects @a filedes and calls @b close(3) if it has a non-negative value.
    *
    * @param   fd  a file descriptor.
    * @relates basic_pstreambuf
@@ -1088,6 +1029,113 @@ namespace redi
     {
       for (std::size_t i = 0; i < N; ++i)
         close_fd(fds[i]);
+    }
+
+  /**
+   * Starts a new process by executing @a file with the arguments in
+   * @a argv and opens pipes to the process with the specified @a mode.
+   *
+   * By convention argv[0] should be the file name of the file being executed.
+   * Will duplicate the actions of  the  shell  in searching for an
+   * executable file if the specified file name does not contain a slash (/)
+   * character.
+   *
+   * Iff @a file is successfully executed then is_open() will return true.
+   * Note that exited() will return true if file cannot be executed, since
+   * the child process will have exited.
+   *
+   * @param   file  a string containing the pathname of a program to execute.
+   * @param   argv  a vector of argument strings passed to the new program.
+   * @param   mode  a bitwise OR of one or more of @c out, @c in and @c err.
+   * @return  NULL if a pipe could not be opened or if the program could
+   *          not be executed, @c this otherwise.
+   * @see     execvp(3)
+   */
+  template <typename C, typename T>
+    basic_pstreambuf<C,T>*
+    basic_pstreambuf<C,T>::open( const std::string& file,
+                                 const argv_type& argv,
+                                 pmode mode )
+    {
+      basic_pstreambuf<C,T>* ret = NULL;
+
+      if (!is_open())
+      {
+        // constants for read/write ends of pipe
+        enum { RD, WR };
+
+        // open another pipe and set close-on-exec
+        fd_type ck_exec[] = { -1, -1 };
+        if (-1 == ::pipe(ck_exec)
+            || -1 == ::fcntl(ck_exec[RD], F_SETFD, FD_CLOEXEC)
+            || -1 == ::fcntl(ck_exec[WR], F_SETFD, FD_CLOEXEC))
+        {
+          error_ = errno;
+          close_fd_array(ck_exec);
+        }
+        else
+        {
+          switch(fork(mode))
+          {
+          case 0 :
+            // this is the new process, exec command
+            {
+              char** arg_v = new char*[argv.size()+1];
+              for (std::size_t i = 0; i < argv.size(); ++i)
+              {
+                const std::string& src = argv[i];
+                char*& dest = arg_v[i];
+                dest = new char[src.size()+1];
+                dest[ src.copy(dest, src.size()) ] = '\0';
+              }
+              arg_v[argv.size()] = NULL;
+
+              ::execvp(file.c_str(), arg_v);
+
+              // can only reach this point if exec() failed
+
+              // parent can get error code from ck_exec pipe
+              error_ = errno;
+
+              ::write(ck_exec[WR], &error_, sizeof(error_));
+              ::close(ck_exec[WR]);
+              ::close(ck_exec[RD]);
+
+              ::_exit(error_);
+              // using std::exit() would make static dtors run twice
+            }
+
+          case -1 :
+            // couldn't fork, error already handled in pstreambuf::fork()
+            close_fd_array(ck_exec);
+            break;
+
+          default :
+            // this is the parent process
+
+            // check child called exec() successfully
+            ::close(ck_exec[WR]);
+            switch (::read(ck_exec[RD], &error_, sizeof(error_)))
+            {
+            case 0:
+              // activate buffers
+              create_buffers(mode);
+              ret = this;
+              break;
+            case -1:
+              error_ = errno;
+              break;
+            default:
+              // error_ contains error code from child
+              // call wait() to clean up and set ppid_ to 0
+              this->wait();
+              break;
+            }
+            ::close(ck_exec[RD]);
+          }
+        }
+      }
+      return ret;
     }
 
   /**
