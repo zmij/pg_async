@@ -111,6 +111,13 @@ namespace  // anon
     template <typename T>
     bool
     check_fail(const T& s) { return check_pass(s, false); }
+
+    // exit status of shell when command not found
+#if defined(__sun)
+    int sh_cmd_not_found = 1;
+#else
+    int sh_cmd_not_found = 127;
+#endif
 }
 
 
@@ -308,7 +315,8 @@ int main()
         pstreambuf* buf = ofail.rdbuf();
         print_result(ofail, buf->exited());
         int status = buf->status();
-        print_result(ofail, WIFEXITED(status) && WEXITSTATUS(status)==127);
+        print_result( ofail,
+                WIFEXITED(status) && WEXITSTATUS(status) == sh_cmd_not_found );
     }
 
     {
