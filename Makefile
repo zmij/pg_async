@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.16 2003/04/20 13:29:42 redi Exp $
+# $Id: Makefile,v 1.17 2004/01/25 03:21:36 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -26,7 +26,7 @@ OPTIM=-g3
 EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=
 
-CFLAGS=-ansi -pedantic -Werror -Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
+CFLAGS=-ansi -pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
 SOURCES = pstream.h
