@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.30 2002/04/29 23:03:03 redi Exp $
+/* $Id: pstream.h,v 1.31 2002/04/29 23:44:52 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -223,9 +223,9 @@ namespace redi
       /// Constructor that initialises the stream by starting a process.
       pstream_base(const std::string& file, const std::vector<std::string>& argv, pmode mode);
 
-      /// Destructor
+      /// Pure virtual destructor
       virtual
-      ~pstream_base() { }
+      ~pstream_base() = 0;
 
       /// Start a process.
       virtual void
@@ -1241,11 +1241,10 @@ namespace redi
 
   /**
    * @class pstream_base
-   * Abstract Base Class providing common functionality for basic_ipsteam,
-   * basic_opstream and basic_pstream. pstream_base manages the pstreambuf
-   * which should be used by derived classes to initialise an IOStream
-   * class, which will shares a std::basic_ios virtual base class with the
-   * pstream_base.
+   * Abstract Base Class providing common functionality for basic_ipstream,
+   * basic_opstream and basic_pstream.
+   * pstream_base manages the basic_pstreambuf stream buffer that is used
+   * by the derived classes to initialise an IOStream class.
    */
 
   /** Creates an uninitialised stream. */
@@ -1296,6 +1295,19 @@ namespace redi
     {
       this->init(&buf_);
       this->open(file, argv, mode);
+    }
+
+  /**
+   * This is a pure virtual function to make @c pstream_base abstract.
+   * Because it is the destructor it will be called by derived classes
+   * and so must be defined.
+   * @sa If defining a pure virtual seems odd you should read
+   * http://www.gotw.ca/gotw/031.htm (and the rest of the site as well!)
+   */
+  template <typename C, typename T>
+    inline
+    pstream_base<C,T>::~pstream_base()
+    {
     }
 
   /**
