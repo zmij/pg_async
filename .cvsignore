@@ -6,6 +6,7 @@ pstreams-[0-9].[0-9][0-9]
 pstreams-[0-9].[0-9][0-9]-docs
 doc
 TODO
+MANIFEST
 ChangeLog
 a.out
 .*.swp
