@@ -1,11 +1,32 @@
-#ifndef REDI_PSTREAM_COMPAT_H
-#define REDI_PSTREAM_COMPAT_H
+/* $Id: pstream_compat.h,v 1.2 2002/07/24 21:06:03 redi Exp $
+PStreams - POSIX Process I/O for C++
+Copyright (C) 2001,2002 Jonathan Wakely
+
+This file is part of PStreams.
+
+PStreams is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of
+the License, or (at your option) any later version.
+
+PStreams is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with PStreams; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
 
 /**
  * @file pstream_compat.h
  * Declares non-standard implementations of the PStreams classes for older
  * compilers.
  */
+
+#ifndef REDI_PSTREAM_COMPAT_H
+#define REDI_PSTREAM_COMPAT_H
 
 #if ! ( BACK_COMPAT == 1 || GCC_BACK_COMPAT == 1 )
 

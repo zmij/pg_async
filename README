@@ -1,13 +1,59 @@
-PStreams version 0.12
+PStreams
+========
 
-COPYING         - licensing information
-ChangeLog       - change history
-README          - this file
-TODO            - list of missing or incompete features
-pstream.h       - the library header
-pstreams.html   - HTML documentation
+This is the README file for PStreams, a C++ utility for simple IOStream-based
+Inter-Process Communication. PStreams is a tool. Not the most efficient or
+flexible method of IPC, but fairly simple and IOStream-based, with all the
+advantages that provides. I hope you find it useful.
 
 The latest version can be found at http://pstreams.sourceforge.net/
-
 The author can be contacted at pstreams@kayari.org
+
+To use the PStreams classes copy the required header files to somewhere
+your compiler can find them and #include them. The headers are commented
+so that API documentation to be generated using Doxygen
+(http://www.doxygen.org/)
+
+This file contains some notes on PStreams, but is very incomplete. There may
+be some notes here that aren't covered in the API documentation, but see
+those docs for most questions about usage (or at least, how things _should_
+work).
+
+PStreams has only been tested with gcc so far, if you have problems (or
+better still - solutions) with PStreams and other compilers please let
+me know.
+
+The PStream (Un)Buffer class
+============================
+The pstreambuf used by the PStreams classes doesn't do any buffering, so a
+read()/write() call is made for every character. This is going to change
+soon.
+
+
+
+* Behaviour w.r.t child exiting may be incorrect
+
+
+The Good, the Bad and the Ugly
+==============================
+PStreams is intended to be a clean design based on the standard IOStreams,
+but first and foremost it's a handy little tool, and so should be as useful
+as possible. Because it is not always possible to redesign a program to use
+IOStreams instead of C-style I/O it is possible to expose some internal
+details of the PStreams classes. If the macro REDI_EVISCERATE_PSTREAMS has
+a non-zero value then the following public method is added to each stream
+class:
+
+pmode fopen(FILE*& in, FILE*& out, FILE*& err);
+
+    Obtains FILE pointers relating to each open pipe to the process and
+    assigns them to the corresponding FILE* parameters.
+
+These functions should be used with caution because mixing C++ and C I/O
+on the same stream may cause problems. The caller should be aware of the
+issues involved in using the stream buffer's FILE pointer (see your system's
+docs for the fdopen() function that is used by the pstreambuf).
+
+
+$Id: README,v 1.2 2002/07/24 21:06:03 redi Exp $
 
