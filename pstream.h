@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.49 2002/10/22 01:30:27 redi Exp $
+/* $Id: pstream.h,v 1.50 2002/10/22 23:10:18 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -239,6 +239,9 @@ namespace redi
     private:
       basic_pstreambuf(const basic_pstreambuf&);
       basic_pstreambuf& operator=(const basic_pstreambuf&);
+
+      void
+      init_rbuffers();
 
       pid_t         ppid_;        // pid of process
       fd_t          wpipe_;       // pipe used to write to process' stdin
@@ -578,7 +581,7 @@ namespace redi
        * @see   open(const std::string&, const std::vector<std::string>&, pmode)
        */
       basic_pstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
-      : iostream_type(NULL), pbase_type(command, argv, mode)
+      : iostream_type(NULL), pbase_type(file, argv, mode)
       {}
 
       /**
@@ -694,11 +697,7 @@ namespace redi
     , status_(-1)
     , error_(0)
     {
-      rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
-      take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
-#if BUFFERED
-      setp(NULL, NULL);
-#endif
+      init_rbuffers();
     }
 
   /**
@@ -718,11 +717,7 @@ namespace redi
     , status_(-1)
     , error_(0)
     {
-      rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
-      take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
-#if BUFFERED
-      setp(NULL, NULL);
-#endif
+      init_rbuffers();
       open(command, mode);
     }
 
@@ -744,11 +739,7 @@ namespace redi
     , status_(-1)
     , error_(0)
     {
-      rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
-      take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
-#if BUFFERED
-      setp(NULL, NULL);
-#endif
+      init_rbuffers();
       open(file, argv, mode);
     }
 
@@ -1102,6 +1093,21 @@ namespace redi
         }
       }
       return ret;
+    }
+
+
+  /**
+   *  Called on construction to initialise the arrays used for reading.
+   */
+  template <typename C, typename T>
+    inline void
+    basic_pstreambuf<C,T>::init_rbuffers()
+    {
+      rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
+#if BUFFERED
+#else
+      take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
+#endif
     }
 
 
