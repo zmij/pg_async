@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.31 2002/04/29 23:44:52 redi Exp $
+/* $Id: pstream.h,v 1.32 2002/05/15 01:27:47 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -811,9 +811,11 @@ namespace redi
       // For the pstreambuf pin is an output stream and
       // pout and perr are input streams.
 
-      if ( (mode&pstdin && ::pipe(pin)==0)
-          || (mode&pstdout && ::pipe(pout)==0)
-          || (mode&pstderr && ::pipe(perr)==0) )
+      bool pstdin_ok = (mode&pstdin && ::pipe(pin)==0);
+      bool pstdout_ok = (mode&pstdout && ::pipe(pout)==0);
+      bool pstderr_ok = (mode&pstderr && ::pipe(perr)==0);
+
+      if (pstdin_ok || pstdout_ok || pstderr_ok)
       {
         pid = ::fork();
         int error = errno;
