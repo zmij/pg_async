@@ -1,7 +1,7 @@
 
 <!-- start of included file -->
 
-<!-- $Id: mainpage.html,v 1.10 2004/04/30 18:39:12 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.11 2004/05/21 11:52:51 redi Exp $ -->
 
 <table width='100%'>
 <tbody>
@@ -77,7 +77,7 @@ rather than to/from files, this behaviour should be sufficient.</p>
 
 <p>&nbsp;</p>
 <h2><a name='usage'>Usage</a></h2>
-<p>Please refer to the doxygen-generated documentation,
+<p>Please refer to the doxygen-generated API documentation,
 accessible through the links at the top of the page.</p>
 <p>Using the PStreams classes is similar to using a <code>std::fstream</code>,
 except that a shell command is given rather than a filename:</p>
@@ -123,6 +123,22 @@ while (std::getline(in<strong>.err()</strong>, errmsg)) {
 </code></pre>
 <p>This form can also be used with the unrestricted <code>pstream</code>
 and <code>ipstream</code> classes, but it is not strictly necessary.</p>
+
+<p>Since the underlying streams controlled by the <code>pstreambuf</code>
+are pipes, seek operations will not succeed. <code>pstreambuf::seekoff()</code>
+and <code>pstreambuf::seekpos()</code> will always fail, even for what may
+seem like no-ops, such as seeking with an offset of zero relative to the
+current position. Because the streambuf operations aren't successful and
+return <code>off_type(-1)</code>, calling <code>std::istream::seekg()</code>
+or <code>std::ostream::seekp()</code> on a PStream object will cause
+<code>failbit</code> to be added to the stream state.
+Following this you will need to call <code>std::basic_ios::clear()</code>
+on the stream object to clear the stream state information before further
+I/O can take place.
+This behaviour is analogous to calling <code>std::fseek()</code> on a pipe,
+which always fails and sets <code>errno</code> to <code>ESPIPE</code>
+(<em>"Illegal seek"</em>).
+</p>
 
 <hr>
 <p>The latest version of PStreams can be found at
