@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.14 2002/01/08 03:41:27 redi Exp $
+/* $Id: pstream.h,v 1.15 2002/01/08 11:53:28 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAM_H
 
 /// The library version.
-#define PSTREAMS_VERSION 0x000e   // 0.14
+#define PSTREAMS_VERSION 0x000f   // 0.15
 
 // check whether to provide pstream
 // popen() needs to use bidirectional pipe
@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <streambuf>
 #include <string>
 #include <cstdio>
+#include <cerrno>
 
 // TODO add buffering to pstreambuf
 
@@ -268,24 +269,36 @@ namespace redi
     inline basic_pstreambuf<C,T>*
     basic_pstreambuf<C,T>::open( const std::string& command, std::ios_base::openmode mode )
     {
-      file_ = ::popen(command.c_str(), openmode2str(mode).c_str());
-      return is_open() ? this : NULL;
+      basic_pstreambuf<C,T>* ret = NULL;
+      if (!this->is_open())
+      {
+          file_ = ::popen(command.c_str(), openmode2str(mode).c_str());
+          if (this->is_open())
+              ret = this;
+      }
+      return ret;
     }
 
   /**
    * Waits for the associated process to finish and closes the pipe.
-   * @return pointer to self.
+   * @return pointer to self or @c NULL if @c pclose() fails.
    */
   template <typename C, typename T>
     inline basic_pstreambuf<C,T>*
     basic_pstreambuf<C,T>::close()
     {
+      basic_pstreambuf<C,T>* ret = NULL;
       if (this->is_open())
       {
+        errno = 0;
         ::pclose(file_);
-        file_ = 0;
+        if (errno==0)
+        {
+          ret = this;
+          file_ = 0;
+        }
       }
-      return this;
+      return ret;
     }
 
   /**
@@ -507,7 +520,8 @@ namespace redi
     inline void
     basic_ipstream<C,T>::open( const std::string& command, std::ios_base::openmode mode )
     {
-      buf_.open( (command_ = command), mode );
+      if (!buf_.open((command_=command), (mode|std::ios_base::in)))
+        this->setstate(std::ios_base::failbit);
     }
 
   /** Waits for the associated process to finish and closes the pipe. */
@@ -515,7 +529,8 @@ namespace redi
     inline void
     basic_ipstream<C,T>::close()
     {
-      buf_.close();
+      if (!buf_.close())
+        this->setstate(std::ios_base::failbit);
     }
 
   /**
@@ -590,7 +605,8 @@ namespace redi
     inline void
     basic_opstream<C,T>::open( const std::string& command, std::ios_base::openmode mode )
     {
-      buf_.open( (command_ = command), mode );
+      if (!buf_.open((command_=command), (mode|std::ios_base::out)))
+        this->setstate(std::ios_base::failbit);
     }
 
   /** Waits for the associated process to finish and closes the pipe. */
@@ -598,7 +614,8 @@ namespace redi
     inline void
     basic_opstream<C,T>::close()
     {
-      buf_.close();
+      if (!buf_.close())
+        this->setstate(std::ios_base::failbit);
     }
 
   /**
@@ -739,7 +756,8 @@ namespace redi
     inline void
     basic_pstream<C,T>::open(const std::string& command, std::ios_base::openmode mode)
     {
-      buf_.open( (command_ = command), mode );
+      if (!buf_.open((command_=command), mode))
+        this->setstate(std::ios_base::failbit);
     }
 
   /** Waits for the associated process to finish and closes the pipe. */
@@ -747,7 +765,8 @@ namespace redi
     inline void
     basic_pstream<C,T>::close()
     {
-      buf_.close();
+      if (!buf_.close())
+        this->setstate(std::ios_base::failbit);
     }
 
   /**
