@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.4 2001/12/15 17:44:24 redi Exp $
+/* $Id: pstream.h,v 1.5 2001/12/15 18:00:19 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001 Jonathan Wakely
 
@@ -56,7 +56,7 @@ N.B. The interface is slightly different for the non-ISO compliant pstreams.
 #ifndef REDI_PSTREAM_H
 #define REDI_PSTREAM_H
 
-#define PSTREAMS_VERSION 0x0002
+#define PSTREAMS_VERSION 0x000a   // 0.10
 
 #if __GNUC__ == 3
 # define ISO_COMPILER 1
