@@ -142,7 +142,7 @@ int main()
         // This should read the strings on stdin and print them on stdout
         // prefixed by "STDOUT: "
 
-        opstream os("sed 's/^/STDIN: /' - /etc/resolv.conf");
+        opstream os("cat - /etc/resolv.conf | sed 's/^/STDIN: /'");
         os << ".fnord.\n";
         str = "..fnord..\n";
         os << str << std::flush;
