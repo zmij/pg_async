@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.1 2001/12/15 19:36:52 redi Exp $
+# $Id: Makefile,v 1.2 2001/12/15 19:50:21 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -20,7 +20,7 @@
 
 CXX=g++3
 
-all: test TODO tarfile
+all: test distro
 
 test: testpstreams
 
@@ -28,13 +28,16 @@ testpstreams: test.cc pstream.h
 	$(CXX) $(CXXFLAGS) -o $@ $<
 	./$@
 
-tarfile: pstreams.tar.gz
+distro: pstreams.tar.gz
 
-pstreams.tar.gz: pstream.h pstreams.html COPYING TODO Makefile
+ChangeLog:
+	@cvs2cl.pl
+
+pstreams.tar.gz: pstream.h pstreams.html COPYING TODO Makefile ChangeLog
 	@tar czf $@ $^
 
 TODO : pstream.h test.cc Makefile
 	@grep -nH TODO pstream.h test.cc Makefile | sed -e 's@ *// *@@' > $@
 
-.PHONY: TODO test tarfile testpstreams
+.PHONY: TODO test testpstreams distro ChangeLog
 
