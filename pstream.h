@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.40 2002/08/27 19:47:51 redi Exp $
+/* $Id: pstream.h,v 1.41 2002/08/27 19:54:25 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -177,7 +177,7 @@ namespace redi
 
       /// Return the file descriptor for the specified input pipe.
       fd_t&
-      rpipe(enum buf_read_src which);
+      rpipe(buf_read_src which);
 
       /// Return the state of the active input buffer.
       bool&
