@@ -94,7 +94,7 @@ namespace  // anon
     bool
     check_pass(T const& s, bool expected = true)
     {
-        bool res = s.good() == expected;
+        const bool res = s.good() == expected;
         print_result(s, res);
         return res;
     }
@@ -220,12 +220,12 @@ int main()
 
     clog << "# Testing bidirectional PStreams\n";
 
-    pstreams::pmode all3streams =
+    const pstreams::pmode all3streams =
         pstreams::pstdin|pstreams::pstdout|pstreams::pstderr;
 
     {
         // test reading from bidirectional pstream
-        string cmd = "grep '^127' -- /etc/hosts /no/such/file -";
+        const string cmd = "grep '^127' -- /etc/hosts /no/such/file -";
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -248,7 +248,7 @@ int main()
     {
         // test input on bidirectional pstream
         // and test child moves onto next file after peof on stdin
-        string cmd = "grep fnord -- - /etc/hosts";
+        const string cmd = "grep fnord -- - /etc/hosts";
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -271,19 +271,20 @@ int main()
 
     {
         // test signals
-        string cmd = "grep 127 -- -";
+        const string cmd = "grep 127 -- -";
         pstream ps(cmd, all3streams);
 
         pstreambuf* pbuf = ps.rdbuf();
 
-        int e1 = pbuf->error();
+        const int e1 = pbuf->error();
         print_result(ps, e1 == 0);
         pbuf->kill(SIGTERM);
-        int e2 = pbuf->error();
+        const int e2 = pbuf->error();
         print_result(ps, e1 == e2);
 
         pbuf->close();
-        int e3 = pbuf->error();
+
+        const int e3 = pbuf->error();
         check_fail(ps << "127 fail 127\n");
         print_result(ps, e1 == e3);
     }
@@ -343,26 +344,26 @@ int main()
     clog << "# Testing other member functions\n";
 
     {
-        string cmd("grep re");
+        const string cmd("grep re");
         opstream s(cmd);
         print_result(s, cmd == s.command());
     }
 
     {
-        string cmd("grep re");
+        const string cmd("grep re");
         opstream s;
         s.open(cmd);
         print_result(s, cmd == s.command());
     }
 
     {
-        string cmd("/bin/ls");
+        const string cmd("/bin/ls");
         ipstream s(cmd);
         print_result(s, cmd == s.command());
     }
 
     {
-        string cmd("/bin/ls");
+        const string cmd("/bin/ls");
         ipstream s;
         s.open(cmd);
         print_result(s, cmd == s.command());
