@@ -2,20 +2,24 @@
 
 int main()
 {
+    using namespace redi;
+
     char c;
-    redi::ipstream who("whoami");
+    ipstream who("whoami");
     if (!(who >> c))
         return 1;
 
     redi::opstream cat("cat");
     if (!(cat << c))
-        return 1;
+        return 2;
 
     while (who >> c)
         cat << c;
 
     cat << '\n';
 
+    pstream fail("ghghghg", pstreambuf::pstderr);
+    
     return 0;
 }
 

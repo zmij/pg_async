@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE 1
 
 //#include "pstream_compat.h"
+
+// TODO test rpstream
+#define RPSTREAM 1
+
 #include "pstream.h"
 
 using namespace std;
@@ -96,6 +100,16 @@ int main()
         cat << "Hello, world!\n";
         str = "Hello, world!\n";
         cat << str;
+        check_pass(cat);
+    }
+
+    {
+        // test formatted output
+        vector<string> argv;
+        argv.push_back("cat");
+        argv.push_back("/etc/motd");
+        argv.push_back("/etc/issue");
+        opstream cat("cat", argv);
         check_pass(cat);
     }
 
@@ -197,6 +211,18 @@ int main()
         check_fail(ofail);
     }
 
+    {
+        // writing to bad cmd
+        vector<string> argv;
+        argv.push_back("cat");
+        argv.push_back("/etc/motd");
+        argv.push_back("/etc/issue");
+        ipstream ifail("hdhdhd", argv);
+        if (ifail >> str)
+            cout << "Read from bad process" << endl;
+        check_fail(ifail);
+    }
+    
     cerr << "# Testing behaviour with uninit'ed streams" << endl;
 
     {
