@@ -21,6 +21,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 // TODO test rpstream more
+// TODO test whether error_ cleared after successful open().
 
 // test for failures. test opening pstream with neither pstdin nor pstdout.
 // maybe set failbit if !(mode&(pstdin|pstdout|pstderr)) ?
@@ -375,6 +376,23 @@ int main()
     const string badcmd = "hgfhdgf 2>/dev/null";
 
     {
+        // check is_open() works 
+        ipstream is(badcmd);
+        // print_result(is, !is.is_open());  // XXX cannot pass this test!
+        print_result(is, is.rdbuf()->exited() && !is.is_open());
+    }
+
+    {
+        // check is_open() works 
+        pstreams::argv_type argv;
+        argv.push_back("hdhdhd");
+        argv.push_back("arg1");
+        argv.push_back("arg2");
+        ipstream ifail("hdhdhd", argv);
+        print_result(ifail, !ifail.is_open());
+    }
+
+    {
         // check eof() works 
         ipstream is(badcmd);
         print_result(is, is.get()==EOF);
@@ -403,7 +421,7 @@ int main()
         ipstream ifail("hdhdhd", argv);
         check_fail(ifail>>str);
     }
-    
+
     clog << "# Testing behaviour with uninit'ed streams" << endl;
 
     {
