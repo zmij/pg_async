@@ -157,7 +157,7 @@ int main()
         // This should read the strings on stdin and print them on stdout
         // prefixed by "STDIN: "
 
-        vector<string> argv;
+        pstreams::argv_type argv;
         argv.push_back("sed");
         argv.push_back("s/^/STDIN: /");
         opstream os("sed", argv);
@@ -388,7 +388,7 @@ int main()
 
     {
         // reading from bad cmd
-        vector<string> argv;
+        pstreams::argv_type argv;
         argv.push_back("hdhdhd");
         argv.push_back("arg1");
         argv.push_back("arg2");
