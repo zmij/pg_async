@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.23 2002/04/25 02:12:50 redi Exp $
+/* $Id: pstream.h,v 1.24 2002/04/26 01:16:47 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -372,7 +372,7 @@ namespace redi
        * @see open()
        */
       basic_opstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
-      : ostream_type(NULL), pbase_type(command, argv, mode)
+      : ostream_type(NULL), pbase_type(file, argv, mode)
       {}
 
       /**
@@ -1219,7 +1219,7 @@ namespace redi
     , command_()
     , buf_()
     {
-      this->init(&buf);
+      this->init(&buf_);
     }
 
   /**
