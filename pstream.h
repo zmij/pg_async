@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.70 2004/04/30 18:39:12 redi Exp $
+/* $Id: pstream.h,v 1.71 2004/06/10 11:32:58 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -136,7 +136,7 @@ namespace redi
       /// Change active input source.
       bool
       read_err(bool readerr = true);
-      
+
       /// Report whether the stream buffer has been initialised.
       bool
       is_open() const;
@@ -447,7 +447,7 @@ namespace redi
   /**
    * @class basic_opstream
    * @brief Class template for Output PStreams.
-   * 
+   *
    * Writing to an open opstream writes to the standard input of the command;
    * the command's standard output is the same as that of the process that
    * created the pstream object, unless altered by the command itself.
@@ -814,11 +814,11 @@ namespace redi
 
 
   /**
-   * When inserted into an ouput pstream the manipulator calls 
+   * When inserted into an ouput pstream the manipulator calls
    * basic_pstreambuf<C,T>::peof() to close the output pipe,
    * causing the child process to receive the End Of File indicator
    * on subsequent reads from its @c stdin stream.
-   * 
+   *
    * @brief   Manipulator to close the pipe connected to the process' stdin.
    * @param   s  An output PStream class.
    * @return  The stream object the manipulator was invoked on.
@@ -1057,7 +1057,7 @@ namespace redi
    * a new process. If the fork is successful the parent process stores
    * the child's PID and the opened pipes and the child process replaces
    * its standard streams with the opened pipes.
-   * 
+   *
    * If an error occurs the error code will be set to one of the possile
    * errors for @c pipe() or @c fork().
    * See your system's documentation for these error codes.
@@ -1194,6 +1194,7 @@ namespace redi
       if (is_open())
       {
         sync();
+
         destroy_buffers(pstdin|pstdout|pstderr);
 
         close_fd_array(&wpipe_, 1);
@@ -1333,7 +1334,7 @@ namespace redi
   /**
    * Sends the specified signal to the process.  A signal can be used to
    * terminate a child process that would not exit otherwise.
-   * 
+   *
    * If an error occurs the error code will be set to one of the possible
    * errors for @c kill().  See your system's documentation for these errors.
    *
@@ -1370,7 +1371,7 @@ namespace redi
 
   /**
    *  @return  The exit status of the child process, or -1 if close()
-   *          has not yet been called to wait for the child to exit.
+   *           has not yet been called to wait for the child to exit.
    *  @see     basic_pstreambuf<C,T>::close()
    */
   template <typename C, typename T>
@@ -1424,7 +1425,7 @@ namespace redi
    * @a readerr is false the the process' stdout will be used.
    * @param   readerr  @c true to read @c stderr, @c false to read @c stdout.
    * @return  @c true if the requested stream is open and will be used for
-   * subsequent extractions, @c false otherwise.
+   *          subsequent extractions, @c false otherwise.
    */
   template <typename C, typename T>
     inline bool
@@ -1444,10 +1445,10 @@ namespace redi
    * to transfer the buffer contents to the pipe. For unbuffered streams
    * this is called for every insertion.
    *
-   * @param   c  a character to be written to the pipe
+   * @param   c  a character to be written to the pipe.
    * @return  @c traits_type::not_eof(c) if @a c is equal to @c
-   * traits_type::eof(). Otherwise returns @a c if @a c can be written
-   * to the pipe, or @c traits_type::eof() if not.
+   *          traits_type::eof(). Otherwise returns @a c if @a c can be
+   *          written to the pipe, or @c traits_type::eof() if not.
    */
   template <typename C, typename T>
     typename basic_pstreambuf<C,T>::int_type
@@ -1690,7 +1691,7 @@ namespace redi
       this->init(&buf_);
       do_open(command, mode);
     }
-   
+
   /**
    * Initialises the stream buffer by calling open() with the supplied
    * arguments.
@@ -1844,7 +1845,7 @@ namespace redi
             open_files |= pstdin;
         }
       }
-      if (rpipe(rsrc_out) > -1) 
+      if (rpipe(rsrc_out) > -1)
       {
         if (out = ::fdopen(rpipe(rsrc_out), "r"))
         {
