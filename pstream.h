@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.73 2004/06/10 15:21:53 redi Exp $
+/* $Id: pstream.h,v 1.74 2004/06/10 23:57:29 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -46,6 +46,9 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <sys/wait.h>   // for waitpid()
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
 #include <signal.h>     // for kill()
+#if REDI_EVISCERATE_PSTREAMS
+#include <stdio.h>       // for FILE, fdopen()
+#endif
 
 
 /// The library version.
@@ -77,8 +80,8 @@ namespace redi
     static const pmode pstderr = std::ios_base::app; ///< Read from stderr
 
   protected:
-    static const size_t bufsz = 32; ///< Size of pstreambuf buffers.
-    static const size_t pbsz  = 2;  ///< Number of putback characters kept.
+    static const std::size_t bufsz = 32; ///< Size of pstreambuf buffers.
+    static const std::size_t pbsz  = 2;  ///< Number of putback characters kept.
   };
 
   /// Class template for stream buffer.
@@ -147,8 +150,8 @@ namespace redi
 
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
-      size_t
-      fopen(FILE*& in, FILE*& out, FILE*& err);
+      std::size_t
+      fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err);
 #endif
 
       /// Return the exit status of the process.
@@ -307,8 +310,8 @@ namespace redi
 
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
-      size_t
-      fopen(FILE*& in, FILE*& out, FILE*& err);
+      std::size_t
+      fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err);
 #endif
 
     protected:
@@ -814,7 +817,7 @@ namespace redi
 
 
   /**
-   * When inserted into an ouput pstream the manipulator calls
+   * When inserted into an output pstream the manipulator calls
    * basic_pstreambuf<C,T>::peof() to close the output pipe,
    * causing the child process to receive the End Of File indicator
    * on subsequent reads from its @c stdin stream.
@@ -1000,7 +1003,7 @@ namespace redi
             // this is the new process, exec command
 
             char** arg_v = new char*[argv.size()+1];
-            for (size_t i = 0; i < argv.size(); ++i)
+            for (std::size_t i = 0; i < argv.size(); ++i)
             {
               const std::string& src = argv[i];
               char*& dest = arg_v[i];
@@ -1044,9 +1047,9 @@ namespace redi
    * @relates basic_pstreambuf
    */
   inline void
-  close_fd_array(int* filedes, size_t count)
+  close_fd_array(int* filedes, std::size_t count)
   {
-    for (size_t i = 0; i < count; ++i)
+    for (std::size_t i = 0; i < count; ++i)
       if (filedes[i] >= 0)
         if (::close(filedes[i]) == 0)
           filedes[i] = -1;
@@ -1281,12 +1284,9 @@ namespace redi
     {
       if (rsrc_ != src)
       {
-        char_type* tmpbufstate[3];
-        tmpbufstate[0] = this->eback();
-        tmpbufstate[1] = this->gptr();
-        tmpbufstate[2] = this->egptr();
+        char_type* tmpbufstate[] = {this->eback(), this->gptr(), this->egptr()};
         this->setg(rbufstate_[0], rbufstate_[1], rbufstate_[2]);
-        for (size_t i = 0; i < 3; ++i)
+        for (std::size_t i = 0; i < 3; ++i)
           rbufstate_[i] = tmpbufstate[i];
         rsrc_ = src;
       }
@@ -1841,11 +1841,11 @@ namespace redi
    * @c !NULL by masking with the corresponding @c pmode value.
    */
   template <typename C, typename T>
-    size_t
-    basic_pstreambuf<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    std::size_t
+    basic_pstreambuf<C,T>::fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err)
     {
       in = out = err = NULL;
-      size_t open_files = 0;
+      std::size_t open_files = 0;
       if (wpipe() > -1)
       {
         if (in = ::fdopen(wpipe(), "w"))
@@ -1881,8 +1881,8 @@ namespace redi
    *  @see    basic_pstreambuf::fopen()
    */
   template <typename C, typename T>
-    inline size_t
-    pstream_common<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    inline std::size_t
+    pstream_common<C,T>::fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err)
     {
       return buf_.fopen(in, out, err);
     }
