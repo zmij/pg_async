@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.26 2002/04/27 14:58:29 redi Exp $
+/* $Id: pstream.h,v 1.27 2002/04/29 21:27:48 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -31,9 +31,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef REDI_PSTREAM_H
 #define REDI_PSTREAM_H
 
-/// The library version.
-#define PSTREAMS_VERSION 0x0022   // 0.34
-
 #include <ios>
 #include <streambuf>
 #include <istream>
@@ -42,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <vector>
 #include <cerrno>
+#include <cstring>
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
@@ -49,7 +47,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // TODO add buffering to pstreambuf
 
-// TODO add member to streambuf to expose a FILE* (comment to discourage use)
+
+/// The library version.
+#define PSTREAMS_VERSION 0x0023   // 0.35
 
 /// All PStreams classes are declared in namespace redi.
 namespace redi
@@ -141,9 +141,12 @@ namespace redi
       read(char_type* s, std::streamsize n);
 #endif
 
-    private:
+    protected:
       basic_pstreambuf(const basic_pstreambuf&);
       basic_pstreambuf& operator=(const basic_pstreambuf&);
+
+      /// Enumerated type to indicate whether stdout or stderr is to be read.
+      enum buf_read_src { rsrc_out = 0, rsrc_err = 1 };
 
       /// Initialise pipes and fork process.
       pid_t
@@ -157,6 +160,10 @@ namespace redi
       fd_t&
       rpipe();
 
+      /// Return the file descriptor for the specified input pipe.
+      fd_t&
+      rpipe(enum buf_read_src which);
+
       /// Return the state of the active input buffer.
       bool&
       take_from_buf();
@@ -169,13 +176,14 @@ namespace redi
       static void
       close_fd_array(fd_t* filedes, size_t count);
 
+    private:
       pid_t         ppid_;        // pid of process
       fd_t          wpipe_;       // pipe used to write to process' stdin
       fd_t          rpipe_[2];    // two pipes to read from, stdout and stderr
       char_type     char_buf_[2];
       bool          take_from_buf_[2];
       /// Index into rpipe_[] to indicate active source for read operations
-      enum { rsrc_out = 0, rsrc_err = 1 } rsrc_;
+      buf_read_src   rsrc_;
     };
 
   /// Class template for common base class.
@@ -185,6 +193,7 @@ namespace redi
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
 
     public:
+      /// Type used to specify how to connect to the process
       typedef typename streambuf_type::pmode        pmode;
 
       /// Default constructor.
@@ -246,6 +255,7 @@ namespace redi
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
+      /// Type used to specify how to connect to the process
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
@@ -340,6 +350,7 @@ namespace redi
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
+      /// Type used to specify how to connect to the process
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
@@ -451,6 +462,7 @@ namespace redi
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
+      /// Type used to specify how to connect to the process
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
@@ -651,8 +663,8 @@ namespace redi
 
             // can only reach this point if exec() failed
             int error = errno;
-            // TODO use exceptions, not cerr, don't #include <iostream>
-            std::cerr << "sh: " << strerror(error) << '\n';
+            // TODO use exceptions not cerr, don't #include iostream & cstring
+            std::cerr << "sh: " << std::strerror(error) << '\n';
 
             // parent can get exit code from waitpid()
             std::exit(error);
@@ -720,8 +732,8 @@ namespace redi
 
             // can only reach this point if exec() failed
             int error = errno;
-            // TODO use exceptions, not cerr, don't #include <iostream>
-            std::cerr << file << ": " << strerror(error) << '\n';
+            // TODO use exceptions not cerr, don't #include iostream & cstring
+            std::cerr << file << ": " << std::strerror(error) << '\n';
 
             // parent can get exit code from waitpid()
             std::exit(error);
@@ -809,8 +821,8 @@ namespace redi
           }
           case -1 :
           {
-            // TODO use exceptions, not cerr, don't #include <iostream>
-            std::cerr << "Cannot fork: " << strerror(error) << '\n';
+            // TODO use exceptions not cerr, don't #include iostream & cstring
+            std::cerr << "Cannot fork: " << std::strerror(error) << '\n';
             // couldn't fork for some reason, close any open pipes
             basic_pstreambuf<C,T>::close_fd_array(fd, 6);
             break;
