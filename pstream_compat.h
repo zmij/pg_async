@@ -1,4 +1,4 @@
-/* $Id: pstream_compat.h,v 1.2 2002/07/24 21:06:03 redi Exp $
+/* $Id: pstream_compat.h,v 1.3 2003/04/28 10:57:41 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -96,7 +96,7 @@ namespace redi
   class pstream :  protected pstreambase, public iostream {
     static const char * const MODE = "r+";
   public:
-    pstream() : pstreambase() { }
+    pstream() : pstreambase(MODE) { }
     pstream(const char* command) : pstreambase(command, MODE) { }
   };
 #endif
