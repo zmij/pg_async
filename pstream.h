@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.54 2003/02/27 17:35:58 redi Exp $
+/* $Id: pstream.h,v 1.55 2003/03/05 23:49:47 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -431,7 +431,7 @@ namespace redi
       basic_ipstream&
       out()
       {
-        buf_.read_err(false);
+        this->buf_.read_err(false);
         return *this;
       }
 
@@ -442,7 +442,7 @@ namespace redi
       basic_ipstream&
       err()
       {
-        buf_.read_err(true);
+        this->buf_.read_err(true);
         return *this;
       }
     };
@@ -633,7 +633,7 @@ namespace redi
       basic_pstream&
       out()
       {
-        buf_.read_err(false);
+        this->buf_.read_err(false);
         return *this;
       }
 
@@ -644,7 +644,7 @@ namespace redi
       basic_pstream&
       err()
       {
-        buf_.read_err(true);
+        this->buf_.read_err(true);
         return *this;
       }
     };
@@ -1632,8 +1632,8 @@ namespace redi
     , command_(file)
     , buf_()
     {
-      init(&buf_);
-      open(file, argv, mode);
+      this->init(&buf_);
+      this->open(file, argv, mode);
     }
 
   /**

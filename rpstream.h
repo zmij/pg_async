@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.9 2003/02/27 17:51:40 redi Exp $
+/* $Id: rpstream.h,v 1.10 2003/03/05 23:49:48 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -199,7 +199,7 @@ namespace redi
     inline typename basic_rpstream<C,T>::istream_type&
     basic_rpstream<C,T>::out()
     {
-      buf_.read_err(false);
+      this->buf_.read_err(false);
       return *this;
     }
 
@@ -210,7 +210,7 @@ namespace redi
     inline typename basic_rpstream<C,T>::istream_type&
     basic_rpstream<C,T>::err()
     {
-      buf_.read_err(true);
+      this->buf_.read_err(true);
       return *this;
     }
 
