@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.44 2002/09/14 02:54:50 redi Exp $
+/* $Id: pstream.h,v 1.45 2002/09/21 21:53:03 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -58,7 +58,8 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0027   // 0.39
+#define PSTREAMS_VERSION 0x0028   // 0.40
+
 
 /**
  *  @namespace redi
@@ -135,11 +136,9 @@ namespace redi
       bool
       is_open() const;
 
-#if PSTREAMS_WAIT
       /// Report whether the process has exited.
       bool
       exited();
-#endif
 
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
@@ -198,11 +197,9 @@ namespace redi
       pid_t
       fork(pmode mode);
 
-#if PSTREAMS_WAIT
       /// Wait for the child process to exit.
       int
       wait(bool nohang = false);
-#endif
 
       /// Return the file descriptor for the output pipe;
       fd_t&
@@ -775,7 +772,7 @@ namespace redi
           default :
           {
             // this is the parent process
-#if PSTREAMS_WAIT && 0
+#if 0
             // check process not exited already
             // very unlikely, since not enough time for shell to parse cmd!
 
@@ -857,7 +854,7 @@ namespace redi
           default :
           {
             // this is the parent process
-#if PSTREAMS_WAIT && 0
+#if 0
             // check process not exited already
             // very unlikely, since not enough time for shell to parse cmd!
 
@@ -1049,34 +1046,15 @@ namespace redi
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
 
-#if PSTREAMS_WAIT
         if (this->wait() == 1)
         {
           ret = this;
         }
-#else
-        int status = 0;
-        switch(::waitpid(ppid_, &status, 0))
-        {
-          case 0 :
-            // shouldn't happen
-            break;
-          case -1 :
-            error_ = errno;
-            break;
-          default:
-            ppid_ = 0;
-            status_ = status;
-            ret = this;
-            break;
-        }
-#endif
       }
       return ret;
     }
 
 
-#if PSTREAMS_WAIT
   /**
    * Suspends execution and waits for the associated process to exit, or
    * until a signal is delivered whose action is to terminate the current
@@ -1116,7 +1094,6 @@ namespace redi
       }
       return exited;
     }
-#endif
 
 
   /**
@@ -1149,7 +1126,6 @@ namespace redi
     }
 
 
-#if PSTREAMS_WAIT
   /**
    *  return  True if the associated process has exited, false otherwise.
    *  see     basic_pstreambuf<C,T>::close()
@@ -1161,7 +1137,6 @@ namespace redi
       // TODO  should close() if is_open() and has exited
       return this->wait(true)==1;
     }
-#endif
 
 
   /**
@@ -1437,8 +1412,6 @@ namespace redi
 
   /**
    * Writes up to @a n characters to the pipe from the buffer @a s.
-   * This currently only works for fixed width character encodings where
-   * each character uses sizeof(char_type) bytes.
    *
    * @param s character buffer.
    * @param n buffer length.
@@ -1453,8 +1426,6 @@ namespace redi
 
   /**
    * Reads up to @a n characters from the pipe to the buffer @a s.
-   * This currently only works for fixed width character encodings where
-   * each character uses sizeof(char_type) bytes.
    *
    * @param s character buffer.
    * @param n buffer length.
@@ -1507,7 +1478,6 @@ namespace redi
     {
       return char_buf_[rsrc_];
     }
-
 
   /*
    * member definitions for pstream_base
@@ -1733,7 +1703,7 @@ namespace redi
       return buf_.fopen(in, out, err);
     }
 
-#endif
+#endif // REDI_EVISCERATE_PSTREAMS
 
 
 } // namespace redi
