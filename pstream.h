@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.71 2004/06/10 11:32:58 redi Exp $
+/* $Id: pstream.h,v 1.72 2004/06/10 14:15:34 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -1178,7 +1178,7 @@ namespace redi
     }
 
   /**
-   * Closes all pipes and waits for the associated process to finish.
+   * Closes all pipes and calls wait() to wait for the process to finish.
    * If an error occurs the error code will be set to one of the possible
    * errors for @c waitpid().
    * See your system's documentation for these errors.
@@ -1197,6 +1197,7 @@ namespace redi
 
         destroy_buffers(pstdin|pstdout|pstderr);
 
+        // close pipes before wait() so child gets SIGPIPE if still writing
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
 
@@ -1324,7 +1325,9 @@ namespace redi
             ppid_ = 0;
             status_ = status;
             exited = 1;
-            // TODO  close pipes with close_fd_array() ?
+            destroy_buffers(pstdin|pstdout|pstderr);
+            close_fd_array(&wpipe_, 1);
+            close_fd_array(rpipe_, 2);
             break;
         }
       }
@@ -1351,7 +1354,10 @@ namespace redi
         if (::kill(ppid_, signal))
           error_ = errno;
         else
+        {
+          // TODO call exited() to check for exit and clean up? leave to user?
           ret = this;
+        }
       }
       return ret;
     }
@@ -1364,7 +1370,6 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::exited()
     {
-      // TODO  should close() if is_open() and has exited
       return wait(true)==1;
     }
 
@@ -1405,18 +1410,20 @@ namespace redi
     }
 
   /**
-   * @return  true if a previous call to open() succeeded and close()
-   *          has not been called successfully, false otherwise.
+   * @return  true if a previous call to open() succeeded and wait() has
+   *          not been called and determined that the process has exited,
+   *          false otherwise.
    * @warning This function can not be used to determine whether the
    *          command used to initialise the buffer was successfully
    *          executed or not. If the shell command failed this function
    *          will still return true.
+   *          You can use exited() to see if it's still open.
    */
   template <typename C, typename T>
     inline bool
     basic_pstreambuf<C,T>::is_open() const
     {
-      return bool(ppid_>0);
+      return ppid_ > 0;
     }
 
   /**
@@ -1467,7 +1474,7 @@ namespace redi
     int
     basic_pstreambuf<C,T>::sync()
     {
-      return empty_buffer() ? 0 : -1;
+      return !exited() && empty_buffer() ? 0 : -1;
     }
 
   /**
