@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.65 2004/03/23 13:09:14 redi Exp $
+/* $Id: pstream.h,v 1.66 2004/03/28 13:27:31 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -37,7 +37,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <ostream>
 #include <string>
 #include <vector>
-#include <algorithm>    // for std::min()
+#include <algorithm>    // for min()
 #include <cstring>      // for memcpy(), memmove() etc.
 #include <cerrno>       // for errno
 #include <cstddef>      // for size_t
@@ -48,17 +48,8 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <signal.h>     // for kill()
 
 
-// TODO   abstract process creation and control to a separate class.
-
-// TODO   capitalise class names ?
-// basic_pstreambuf -> BasicPStreamBuf
-// basic_opstream   -> BasicOPStream
-// basic_ipstream   -> BasicIPStream
-// basic_pstream    -> BasicPStream
-// basic_rpstream   -> BasicRPStream
-
 /// The library version.
-#define PSTREAMS_VERSION 0x002d   // 0.45
+#define PSTREAMS_VERSION 0x002e   // 0.46
 
 /**
  *  @namespace redi
@@ -86,8 +77,8 @@ namespace redi
     static const pmode pstderr = std::ios_base::app; ///< Read from stderr
 
   protected:
-    static const size_t bufsz = 32;
-    static const size_t pbsz  = 2;
+    static const size_t bufsz = 32; ///< Size of pstreambuf buffers.
+    static const size_t pbsz  = 2;  ///< Number of putback characters kept.
   };
 
   /// Class template for stream buffer.
@@ -185,6 +176,7 @@ namespace redi
       int
       sync();
 
+      /// Insert multiple characters into the pipe.
       std::streamsize
       xsputn(const char_type* s, std::streamsize n);
 
@@ -258,9 +250,9 @@ namespace redi
       pid_t         ppid_;        // pid of process
       fd_t          wpipe_;       // pipe used to write to process' stdin
       fd_t          rpipe_[2];    // two pipes to read from, stdout and stderr
-      char_type*                wbuffer_;
-      char_type*                rbuffer_[2];
-      char_type*                rbufstate_[3];
+      char_type*    wbuffer_;
+      char_type*    rbuffer_[2];
+      char_type*    rbufstate_[3];
       /// Index into rpipe_[] to indicate active source for read operations
       buf_read_src  rsrc_;
       int           status_;      // hold exit status of child process
@@ -773,11 +765,6 @@ namespace redi
    * @brief   Manipulator to close the pipe connected to the process' stdin.
    * @param   s  An output PStream class.
    * @return  The stream object the manipulator was invoked on.
-   * @warning The effect of this manipulator is undefined if it is used
-   *          with a stream object for which @c std::basic_ios<C,T>::rdbuf()
-   *          does not return a pointer to a pstreambuf. If unsure do not
-   *          use this manipulator and call basic_pstreambuf<C,T>::peof()
-   *          directly.
    * @see     basic_pstreambuf<C,T>::peof(), basic_pstream<C,T>::rdbuf(),
    *          basic_opstream<C,T>::rdbuf().
    * @relates basic_pstreambuf
@@ -786,8 +773,9 @@ namespace redi
     inline std::basic_ostream<C,T>&
     peof(std::basic_ostream<C,T>& s)
     {
-      static_cast<basic_pstreambuf<C,T>*>(s.rdbuf())->peof();
-      //dynamic_cast<basic_pstreambuf<C,T>*>(s.rdbuf())->peof();
+      typedef basic_pstreambuf<C,T> pstreambuf;
+      if (pstreambuf* p = dynamic_cast<pstreambuf*>(s.rdbuf()))
+        p->peof();
       return s;
     }
 
@@ -1078,9 +1066,9 @@ namespace redi
       // process' stdin, stdout and stderr
       // (stored in a single array so close_fd_array() can close all at once)
       fd_t fd[6] =  {-1, -1, -1, -1, -1, -1};
-      fd_t* pin = fd;
-      fd_t* pout = fd+2;
-      fd_t* perr = fd+4;
+      fd_t* const pin = fd;
+      fd_t* const pout = fd+2;
+      fd_t* const perr = fd+4;
 
       // constants for read/write ends of pipe
       const int RD = 0;
@@ -1472,10 +1460,15 @@ namespace redi
     int
     basic_pstreambuf<C,T>::sync()
     {
-      return (empty_buffer() ? 0 : -1);
+      return empty_buffer() ? 0 : -1;
     }
 
 
+  /**
+   * @param   s  character buffer.
+   * @param   n  buffer length.
+   * @return  the number of characters written.
+   */
   template <typename C, typename T>
     std::streamsize
     basic_pstreambuf<C,T>::xsputn(const char_type* s, std::streamsize n)
@@ -1601,7 +1594,7 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::write(char_type c)
     {
-      return (write(&c, 1) == 1);
+      return write(&c, 1) == 1;
     }
 
   /**
@@ -1615,7 +1608,7 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::read(char_type& c)
     {
-      return (read(&c, 1) == 1);
+      return read(&c, 1) == 1;
     }
 
   /**
@@ -1631,7 +1624,7 @@ namespace redi
     inline std::streamsize
     basic_pstreambuf<C,T>::write(char_type* s, std::streamsize n)
     {
-      return (wpipe() >= 0 ? ::write(wpipe(), s, n * sizeof(char_type)) : 0);
+      return wpipe() >= 0 ? ::write(wpipe(), s, n * sizeof(char_type)) : 0;
     }
 
   /**
@@ -1647,7 +1640,7 @@ namespace redi
     inline std::streamsize
     basic_pstreambuf<C,T>::read(char_type* s, std::streamsize n)
     {
-      return (rpipe() >= 0 ? ::read(rpipe(), s, n * sizeof(char_type)) : 0);
+      return rpipe() >= 0 ? ::read(rpipe(), s, n * sizeof(char_type)) : 0;
     }
 
 

@@ -2,6 +2,17 @@
 
 #include <iostream>
 
+// TODO   add input buffering to pstreambuf
+
+// TODO   abstract process creation and control to a process class.
+
+// TODO   capitalise class names ?
+// basic_pstreambuf -> BasicPStreamBuf
+// basic_opstream   -> BasicOPStream
+// basic_ipstream   -> BasicIPStream
+// basic_pstream    -> BasicPStream
+// basic_rpstream   -> BasicRPStream
+
 template class redi::basic_pstreambuf<char>;
 template class redi::pstream_common<char>;
 template class redi::basic_pstream<char>;
