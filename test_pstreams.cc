@@ -369,7 +369,7 @@ int main()
     clog << "# Testing writing to closed stream\n";
 
     {
-        opstream os("tr a-z A-Z | sed 's/^/STDIN: /'");
+        opstream os("tr '[:lower:]' '[:upper:]' | sed 's/^/STDIN: /'");
         os << "foo\n";
         os.close();
         if (os << "bar\n")
@@ -379,8 +379,8 @@ int main()
 
     clog << "# Testing restricted pstream\n";
     {
-        rpstream rs("tr a-z A-Z | sed 's/^/STDIN: /'");
-        rs << "big" << peof;
+        rpstream rs("tr '[:lower:]' '[:upper:]' | sed 's/^/STDIN: /'");
+        rs << "big\n" << peof;
         string s;
         check_pass(rs.out() >> s);
         print_result(rs, s.size()>0);
@@ -391,7 +391,7 @@ int main()
     clog << "# Testing eviscerated pstream\n";
 
     {
-        opstream os("tr a-z A-Z | sed 's/^/STDIN: /'");
+        opstream os("tr '[:lower:]' '[:upper:]' | sed 's/^/STDIN: /'");
         FILE *in, *out, *err;
         size_t res = os.fopen(in, out, err);
         print_result(os, res & pstreambuf::pstdin);
