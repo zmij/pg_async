@@ -254,7 +254,7 @@ int main()
     {
         // test reading from bidirectional pstream
 
-#ifdef __sun
+#if defined(__sun)
         // Solaris' grep doesn't like "--" and "-"
         const string cmd = "grep '^127' /etc/hosts /no/such/file /dev/stdin";
 #else
@@ -283,7 +283,7 @@ int main()
         // test input on bidirectional pstream
         // and test child moves onto next file after peof on stdin
 
-#ifdef __sun
+#if defined (__sun)
         // Solaris' grep doesn't like "--" and "-"
         const string cmd = "grep fnord /etc/hosts /dev/stdin";
 #else
@@ -392,7 +392,7 @@ int main()
         // check is_open() works 
         ipstream is(badcmd);
         // print_result(is, !is.is_open());  // XXX cannot pass this test!
-#ifdef __sun
+#if defined (__sun) || defined(__APPLE__)
         // fail next test if OS slow to terminate child process, need sleep(1)
         sleep(1);
 #endif
@@ -625,6 +625,9 @@ int main()
     // TODO repeat tests for vector open()
 
     {
+        const int next_fd = dup(0);
+        ::close(next_fd);
+
         ipstream in("hostname");
 
         ::sleep(3);  // wait for process to exit
@@ -632,21 +635,24 @@ int main()
         in.rdbuf()->exited();  // test for exit, destroy buffers
 
         // check no open files except for stdin, stdout, stderr
-        int next_fd = dup(0);
-        print_result(in, next_fd == 3);
-        ::close(next_fd);
+        int fd = dup(0);
+        print_result(in, next_fd == fd);
+        ::close(fd);
     }
 
     {
+        const int next_fd = dup(0);
+        ::close(next_fd);
+
         pstream p("cat", all3streams);
 
         ::sleep(3);  // wait for process to exit
         p.rdbuf()->exited();  // test for exit, destroy buffers
 
         // check no open files except for stdin, stdout, stderr
-        int next_fd = dup(0);
-        print_result(p, next_fd == 3);
-        ::close(next_fd);
+        int fd = dup(0);
+        print_result(p, next_fd == fd);
+        ::close(fd);
 
         // now close and reopen and check again
 
@@ -656,9 +662,9 @@ int main()
         ::sleep(3);  // wait for process to exit
         p.rdbuf()->exited();  // test for exit, destroy buffers
 
-        next_fd = dup(0);
-        print_result(p, next_fd == 3);
-        ::close(next_fd);
+        fd = dup(0);
+        print_result(p, next_fd == fd);
+        ::close(fd);
     }
 
     return 0;
