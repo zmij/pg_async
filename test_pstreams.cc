@@ -426,7 +426,7 @@ int main()
         print_result(is, out!=NULL);
         print_result(is, err!=NULL);
 
-        size_t len = 256;
+        const size_t len = 256;
         char buf[len];
         char* p = fgets(buf, len, out);
         cout << "STDOUT: " << buf;
