@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.17 2002/01/13 05:01:16 redi Exp $
+/* $Id: pstream.h,v 1.18 2002/01/28 02:41:36 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -73,6 +73,12 @@ namespace redi
     class basic_pstreambuf : public std::basic_streambuf<CharT, Traits>
     {
     public:
+      typedef CharT                             char_type;
+      typedef Traits                            traits_type;
+      typedef typename traits_type::int_type    int_type;
+      typedef typename traits_type::off_type    off_type;
+      typedef typename traits_type::pos_type    pos_type;
+
       /// Default constructor.
       basic_pstreambuf();
 
