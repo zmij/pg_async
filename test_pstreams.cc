@@ -51,22 +51,37 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 using namespace std;
 using namespace redi;
 
+// explicit instantiations of template classes
+// for some reason these must be fully qualified, even with using directive ?
+template class redi::pstreambuf;
+template class redi::ipstream;
+template class redi::opstream;
+template class redi::pstream;
+#if TEST_RPSTREAM
+template class redi::rpstream;
+#endif
 
 namespace  // anon
 {
     // helper functions for printing test results
 
-    string
+    char
     test_type(const istream& s)
-    { return "r"; }
+    { return 'r'; }
 
-    string
+    char
     test_type(const ostream& s)
-    { return "w"; }
+    { return 'w'; }
 
-    string
+    char
     test_type(const iostream& s)
-    { return "b"; }
+    { return 'b'; }
+
+#if TEST_RPSTREAM
+    char
+    test_type(const rpstream& s)
+    { return 'x'; }
+#endif
 
     template <typename T>
     string
@@ -365,6 +380,18 @@ int main()
             cout << "Wrote to closed stream" << endl;
         check_fail(os << "bar\n");
     }
+
+#if TEST_RPSTREAM
+    clog << "# Testing restricted pstream\n";
+    {
+        rpstream rs("tr a-z A-Z | sed 's/^/STDIN: /'");
+        rs << "big" << peof;
+        string s;
+        check_pass(rs.out() >> s);
+        print_result(rs, s.size()>0);
+        cout << "STDOUT: " << s << endl;
+    }
+#endif
 
 #if REDI_EVISCERATE_PSTREAMS
     clog << "# Testing eviscerated pstream\n";
