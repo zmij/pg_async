@@ -1,7 +1,7 @@
 
 <!-- start of included file -->
 
-<!-- $Id: mainpage.html,v 1.5 2002/10/22 01:03:22 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.6 2002/11/08 02:53:04 redi Exp $ -->
 
 <table width='100%'>
 <tbody>
@@ -46,27 +46,27 @@ kill or otherwise control it.</li>
 
 <p>&nbsp;</p>
 <h2><a name='status'>Current status</a></h2>
-<p>Version 0.41</p>
+<p>Version 0.42</p>
 <p>Working <code>ipstream</code> and <code>opstream</code> classes for
-ISO C++-compliant compilers.
-The stream buffer class, <code>pstreambuf</code>, doesn't use
+ISO C++-compliant compilers. The classes are fully functional and the
+public interfaces should be stable for all except the <code>pstreambuf</code>
+class, which may be extended to add new features.</p>
+<p>The stream buffer class, <code>pstreambuf</code>, doesn't use
 <code>popen()</code>. It uses up to three
 pipes shared with the associated process, giving access to any combination
 of the process' <code>stdin</code>, <code>stdout</code> and <code>stderr</code>
-streams.</p>
+streams. I/O operations on these pipes are buffered to avoid making a
+system call for every character written or read.</p>
 <p>Another class, <code>rpstream</code> (Restricted PStream) is similar to
 <code>pstream</code> except that the child process' <code>stdout</code>
-and/or <code>stderr</code> cannot be read directly from an
+and <code>stderr</code> cannot be read directly from an
 <code>rpstream</code>. To read from the process you must call either
 <code>rpstream::out()</code> or <code>rpstream::err()</code> to obtain a
 reference to an <code>istream</code> that reads from the process' 
 corresponding output stream. This class is not as well tested as the others
 (i.e. it's hardly tested at all).</p>
-<p>The PStreams classes do not currently do any buffering.
-This means that a call to <code>write(2)</code> or <code>read(2)</code>
-is made for every character, I doubt this is very efficient!</p>
 <p>No code-conversion is performed on multi-byte character streams.
-It should be possible to use the PStream classes templatized with character
+It should be possible to use the PStreams classes templatized with character
 types other than <code>char</code> (e.g. <code>basic_pstream&lt;int&gt;</code>)
 but note that characters are transfered in a bytewise manner, so it is the
 programmer's responsibility to interpret the resulting character strings.
