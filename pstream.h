@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.67 2004/04/08 13:48:46 redi Exp $
+/* $Id: pstream.h,v 1.68 2004/04/30 11:47:51 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -69,7 +69,7 @@ namespace redi
   /// Common base class providing constants and typenames.
   struct pstreams
   {
-    /// Type used to specify how to connect to the process
+    /// Type used to specify how to connect to the process.
     typedef std::ios_base::openmode           pmode;
 
     static const pmode pstdin  = std::ios_base::out; ///< Write to stdin
@@ -94,7 +94,7 @@ namespace redi
       typedef typename traits_type::int_type    int_type;
       typedef typename traits_type::off_type    off_type;
       typedef typename traits_type::pos_type    pos_type;
-      /// Type used for file descriptors
+      /// Type used for file descriptors.
       typedef int                               fd_t;
 
       /// Default constructor.
@@ -103,7 +103,7 @@ namespace redi
       /// Constructor that initialises the buffer with @a command.
       basic_pstreambuf(const std::string& command, pmode mode);
 
-      /// Constructor that initialises the buffer with @a file and @a argv..
+      /// Constructor that initialises the buffer with @a file and @a argv.
       basic_pstreambuf( const std::string& file,
                         const std::vector<std::string>& argv,
                         pmode mode );
@@ -200,11 +200,11 @@ namespace redi
       int
       wait(bool nohang = false);
 
-      /// Return the file descriptor for the output pipe;
+      /// Return the file descriptor for the output pipe.
       fd_t&
       wpipe();
 
-      /// Return the file descriptor for the active input pipe
+      /// Return the file descriptor for the active input pipe.
       fd_t&
       rpipe();
 
@@ -218,14 +218,14 @@ namespace redi
       void
       destroy_buffers(pmode mode);
 
-      /// Writes buffered characters to the process' stdin pipe..
+      /// Writes buffered characters to the process' stdin pipe.
       bool
       empty_buffer();
 
       bool
       fill_buffer();
 
-      /// Return the active input buffer
+      /// Return the active input buffer.
       char_type*
       rbuffer();
 
@@ -245,7 +245,7 @@ namespace redi
       char_type*    wbuffer_;
       char_type*    rbuffer_[2];
       char_type*    rbufstate_[3];
-      /// Index into rpipe_[] to indicate active source for read operations
+      /// Index into rpipe_[] to indicate active source for read operations.
       buf_read_src  rsrc_;
       int           status_;      // hold exit status of child process
       int           error_;       // hold errno if fork() or exec() fails
@@ -260,7 +260,7 @@ namespace redi
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
 
-      /// Type used to specify how to connect to the process
+      /// Type used to specify how to connect to the process.
       typedef typename streambuf_type::pmode        pmode;
 
       /// Default constructor.
@@ -274,7 +274,7 @@ namespace redi
                       const std::vector<std::string>& argv,
                       pmode mode );
 
-      /// Pure virtual destructor
+      /// Pure virtual destructor.
       virtual
       ~pstream_common() = 0;
 
@@ -301,7 +301,7 @@ namespace redi
       const std::string&
       command() const;
 
-      /// Return a pointer to the stream buffer
+      /// Return a pointer to the stream buffer.
       streambuf_type*
       rdbuf() const;
 
@@ -338,7 +338,7 @@ namespace redi
       using pbase_type::buf_;  // declare name in this scope
 
     public:
-      /// Type used to specify how to connect to the process
+      /// Type used to specify how to connect to the process.
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
@@ -378,7 +378,7 @@ namespace redi
       { }
 
       /**
-       * @brief Destructor
+       * @brief Destructor.
        *
        * Closes the stream and waits for the child to exit.
        */
@@ -464,7 +464,7 @@ namespace redi
       using pbase_type::buf_;  // declare name in this scope
 
     public:
-      /// Type used to specify how to connect to the process
+      /// Type used to specify how to connect to the process.
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
@@ -564,7 +564,7 @@ namespace redi
       using pbase_type::buf_;  // declare name in this scope
 
     public:
-      /// Type used to specify how to connect to the process
+      /// Type used to specify how to connect to the process.
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
@@ -697,7 +697,7 @@ namespace redi
       using pbase_type::buf_;  // declare name in this scope
 
     public:
-      /// Type used to specify how to connect to the process
+      /// Type used to specify how to connect to the process.
       typedef typename pbase_type::pmode            pmode;
 
       /// Default constructor, creates an uninitialised stream.
