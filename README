@@ -44,19 +44,16 @@ details of the PStreams classes. If the macro REDI_EVISCERATE_PSTREAMS has
 a non-zero value then the following public method is added to each stream
 class:
 
-pmode fopen(int& in, int& out, int& err);
+pmode fopen(FILE*& in, FILE*& out, FILE*& err);
 
-    Obtains file descriptors relating to each open pipe to the process and
-    assigns them to the corresponding int parameters.
+    Obtains FILE pointers relating to each open pipe to the process and
+    assigns them to the corresponding FILE* parameters.
 
 These functions should be used with caution because mixing C++ and C I/O
 on the same stream may cause problems. The caller should be aware of the
-issues involved in using the stream buffer's file descriptors directly and
-should take care of flushing etc.
-Note that it is not possible to use fdopen() to obtain a FILE* from these
-file descriptors, since they are associated with pipes, which do not permit
-the seek operations that are attempted by fdopen().
+issues involved in using the stream buffer's FILE pointer (see your system's
+docs for the fdopen() function that is used by the pstreambuf).
 
 
-$Id: README,v 1.3 2002/08/27 02:07:35 redi Exp $
+$Id: README,v 1.4 2002/08/27 19:43:01 redi Exp $
 

@@ -290,12 +290,36 @@ int main()
 
     {
         opstream os("sed 's/.*/FNORD/'");
-        int in, out, err;
+        FILE *in, *out, *err;
         size_t res = os.fopen(in, out, err);
         print_result(os, res & pstreambuf::pstdin);
-        print_result(os, in>=0);
-        print_result(os, write(in, "flax", 4)==4);
+        print_result(os, in!=NULL);
+        int i = fputs("flax\n", in);
+        fflush(in);
+        print_result(os, i>=0 && i!=EOF);
     }
+
+    {
+        string cmd = "ls /etc/motd /no/such/file";
+        ipstream is(cmd, pstreambuf::pstdout|pstreambuf::pstderr);
+        FILE *in, *out, *err;
+        size_t res = is.fopen(in, out, err);
+        print_result(is, res & pstreambuf::pstdout);
+        print_result(is, res & pstreambuf::pstderr);
+        print_result(is, out!=NULL);
+        print_result(is, err!=NULL);
+
+        size_t len = 256;
+        char buf[len];
+        char* p = fgets(buf, len, out);
+        cout << "OUTPUT: " << buf;
+        print_result(is, p!=NULL);
+
+        p = fgets(buf, len, err);
+        cout << "ERROR: " << buf;
+        print_result(is, p!=NULL);
+    }
+
 #endif
     
 #if 0
