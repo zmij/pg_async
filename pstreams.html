@@ -1,18 +1,18 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN"
-        "http://www.w3.org/TR/REC-html40/strict.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 <html>
 <head>
+  <!-- $Id: pstreams.html,v 1.2 2001/12/13 03:27:03 redi Exp $ -->
   <title>Redi PStreams Library</title>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <style type='text/css'>
     .footer { font-style: italic; font-size: smaller; }
     .note { font-style: italic; font-size: smaller; }
   </style>
-  <!-- $Id: pstreams.html,v 1.1 2001/12/13 00:39:16 redi Exp $ -->
 </head>
 <body>
 <a name='top'></a>
 <table width='100%'>
+<tbody>
 <tr>
 <td>
 <h1>PStreams Library</h1>
@@ -22,10 +22,11 @@
 <img src='images/pstreams1.png' alt='' border='0' align='right'>
 </td>
 </tr>
+</tbody>
 </table>
 <p>The library is a work in progress. When (or rather, if) finished it will
 provide a C++ interface to the POSIX.2 functions <code>popen(3)</code> and
-<code>pclose(3)</code>,<sup><a href='#footnote1'>[1]</a></sup>
+<code>pclose(3)</code>,<a href='#footnote1' class='ref'>[1]</a>
 using IOStreams to read from or write to the opened process.</p>
 <p>The inspiration for this project came from seeing a
 <!-- a href='http://gcc.gnu.org/ml/libstdc++/2001-11/msg00107.html' -->message<!-- /a -->
@@ -39,7 +40,7 @@ write a solution that would work with standard-conforming C++ libraries.
 streams and relied on <a href='http://gcc.gnu.org/'>GCC</a>-specific
 libraries.)</p>
 <p>My aim is to provide class templates in the style of the standard IOStreams
-that can be used with any standard conforming compiler on a POSIX platform.
+that can be used with any standard-conforming compiler on a POSIX platform.
 This will involve writing a <code>streambuf</code> class that uses the
 <code>FILE*</code> returned by <code>popen()</code>.
 This may take me a while, so initially the library will only work
@@ -49,11 +50,11 @@ character traits or wide characters.</p>
 <a href='http://www.gnu.org/licenses/gpl.txt'>General Public License</a>
 <p>&nbsp;</p>
 <h2><a name='status'>Current status</a></h2>
-<p>Version 0.01</p>
+<p>Version 0.02</p>
 <p>Functional <code>ipstream</code> and <code>opstream</code>
-classes for GCC &lt; v3 (libg++)<br />The classes simply inherit from
+classes for GCC &lt; v3 (libg++)<br />The classes are implemented using
 <code>fstream</code> and provide no more functionality than the
-<code>pfstream</code> classes provided with GCC 2.95.
+<code>pfstream</code> classes provided with libg++.
 <br />These classes rely on non-standard extensions found in the old streams
 (such as attaching an <code>fstream</code>'s buffer to a file descriptor with
 <code>fstreambase::attach(int fd)</code>).</p>
@@ -61,17 +62,62 @@ classes for GCC &lt; v3 (libg++)<br />The classes simply inherit from
 currently sets <code>errno</code> to <code>ESPIPE</code> because the
 <code>fstreambase</code> tries to seek to the end of the stream, which
 is not allowed for pipes. <code>errno</code> is reset by the classes.</p>
-<p>There is no class that allows both reading from and writing to the
-pipe because most implementations of <code>popen()</code> do not allow
-this (FreeBSD's implementation uses a bidirectional pipe, so I might add
-a <code>pstream</code> class for systems that support it.)</p>
+<p>For systems known to use a bidirectional pipe to implement
+<code>popen()</code> there is a <code>pstream</code> class that allows
+both reading from and writing to the
+pipe.<a href='#footnote2' class='ref'>[2]</a></p>
+<p>&nbsp;</p>
+<h2><a name='usage'>Usage</a></h2>
+<p>The PStreams classes have a common public interface.
+<code>ipstream</code> is shown here, but <code>opstream</code> is the same
+(as is <code>pstream</code> where available).</p>
+<pre><code>
+class ipstream {
+public:
+    ipstream();
+    ipstream(const char* command);
+    void open(const char* command);
+};
+</code>
+<code>ipstream();</code>
+    Creates a new object with no associated process.
+
+<code>ipstream(const char* command);</code>
+    Passes command to /bin/sh and opens a pipe to the new process.
+
+<code>void open(const char* command);</code>
+     Passes command to /bin/sh and opens a pipe to the new process.
+</pre>
+<p>The  command  argument  is  a pointer to a null-terminated
+string containing a shell command line.  This  command  is
+passed  to  /bin/sh  using the -c flag; interpretation, if
+any, is performed by the shell.</p>
+<p>Using the PStreams classes is similar to using a <code>std::fstream</code>,
+except that a shell command is given rather than a filename:</p>
+<pre><code>
+// print names of all header files in current directory
+redi::ipstream in("/bin/ls ./*.h");
+std::string str;
+while (in &gt;&gt; str) {
+    std::cout &lt;&lt; str &lt;&lt; std::endl;
+}
+</code></pre>
+<p>Note that output PStreams are fully buffered by default.</p>
+
 <p>&nbsp;</p>
 <h2><a name='download'>Download</a></h2>
 <p>The "library" currently consists of a single header file,
-<a href='pstream.h'>pstream.h</a>, which defines the classes
-<code>ipstream</code> and <code>opstream</code> in the <code>redi</code>
-namespace. Simply download the header and include it in your own
-applications.</p>
+<a href='pstream.h'>pstream.h</a>, which defines the PStreams classes
+in the <code>redi</code> namespace.</p>
+<!--
+<p>The "library" currently consists of a single header file,
+<a href='pstream.h'>pstream.h</a>, which defines the PStreams classes
+in the <code>redi</code> namespace, and
+<a href='pstreamconf.h'>pstreamconf.h</a> which is used by pstream.h
+to set some macros. pstreamconf.h should not be included directly.
+<p>You can download the library as a gzipped tar file:
+<a href='pstreams.tar.gz'>pstreams.tar.gz</a></p>
+-->
 <p><a href='#top'>top</a></p>
 <hr>
 <p class='note'><a name='footnote1'>[1]</a> Implementations of
@@ -82,13 +128,17 @@ Check your local documentation for details of return types and errors.
 The 4.3 BSD implementation seems to be fairly typical, you can read the
 <a href='http://www.freebsd.org/cgi/man.cgi?query=popen&apropos=0&sektion=3&manpath=4.3BSD+NET%2F2&format=html'>man page</a>
 at www.FreeBSD.org</p>
+<p class='note'><a name='footnote2'>[2]</a> The <code>pstream</code> class
+is currently available on FreeBSD version 3 and above and
+NetBSD version 1.4 and above.</p>
 <p><a href='#top'>top</a></p>
 <hr>
 <div class='footer'>
 <p>Please send comments, suggestions, bugfixes, patches, cakes, pies etc. to
 pstreams&nbsp;at&nbsp;redi&nbsp;dot&nbsp;uklinux&nbsp;dot&nbsp;net
-<br />Last updated $Date: 2001/12/13 00:39:16 $
+<br />This page last updated on $Date: 2001/12/13 03:27:03 $
 <br />Copyright &copy; 2001 Jonathan Wakely</p>
 </div>
 </body>
 </html>
+
