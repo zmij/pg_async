@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.82 2004/10/03 04:56:43 redi Exp $
+/* $Id: pstream.h,v 1.83 2004/10/03 05:01:40 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -952,7 +952,7 @@ namespace redi
    * @param   mode     a bitwise OR of one or more of @c out, @c in, @c err.
    * @return  NULL if the shell could not be started or the
    *          pipes could not be opened, @c this otherwise.
-   * @see execlp(3)
+   * @see     execlp(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
@@ -1006,7 +1006,7 @@ namespace redi
    * @param   mode  a bitwise OR of one or more of @c out, @c in and @c err.
    * @return  NULL if a pipe could not be opened or if the program could
    *          not be executed, @c this otherwise.
-   * @see execvp(3)
+   * @see     execvp(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
