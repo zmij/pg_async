@@ -2,12 +2,12 @@
 
 #include <iostream>
 
-template class redi::pstreambuf;
+template class redi::basic_pstreambuf<char>;
 template class redi::pstream_common<char>;
-template class redi::pstream;
-template class redi::ipstream;
-template class redi::opstream;
-template class redi::rpstream;
+template class redi::basic_pstream<char>;
+template class redi::basic_ipstream<char>;
+template class redi::basic_opstream<char>;
+template class redi::basic_rpstream<char>;
 
 int main()
 {
