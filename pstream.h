@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.5 2001/12/15 18:00:19 redi Exp $
+/* $Id: pstream.h,v 1.6 2001/12/15 19:03:58 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001 Jonathan Wakely
 
@@ -56,11 +56,7 @@ N.B. The interface is slightly different for the non-ISO compliant pstreams.
 #ifndef REDI_PSTREAM_H
 #define REDI_PSTREAM_H
 
-#define PSTREAMS_VERSION 0x000a   // 0.10
-
-#if __GNUC__ == 3
-# define ISO_COMPILER 1
-#endif
+#define PSTREAMS_VERSION 0x000b   // 0.11
 
 // check whether to provide pstream
 // popen() needs to use bidirectional pipe
@@ -70,7 +66,7 @@ N.B. The interface is slightly different for the non-ISO compliant pstreams.
 # define REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE 1
 #endif
 
-#if ISO_COMPILER
+#if ! ( BACK_COMPAT == 1 || GCC_BACK_COMPAT == 1 )
 
 #include <ios>
 #include <streambuf>
@@ -79,6 +75,8 @@ N.B. The interface is slightly different for the non-ISO compliant pstreams.
 
 namespace redi
 {
+// TODO comment code better
+
   template <typename CharT, typename Traits>
     class basic_pstreambuf : public std::basic_streambuf<CharT, Traits>
     {
@@ -141,9 +139,6 @@ namespace redi
       FILE* file_;
       char_type char_buf_;
       bool take_from_buf_;
-
-      // openmodes that pstreambuf honours
-      static const ios_base::openmode MODE_MASK = (ios_base::in|ios_base::out);
     };
 
   template <typename CharT, typename Traits = std::char_traits<CharT> >
@@ -372,10 +367,11 @@ namespace redi
 
   // TODO extend this to handle all modes and make non-member ?
   template <typename C, typename T>
-    inline std::string
+    std::string
     basic_pstreambuf<C,T>::openmode2str(std::ios_base::openmode mode)
     {
-      mode &= MODE_MASK;
+      // restrict to the openmodes that pstreambuf honours
+      mode &= (ios_base::in|ios_base::out);
       if (mode == ios_base::in)
         return "r";
       else if (mode == ios_base::out)
@@ -388,8 +384,11 @@ namespace redi
 
 } // namespace redi
 
-#elif __GNUC__ == 2 && __GNUC_MINOR__ >= 7   // ! ISO_COMPILER
+#elif GCC_BACK_COMPAT == 1
 // gcc 2.7 / 2.8 / 2.9x
+//#elif __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+
+#warning "PStreams needs an ISO C++ compliant compiler"
 
 // turn on non-standard extensions
 #define _STREAM_COMPAT 1
@@ -451,9 +450,9 @@ namespace redi
 
 }  // namespace redi
 
-#else  // ! ( ISO_COMPILER || __GNUC__ )
+#elif BACK_COMPAT == 1
 
-#warning "PStreams needs an ISO C++ compliant compiler"
+#warning "PStreams needs an ISO C++ compliant compiler!"
 
 #include <fstream>
 #include <cstdio>
