@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.53 2003/02/27 17:29:42 redi Exp $
+/* $Id: pstream.h,v 1.54 2003/02/27 17:35:58 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -1664,7 +1664,7 @@ namespace redi
     pstream_common<C,T>::open(const std::string& command, pmode mode)
     {
       if (!buf_.open((command_=command), mode))
-        setstate(std::ios_base::failbit);
+        this->setstate(std::ios_base::failbit);
     }
 
   /**
@@ -1681,7 +1681,7 @@ namespace redi
     pstream_common<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     {
       if (!buf_.open((command_=file), argv, mode))
-        setstate(std::ios_base::failbit);
+        this->setstate(std::ios_base::failbit);
     }
 
   /** Waits for the associated process to finish and closes the pipe. */
@@ -1690,7 +1690,7 @@ namespace redi
     pstream_common<C,T>::close()
     {
       if (!buf_.close())
-        setstate(std::ios_base::failbit);
+        this->setstate(std::ios_base::failbit);
     }
 
   /**
