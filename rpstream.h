@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.5 2002/09/21 21:44:54 redi Exp $
+/* $Id: rpstream.h,v 1.6 2002/10/22 00:40:03 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -156,7 +156,7 @@ namespace redi
     basic_rpstream<C,T>::basic_rpstream(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     : ostream_type(NULL)
     , istream_type(NULL)
-    , pbase_type(command, argv, mode)
+    , pbase_type(file, argv, mode)
     {
       this->init(&buf_);
     }
