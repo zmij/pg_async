@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.88 2004/10/21 00:17:09 redi Exp $
+/* $Id: pstream.h,v 1.89 2005/03/16 02:12:16 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -190,7 +190,7 @@ namespace redi
 
       /// Insert a sequence of characters into the pipe.
       std::streamsize
-      write(char_type* s, std::streamsize n);
+      write(const char_type* s, std::streamsize n);
 
       /// Extract a sequence of characters from the pipe.
       std::streamsize
@@ -1686,7 +1686,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline std::streamsize
-    basic_pstreambuf<C,T>::write(char_type* s, std::streamsize n)
+    basic_pstreambuf<C,T>::write(const char_type* s, std::streamsize n)
     {
       return wpipe() >= 0 ? ::write(wpipe(), s, n * sizeof(char_type)) : 0;
     }
