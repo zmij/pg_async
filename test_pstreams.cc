@@ -34,8 +34,11 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 //#include "pstream_compat.h"
 
-// TODO test rpstream
+// TODO test rpstream - this does nothing for the moment
 #define RPSTREAM 1
+
+// test eviscerated pstreams
+#define REDI_EVISCERATE_PSTREAMS 1
 
 #include "pstream.h"
 
@@ -282,7 +285,18 @@ int main()
         print_result(os, !(os << "bar\n"));
     }
 
+#if REDI_EVISCERATE_PSTREAMS
+    cerr << "Testing eviscerated pstream\n";
 
+    {
+        opstream os("cat");
+        FILE *in, *out, *err;
+        size_t res = os.fopen(in, out, err);
+        print_result(os, res & pstreambuf::pstdin);
+        print_result(os, in!=NULL);
+    }
+#endif
+    
 #if 0
 
 #ifdef _STREAM_COMPAT
