@@ -40,7 +40,7 @@ Signalling and Termination
 The pstreambuf class now provides a kill(int) member function which is
 similar to the C library call and allows signals to be sent to the child.
 The stream buffer class also provides an exited() member which will return
-true if the child process has terinated, and a status() member which returns
+true if the child process has terminated, and a status() member which returns
 the exit status of the child. This exit status can be evaluated using
 the WIFEXITED() and related macros as with the C library function waitpid().
 
@@ -70,5 +70,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.8 2002/12/14 19:19:49 redi Exp $
+$Id: README,v 1.9 2004/04/30 18:37:01 redi Exp $
 
