@@ -1,3 +1,24 @@
+Release notes for PStreams 0.48
+===============================
+
+This release includes changes to allow PStreams to be used with G++ 3.4,
+which is far more standards compliant that previous releases and caught
+a few bugs in the code.
+
+I've removed the rpstream.h header and moved the definition of the
+redi::rpstream class into pstream.h. This is now the only file needed.
+
+Fixed a 64-bit bug where int was compared to a pointer.
+
+The redi::peof IO manipulator now uses dynamic_cast not static_cast.
+This is safer, but if you don't want to use dynamic_cast you'll have to
+change it back to using static_cast.
+
+Use POSIX's ::_exit() instead of std::exit() to terminate child if exec()
+fails. This will prevent static destructors being run in the child process
+(which could try to destroy resources twice).
+
+
 PStreams
 ========
 
@@ -70,5 +91,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.9 2004/04/30 18:37:01 redi Exp $
+$Id: README,v 1.10 2004/04/30 19:13:14 redi Exp $
 
