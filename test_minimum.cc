@@ -2,6 +2,12 @@
 
 #include <iostream>
 
+template class redi::pstreambuf;
+template class redi::pstream_common<char>;
+template class redi::pstream;
+template class redi::ipstream;
+template class redi::opstream;
+template class redi::rpstream;
 
 int main()
 {
