@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.59 2003/07/17 23:39:09 redi Exp $
+/* $Id: pstream.h,v 1.60 2003/07/17 23:45:37 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003 Jonathan Wakely
 
@@ -1361,8 +1361,6 @@ namespace redi
   /**
    *  Closes the output pipe, causing the child process to receive the
    *  End Of File indicator on subsequent reads from its @c stdin stream.
-   *
-   *  @return  peof() returns no value.
    */
   template <typename C, typename T>
     inline void
