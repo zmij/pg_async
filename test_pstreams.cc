@@ -19,18 +19,22 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-
 #define REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE 1
 
 //#include "pstream_compat.h"
 
 // TODO test rpstream - this does nothing for the moment
-#define RPSTREAM 1
+#define TEST_RPSTREAM 1
+
 
 // test eviscerated pstreams
 #define REDI_EVISCERATE_PSTREAMS 1
 
 #include "pstream.h"
+
+#if TEST_RPSTREAM
+#include "rpstream.h"
+#endif
 
 // include these after pstream.h to ensure it #includes everything it needs
 #include <iostream>
@@ -44,52 +48,58 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 //#include <fcntl.h>
 #include <errno.h>
 
-
 using namespace std;
 using namespace redi;
 
 
-string
-test_type(const istream& s)
-{ return "r"; }
-
-string
-test_type(const ostream& s)
-{ return "w"; }
-
-template <typename T>
-string
-test_id(const T& s)
+namespace  // anon
 {
-    static int count = 0;
-    ostringstream buf;
-    buf << test_type(s) << ++count;
-    return buf.str();
-}
+    // helper functions for printing test results
 
-template <typename T>
-void
-print_result(const T& s, bool result)
-{
-    cerr << "Test" << setw(4) << test_id(s) << ": "
-        << (result ? "Pass" : "Fail!")
-        << endl;
-}
+    string
+    test_type(const istream& s)
+    { return "r"; }
 
-template <typename T>
-bool
-check_pass(const T& s, bool expect_pass = true)
-{
-    bool res = s.good();
-    if (!expect_pass)
-        res = !res;
-    print_result(s, res);
-    return res;
-}
+    string
+    test_type(const ostream& s)
+    { return "w"; }
 
-template <typename T>
-bool
-check_fail(const T& s) { return check_pass(s, false); }
+    string
+    test_type(const iostream& s)
+    { return "b"; }
+
+    template <typename T>
+    string
+    test_id(const T& s)
+    {
+        static int count = 0;
+        ostringstream buf;
+        buf << test_type(s) << ++count;
+        return buf.str();
+    }
+
+    template <typename T>
+    void
+    print_result(const T& s, bool result)
+    {
+        clog << "Test " << setw(4) << test_id(s) << ": "
+            << (result ? "Pass" : "Fail!")
+            << endl;
+    }
+
+    template <typename T>
+    bool
+    check_pass(const T& s, bool expected = true)
+    {
+        bool res = s.good() == expected;
+        print_result(s, res);
+        return res;
+    }
+
+    template <typename T>
+    bool
+    check_fail(const T& s) { return check_pass(s, false); }
+}
 
 
 int main()
@@ -98,67 +108,90 @@ int main()
 
     string str;
 
-    cerr << "# Testing basic I/O\n";
+    clog << "# Testing basic I/O\n";
 
     {
         // test formatted output
-        opstream cat("/bin/cat");
-        cat << "Hello, world!\n";
-        str = "Hello, world!\n";
-        cat << str;
-        check_pass(cat);
+        //
+        // This should read the strings on stdin and print them on stdout
+        // prefixed by "STDOUT: "
+
+        opstream os("/bin/sed 's/^./STDIN: &/' - /etc/issue");
+        os << ".fnord.\n";
+        str = "..fnord..\n";
+        os << str;
+        check_pass(os);
     }
 
     {
-        // test formatted output
+        // test execve() style construction
+        //
+        // This should read the strings on stdin and print them on stdout
+        // prefixed by "STDIN: "
+
         vector<string> argv;
-        argv.push_back("cat");
-        argv.push_back("/etc/motd");
-        argv.push_back("/etc/issue");
-        opstream cat("cat", argv);
-        check_pass(cat);
+        argv.push_back("sed");
+        argv.push_back("s/^./STDIN: &/");
+        opstream os("sed", argv);
+
+        check_pass(os << "Magic Monkey\n");
     }
 
     {
         // test unformatted output
-        opstream cat("/bin/cat");
-        str = "Hello, world!\n";
+        //
+        // This should read the strings on stdin and print them on stdout
+        // prefixed by "STDIN: "
+
+        opstream sed("/bin/sed 's/^./STDIN: &/'");
+        str = "Monkey Magic\n";
         for (string::const_iterator i = str.begin(); i!=str.end(); ++i)
-            cat.put(*i);
-        check_pass(cat);
+            sed.put(*i);
+        check_pass(sed);
     }
 
     {
         // test formatted input
+        // should print hostname on stdout, prefixed by "STDOUT: "
         ipstream host("hostname");
         if (getline(host, str))  // extracts up to newline, eats newline
-            cout << "hostname = " << str << endl;
+            cout << "STDOUT: " << str << endl;
         check_pass(host);
         // check we hit EOF at next read
         char c;
-        if (host.get(c))
-            cout << "read '" << c << "'" << endl;
+        print_result(host, !host.get(c));
         print_result(host, host.eof());
         check_fail(host);
     }
 
     {
         // test unformatted input
-        ipstream host("hostname");
+        // should print hostname on stdout, prefixed by "STDOUT: "
+        ipstream host("date");
         str.clear();
         char c;
         while (host.get(c))  // extracts up to EOF (including newline)
             str += c;
-        cout << "hostname = " << str << flush;
+        cout << "STDOUT:  " << str << flush;
         print_result(host, host.eof());
     }
 
     {
         // open after construction, then write
-        opstream cat2;
-        cat2.open("/bin/cat");
-        cat2 << "Hello, world!\n";
-        check_pass(cat2);
+        opstream os;
+        os.open("/bin/sed 's/^./STDIN: &/'");
+        os << "Hello, world!\n";
+        check_pass(os);
+    }
+
+    {
+        // open after construction, then read
+        ipstream is;
+        is.open("hostname");
+        string s;
+        is >> s;
+        cout << "STDOUT: " << s << endl;
+        check_pass(is);
     }
 
     {
@@ -166,7 +199,7 @@ int main()
         ipstream host;
         host.open("hostname");
         if (host >> str)
-            cout << "hostname = " << str << endl;
+            cout << "STDOUT: " << str << endl;
         check_pass(host);
         // chomp newline and try to read past end
         char c;
@@ -175,79 +208,121 @@ int main()
         check_fail(host);
     }
 
-#if 0
-    {
-        cerr << "Testing some more\n";
-        opstream grep("grep 'pattern'");
-        grep << "This string matches pattern.\n"
-            << "This string doesn't.\n"
-            << "The first line of this multiline string matches pattern.\n"
-               "But the second doesn't.\n";
-        check_pass(grep);
-    }
-#endif
+    clog << "# Testing bidirectional PStreams\n";
 
-    cerr << "# Testing behaviour with bad commands" << endl;
+    pstreambuf::pmode all3streams =
+        pstreambuf::pstdin|pstreambuf::pstdout|pstreambuf::pstderr;
+
+    {
+        // test output on bidirectional pstream
+        string cmd = "grep ^127 -- /etc/hosts /no/such/file";
+        pstream ps(cmd, all3streams);
+
+        print_result(ps, ps.is_open());
+        print_result(ps, ps.out());
+        print_result(ps, ps.err());
+
+        string buf;
+        while (getline(ps.out(), buf))
+            cout << "STDOUT: " << buf << endl;
+        check_fail(ps);
+        while (getline(ps.err(), buf))
+            cout << "STDERR: " << buf << endl;
+        check_fail(ps);
+    }
+
+    {
+        // test input on bidirectional pstream and test peof manip
+        string cmd = "grep fnord -- -";
+        pstream ps(cmd, all3streams);
+
+        print_result(ps, ps.is_open());
+        print_result(ps, ps);
+
+        ps << "12345\nfnord\n0000" << peof;
+        // manip calls static_cast<pstreambuf*>(ps.rdbuf())->peof();
+
+        string buf;
+        getline(ps.out(), buf);
+
+        do
+        {
+            print_result(ps, buf == "fnord");
+            cout << "STDOUT: " << buf << endl;
+        } while (getline(ps.out(), buf));
+
+        print_result(ps, !(ps << "pipe closed, no fnord now"));
+        check_fail(ps);
+    }
+    // TODO - test child moves onto next file after peof on stdin
+
+    {
+        // test signals
+        string cmd = "grep 127 -- -";
+        pstream ps(cmd, all3streams);
+
+        pstreambuf* pbuf = static_cast<pstreambuf*>(ps.rdbuf());
+
+        int e1 = pbuf->error();
+        print_result(ps, e1 == 0);
+        pbuf->kill(SIGTERM);
+        int e2 = pbuf->error();
+        print_result(ps, e1 == e2);
+
+        pbuf->close();
+        int e3 = pbuf->error();
+        print_result(ps, !(ps << "127 fail 127\n"));
+        print_result(ps, e1 == e3);
+    }
+
+
+    clog << "# Testing behaviour with bad commands" << endl;
 
     //string badcmd = "hgfhdgf";
     string badcmd = "hgfhdgf 2>/dev/null";
 
     {
         // check eof() works 
-        ipstream ifail(badcmd);
-        int i = ifail.get();
-        print_result(ifail, i==EOF && ifail.eof() );
+        ipstream is(badcmd);
+        print_result(is, is.get()==EOF);
+        print_result(is, is.eof() );
     }
 
     {
         // test writing to bad command
         opstream ofail(badcmd);
-        if (ofail << "blahblah")
-            cout << "Wrote to " << ofail.command() << endl;
-        check_fail(ofail);
+        check_fail(ofail<<"blahblah");
         // FAIL !!!
         // no way to tell if command fails, 
     }
 
     {
-        // test writing to bad command
-        ofstream ofail(string("/root/ngngng/" + badcmd).c_str());
-        if (ofail << "blahblah")
-            cout << "Wrote to file" << endl;
-        check_fail(ofail);
-    }
-
-    {
-        // writing to bad cmd
+        // reading from bad cmd
         vector<string> argv;
-        argv.push_back("cat");
-        argv.push_back("/etc/motd");
-        argv.push_back("/etc/issue");
+        argv.push_back("hdhdhd");
+        argv.push_back("arg1");
+        argv.push_back("arg2");
         ipstream ifail("hdhdhd", argv);
-        if (ifail >> str)
-            cout << "Read from bad process" << endl;
-        check_fail(ifail);
+        check_fail(ifail>>str);
     }
     
-    cerr << "# Testing behaviour with uninit'ed streams" << endl;
+    clog << "# Testing behaviour with uninit'ed streams" << endl;
 
     {
         // check eof() works 
-        ipstream ifail;
-        int i = ifail.get();
-        print_result(ifail, i==EOF && ifail.eof() );
+        ipstream is;
+        print_result(is, is.get()==EOF);
+        print_result(is, is.eof() );
     }
 
     {
         // test writing to no command
         opstream ofail;
-        if (ofail << "blahblah")
-            cout << "Wrote to " << ofail.command() << endl;
-        check_fail(ofail);
+        check_fail(ofail<<"blahblah");
     }
 
 
-    cerr << "# Testing other member functions\n";
+    clog << "# Testing other member functions\n";
 
     {
         string cmd("grep re");
@@ -275,9 +350,9 @@ int main()
         print_result(s, cmd == s.command());
     }
 
-    // TODO more testing of other members?
+    // TODO more testing of other members
 
-    cerr << "# Testing writing to closed stream\n";
+    clog << "# Testing writing to closed stream\n";
 
     {
         opstream os("sed 's/foo/FOO/'");
@@ -289,7 +364,7 @@ int main()
     }
 
 #if REDI_EVISCERATE_PSTREAMS
-    cerr << "Testing eviscerated pstream\n";
+    clog << "# Testing eviscerated pstream\n";
 
     {
         opstream os("sed 's/.*/FNORD/'");
@@ -315,16 +390,47 @@ int main()
         size_t len = 256;
         char buf[len];
         char* p = fgets(buf, len, out);
-        cout << "OUTPUT: " << buf;
+        cout << "STDOUT: " << buf;
         print_result(is, p!=NULL);
 
         p = fgets(buf, len, err);
-        cout << "ERROR: " << buf;
+        cout << "STDERR: " << buf;
         print_result(is, p!=NULL);
+    }
+
+    {
+        string cmd = "grep 127 -- - /etc/hosts /no/such/file";
+        pstream ps(cmd, all3streams);
+        FILE *in, *out, *err;
+        size_t res = ps.fopen(in, out, err);
+        print_result(ps, res & pstreambuf::pstdin);
+        print_result(ps, res & pstreambuf::pstdout);
+        print_result(ps, res & pstreambuf::pstderr);
+        print_result(ps, in!=NULL);
+        print_result(ps, out!=NULL);
+        print_result(ps, err!=NULL);
+
+        // ps << "12345\n1112777\n0000" << EOF;
+#if 0
+        size_t len = 256;
+        char buf[len];
+        char* p = fgets(buf, len, out);
+        cout << "STDOUT: " << buf;
+        print_result(ps, p!=NULL);
+
+        p = fgets(buf, len, err);
+        cout << "STDERR: " << buf;
+        print_result(ps, p!=NULL);
+#endif
     }
 
 #endif
     
+
+#if TEST_RPSTREAM
+#endif
+
+
 #if 0
 
 #ifdef _STREAM_COMPAT
@@ -344,20 +450,20 @@ int main()
 
     // same check again, using only filedescs (no FILE*s)
     int fd = open("/tmp/oops", O_CREAT|O_WRONLY, 0777);
-    cerr << errno << ' ' << strerror(errno) << endl;
+    clog << errno << ' ' << strerror(errno) << endl;
     errno=0;
-    cerr << write(fd, "TEXT\n", 5) << endl;
-    cerr << errno << ' ' << strerror(errno) << endl;
+    clog << write(fd, "TEXT\n", 5) << endl;
+    clog << errno << ' ' << strerror(errno) << endl;
     errno=0;
     fsync(fd);
     {
         ofstream fs(fd);
         fs << "MORE TEXT" << endl;
-        cerr << strerror(errno) << endl;
+        clog << strerror(errno) << endl;
         errno=0;
     }
-    cerr << write(fd, "EVEN MORE TEXT\n", 15) << endl;
-    cerr << strerror(errno) << endl;
+    clog << write(fd, "EVEN MORE TEXT\n", 15) << endl;
+    clog << strerror(errno) << endl;
     errno=0;
     fsync(fd);
     close(fd);
