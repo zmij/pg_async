@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.55 2003/03/05 23:49:47 redi Exp $
+/* $Id: pstream.h,v 1.56 2003/03/10 01:13:54 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -345,7 +345,6 @@ namespace redi
     {
       typedef std::basic_istream<CharT, Traits>     istream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
-      typedef typename pbase_type::streambuf_type   streambuf_type;
 
       using pbase_type::buf_;  // declare name in this scope
 
@@ -464,7 +463,6 @@ namespace redi
     {
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
-      typedef typename pbase_type::streambuf_type   streambuf_type;
 
       using pbase_type::buf_;  // declare name in this scope
 
@@ -556,7 +554,6 @@ namespace redi
     {
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
       typedef pstream_common<CharT, Traits>         pbase_type;
-      typedef typename pbase_type::streambuf_type   streambuf_type;
 
       using pbase_type::buf_;  // declare name in this scope
 
