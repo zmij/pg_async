@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.84 2004/10/17 15:43:16 redi Exp $
+/* $Id: pstream.h,v 1.85 2004/10/18 09:49:02 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -273,9 +273,7 @@ namespace redi
       pstream_common(const std::string& command, pmode mode);
 
       /// Constructor that initialises the stream by starting a process.
-      pstream_common( const std::string& file,
-                      const argv_type& argv,
-                      pmode mode );
+      pstream_common(const std::string& file, const argv_type& argv, pmode mode);
 
       /// Pure virtual destructor.
       virtual
@@ -598,8 +596,7 @@ namespace redi
        * @param mode     the I/O mode to use when opening the pipe.
        * @see   do_open(const std::string&, pmode)
        */
-      basic_pstream( const std::string& command,
-                     pmode mode = pstdout|pstdin )
+      basic_pstream(const std::string& command, pmode mode = pstdout|pstdin)
       : iostream_type(NULL), pbase_type(command, mode)
       { }
 
@@ -727,7 +724,7 @@ namespace redi
 
       /// Default constructor, creates an uninitialised stream.
       basic_rpstream()
-      : ostream_type(NULL) , istream_type(NULL) , pbase_type()
+      : ostream_type(NULL), istream_type(NULL), pbase_type()
       { }
 
       /**
@@ -1099,10 +1096,11 @@ namespace redi
     {
       pid_t pid = -1;
 
-      // three pairs of file descriptors, for pipes connected to the
+      // Three pairs of file descriptors, for pipes connected to the
       // process' stdin, stdout and stderr
       // (stored in a single array so close_fd_array() can close all at once)
-      fd_type fd[6] =  {-1, -1, -1, -1, -1, -1};
+      const std::size_t nfd = 6;
+      fd_type fd[nfd] = { -1, -1, -1, -1, -1, -1 };
       fd_type* const pin = fd;
       fd_type* const pout = fd+2;
       fd_type* const perr = fd+4;
@@ -1161,7 +1159,7 @@ namespace redi
             // couldn't fork for some reason
             error_ = errno;
             // close any open pipes
-            close_fd_array(fd, 6);
+            close_fd_array(fd, nfd);
             break;
           }
           default :
@@ -1197,7 +1195,7 @@ namespace redi
       else
       {
         // close any pipes we opened before failure
-        close_fd_array(fd, 6);
+        close_fd_array(fd, nfd);
       }
       return pid;
     }
