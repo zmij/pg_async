@@ -1,4 +1,4 @@
-/* $Id: pstream_compat.h,v 1.5 2004/03/30 11:51:26 redi Exp $
+/* $Id: pstream_compat.h,v 1.6 2004/04/30 18:39:12 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -25,8 +25,8 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
  * compilers.
  */
 
-#ifndef REDI_PSTREAM_COMPAT_H
-#define REDI_PSTREAM_COMPAT_H
+#ifndef REDI_PSTREAM_COMPAT_H_SEEN
+#define REDI_PSTREAM_COMPAT_H_SEEN
 
 #if ! ( BACK_COMPAT == 1 || GCC_BACK_COMPAT == 1 )
 
@@ -178,5 +178,5 @@ namespace redi
 
 #endif  // __GNUC__
 
-#endif // REDI_PSTREAM_COMPAT_H
+#endif // REDI_PSTREAM_COMPAT_H_SEEN
 
