@@ -289,11 +289,12 @@ int main()
     cerr << "Testing eviscerated pstream\n";
 
     {
-        opstream os("cat");
-        FILE *in, *out, *err;
+        opstream os("sed 's/.*/FNORD/'");
+        int in, out, err;
         size_t res = os.fopen(in, out, err);
         print_result(os, res & pstreambuf::pstdin);
-        print_result(os, in!=NULL);
+        print_result(os, in>=0);
+        print_result(os, write(in, "flax", 4)==4);
     }
 #endif
     

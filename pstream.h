@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.36 2002/08/27 01:43:45 redi Exp $
+/* $Id: pstream.h,v 1.37 2002/08/27 02:07:35 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -121,7 +121,7 @@ namespace redi
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
       size_t
-      fopen(FILE*& in, FILE*& out, FILE*& err);
+      fopen(int& in, int& out, int& err);
 #endif
 
     protected:
@@ -251,7 +251,7 @@ namespace redi
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
       size_t
-      fopen(FILE*& in, FILE*& out, FILE*& err);
+      fopen(int& in, int& out, int& err);
 #endif
 
     protected:
@@ -1404,9 +1404,9 @@ namespace redi
    *           @c FILE pointers from the streambuf's private file descriptor
    *           members so consult your system's documentation for @c fdopen().
    *
-   * @param  in   A FILE* that will refer to the process' stdin.
-   * @param  out  A FILE* that will refer to the process' stdout.
-   * @param  err  A FILE* that will refer to the process' stderr.
+   * @param  in   An integer to hold the process' stdin descriptor.
+   * @param  out  An integer to hold the process' stdout descriptor.
+   * @param  err  An integer to hold the process' stderr descriptor.
    * @return A bitwise-or of zero or more of @c pstdin, @c pstdout, @c pstderr.
    *
    * For each open stream shared with the child process a @c FILE* is
@@ -1417,30 +1417,24 @@ namespace redi
    */
   template <typename C, typename T>
     inline size_t
-    basic_pstreambuf<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    basic_pstreambuf<C,T>::fopen(int& in, int& out, int& err)
     {
-      in = out = err = NULL;
+      in = out = err = -1;
       size_t open_files = 0;
       if (this->wpipe() > -1)
       {
-        if (in = ::fdopen(this->wpipe(), "w"))
-        {
-            open_files |= pstdin;
-        }
+        in = this->wpipe();
+        open_files |= pstdin;
       }
       if (this->rpipe(rsrc_out) > -1) 
       {
-        if (out = ::fdopen(this->rpipe(rsrc_out), "r"))
-        {
-            open_files |= pstdout;
-        }
+        out = this->rpipe(rsrc_out);
+        open_files |= pstdout;
       }
       if (this->rpipe(rsrc_err) > -1)
       {
-        if (err = ::fdopen(this->rpipe(rsrc_err), "r"))
-        {
-            open_files |= pstderr;
-        }
+        err = this->rpipe(rsrc_err);
+        open_files |= pstderr;
       }
       return open_files;
     }
@@ -1449,15 +1443,15 @@ namespace redi
    *  @warning This function exposes the internals of the stream buffer and
    *  should be used with caution.
    *
-   *  @param  in   A FILE* that will refer to the process' stdin.
-   *  @param  out  A FILE* that will refer to the process' stdout.
-   *  @param  err  A FILE* that will refer to the process' stderr.
+   *  @param  in   An integer to hold the process' stdin descriptor.
+   *  @param  out  An integer to hold the process' stdout descriptor.
+   *  @param  err  An integer to hold the process' stderr descriptor.
    *  @return A bitwise-or of zero or more of @c pstdin, @c pstdout, @c pstderr.
    *  @see    basic_pstreambuf::fopen()
    */
   template <typename C, typename T>
     inline size_t
-    pstream_base<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    pstream_base<C,T>::fopen(int& in, int& out, int& err)
     {
       return buf_.fopen(in, out, err);
     }
