@@ -19,9 +19,6 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE 1
-
-//#include "pstream_compat.h"
 
 // TODO test rpstream - this does nothing for the moment
 #define TEST_RPSTREAM 1
@@ -131,7 +128,7 @@ int main()
         // This should read the strings on stdin and print them on stdout
         // prefixed by "STDOUT: "
 
-        opstream os("/bin/sed 's/^./STDIN: &/' - /etc/issue");
+        opstream os("sed 's/^./STDIN: &/' /dev/stdin /etc/resolv.conf");
         os << ".fnord.\n";
         str = "..fnord..\n";
         os << str;
@@ -158,7 +155,7 @@ int main()
         // This should read the strings on stdin and print them on stdout
         // prefixed by "STDIN: "
 
-        opstream sed("/bin/sed 's/^./STDIN: &/'");
+        opstream sed("sed 's/^./STDIN: &/'");
         str = "Monkey Magic\n";
         for (string::const_iterator i = str.begin(); i!=str.end(); ++i)
             sed.put(*i);
@@ -194,7 +191,7 @@ int main()
     {
         // open after construction, then write
         opstream os;
-        os.open("/bin/sed 's/^./STDIN: &/'");
+        os.open("sed 's/^./STDIN: &/'");
         os << "Hello, world!\n";
         check_pass(os);
     }
@@ -248,7 +245,7 @@ int main()
 
     {
         // test input on bidirectional pstream and test peof manip
-        string cmd = "grep fnord -- -";
+        string cmd = "grep fnord -- /dev/stdin";
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
