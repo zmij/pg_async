@@ -1,4 +1,4 @@
-/* $Id: rpstream.h,v 1.6 2002/10/22 00:40:03 redi Exp $
+/* $Id: rpstream.h,v 1.7 2002/10/22 01:30:27 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -47,11 +47,11 @@ namespace redi
     class basic_rpstream
     : public std::basic_ostream<CharT, Traits>
     , private std::basic_istream<CharT, Traits>
-    , private pstream_base<CharT, Traits>
+    , private pstream_common<CharT, Traits>
     {
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
       typedef std::basic_istream<CharT, Traits>     istream_type;
-      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::pmode            pmode;
 
     public:

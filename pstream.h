@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.48 2002/10/22 00:59:19 redi Exp $
+/* $Id: pstream.h,v 1.49 2002/10/22 01:30:27 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -70,7 +70,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
  *  they are most likely to be used with @c char and the default
  *  traits type, so typedefs for this most common case are provided.
  *
- *  The @c pstream_base class template is not intended to be used directly,
+ *  The @c pstream_common class template is not intended to be used directly,
  *  it is used internally to provide the common functionality for the
  *  other stream classes.
  */
@@ -259,7 +259,7 @@ namespace redi
 
   /// Class template for common base class.
   template <typename CharT, typename Traits = std::char_traits<CharT> >
-    class pstream_base : virtual public std::basic_ios<CharT, Traits>
+    class pstream_common : virtual public std::basic_ios<CharT, Traits>
     {
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
@@ -269,13 +269,13 @@ namespace redi
       typedef typename streambuf_type::pmode        pmode;
 
       /// Default constructor.
-      pstream_base();
+      pstream_common();
 
       /// Constructor that initialises the stream by starting a process.
-      pstream_base(const std::string& command, pmode mode);
+      pstream_common(const std::string& command, pmode mode);
 
       /// Constructor that initialises the stream by starting a process.
-      pstream_base(const std::string& file, const std::vector<std::string>& argv, pmode mode);
+      pstream_common(const std::string& file, const std::vector<std::string>& argv, pmode mode);
 
       /// Start a process.
       virtual void
@@ -310,7 +310,7 @@ namespace redi
     protected:
       /// Pure virtual destructor
       virtual
-      ~pstream_base() = 0;
+      ~pstream_common() = 0;
 
       std::string       command_; ///< The command used to start the process.
       streambuf_type    buf_;     ///< The stream buffer.
@@ -330,10 +330,10 @@ namespace redi
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_ipstream
     : public std::basic_istream<CharT, Traits>
-    , public pstream_base<CharT, Traits>
+    , public pstream_common<CharT, Traits>
     {
       typedef std::basic_istream<CharT, Traits>     istream_type;
-      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
@@ -390,7 +390,7 @@ namespace redi
        *
        * @param command a string containing a shell command.
        * @param mode    the I/O mode to use when opening the pipe.
-       * @see   pstream_base::open()
+       * @see   pstream_common::open()
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::in)
@@ -405,7 +405,7 @@ namespace redi
        * @param file  a string containing the pathname of a program to execute.
        * @param argv  a vector of argument strings passed to the new program.
        * @param mode  the I/O mode to use when opening the pipe.
-       * @see   pstream_base::open()
+       * @see   pstream_common::open()
        */
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
@@ -447,10 +447,10 @@ namespace redi
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_opstream
     : public std::basic_ostream<CharT, Traits>
-    , public pstream_base<CharT, Traits>
+    , public pstream_common<CharT, Traits>
     {
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
-      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
@@ -502,7 +502,7 @@ namespace redi
        * @brief Start a process.
        * @param command a string containing a shell command.
        * @param mode    the I/O mode to use when opening the pipe.
-       * @see   pstream_base::open(const std::string&, pmode)
+       * @see   pstream_common::open(const std::string&, pmode)
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::out)
@@ -513,7 +513,7 @@ namespace redi
        * @param file  a string containing the pathname of a program to execute.
        * @param argv  a vector of argument strings passed to the new program.
        * @param mode  the I/O mode to use when opening the pipe.
-       * @see   pstream_base::open(const std::string&, const std::vector<std::string>&, pmode)
+       * @see   pstream_common::open(const std::string&, const std::vector<std::string>&, pmode)
        */
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
@@ -537,10 +537,10 @@ namespace redi
   template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_pstream
     : public std::basic_iostream<CharT, Traits>
-    , public pstream_base<CharT, Traits>
+    , public pstream_common<CharT, Traits>
     {
       typedef std::basic_iostream<CharT, Traits>    iostream_type;
-      typedef pstream_base<CharT, Traits>           pbase_type;
+      typedef pstream_common<CharT, Traits>         pbase_type;
       typedef typename pbase_type::streambuf_type   streambuf_type;
 
     public:
@@ -592,7 +592,7 @@ namespace redi
        * @brief Start a process.
        * @param command a string containing a shell command.
        * @param mode    the I/O mode to use when opening the pipe.
-       * @see   pstream_base::open(const std::string&, pmode)
+       * @see   pstream_common::open(const std::string&, pmode)
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out)
@@ -603,7 +603,7 @@ namespace redi
        * @param file  a string containing the pathname of a program to execute.
        * @param argv  a vector of argument strings passed to the new program.
        * @param mode  the I/O mode to use when opening the pipe.
-       * @see   pstream_base::open(const std::string&, const std::vector<std::string>&, pmode)
+       * @see   pstream_common::open(const std::string&, const std::vector<std::string>&, pmode)
        */
       void
       open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
@@ -1606,21 +1606,21 @@ namespace redi
 
 
   /*
-   * member definitions for pstream_base
+   * member definitions for pstream_common
    */
 
   /**
-   * @class pstream_base
+   * @class pstream_common
    * Abstract Base Class providing common functionality for basic_ipstream,
    * basic_opstream and basic_pstream.
-   * pstream_base manages the basic_pstreambuf stream buffer that is used
+   * pstream_common manages the basic_pstreambuf stream buffer that is used
    * by the derived classes to initialise an IOStream class.
    */
 
   /** Creates an uninitialised stream. */
   template <typename C, typename T>
     inline
-    pstream_base<C,T>::pstream_base()
+    pstream_common<C,T>::pstream_common()
     : std::basic_ios<C,T>(NULL)
     , command_()
     , buf_()
@@ -1638,7 +1638,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline
-    pstream_base<C,T>::pstream_base(const std::string& command, pmode mode)
+    pstream_common<C,T>::pstream_common(const std::string& command, pmode mode)
     : std::basic_ios<C,T>(NULL)
     , command_(command)
     , buf_()
@@ -1658,7 +1658,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline
-    pstream_base<C,T>::pstream_base(const std::string& file, const std::vector<std::string>& argv, pmode mode)
+    pstream_common<C,T>::pstream_common(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     : std::basic_ios<C,T>(NULL)
     , command_(file)
     , buf_()
@@ -1668,7 +1668,7 @@ namespace redi
     }
 
   /**
-   * This is a pure virtual function to make @c pstream_base abstract.
+   * This is a pure virtual function to make @c pstream_common abstract.
    * Because it is the destructor it will be called by derived classes
    * and so must be defined.  It is also protected, to discourage use of
    * the PStreams classes through pointers or references to the base class.
@@ -1678,7 +1678,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline
-    pstream_base<C,T>::~pstream_base()
+    pstream_common<C,T>::~pstream_common()
     {
     }
 
@@ -1692,7 +1692,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline void
-    pstream_base<C,T>::open(const std::string& command, pmode mode)
+    pstream_common<C,T>::open(const std::string& command, pmode mode)
     {
       if (!buf_.open((command_=command), mode))
         setstate(std::ios_base::failbit);
@@ -1709,7 +1709,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline void
-    pstream_base<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
+    pstream_common<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     {
       if (!buf_.open((command_=file), argv, mode))
         setstate(std::ios_base::failbit);
@@ -1718,7 +1718,7 @@ namespace redi
   /** Waits for the associated process to finish and closes the pipe. */
   template <typename C, typename T>
     inline void
-    pstream_base<C,T>::close()
+    pstream_common<C,T>::close()
     {
       if (!buf_.close())
         setstate(std::ios_base::failbit);
@@ -1730,7 +1730,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline bool
-    pstream_base<C,T>::is_open() const
+    pstream_common<C,T>::is_open() const
     {
       return buf_.is_open();
     }
@@ -1738,7 +1738,7 @@ namespace redi
   /** @return a string containing the command used to initialise the stream. */
   template <typename C, typename T>
     inline const std::string&
-    pstream_base<C,T>::command() const
+    pstream_common<C,T>::command() const
     {
       return command_;
     }
@@ -1746,8 +1746,8 @@ namespace redi
   /** @return a pointer to the private stream buffer member. */
   // TODO  document behaviour if buffer replaced.
   template <typename C, typename T>
-    inline typename pstream_base<C,T>::streambuf_type*
-    pstream_base<C,T>::rdbuf() const
+    inline typename pstream_common<C,T>::streambuf_type*
+    pstream_common<C,T>::rdbuf() const
     {
       return const_cast<streambuf_type*>(&buf_);
     }
@@ -1824,7 +1824,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline size_t
-    pstream_base<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
+    pstream_common<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
     {
       return buf_.fopen(in, out, err);
     }
