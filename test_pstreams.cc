@@ -27,7 +27,6 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #define REDI_EVISCERATE_PSTREAMS 1
 
 #include "pstream.h"
-#include "rpstream.h"
 
 // include these after pstream.h to ensure it #includes everything it needs
 #include <iostream>

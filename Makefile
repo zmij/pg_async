@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.14 2002/09/14 02:52:05 redi Exp $
+# $Id: Makefile,v 1.15 2003/03/10 01:31:10 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -29,7 +29,7 @@ EXTRA_CXXFLAGS=
 CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
-SOURCES = pstream.h rpstream.h
+SOURCES = pstream.h
 GENERATED_FILES = ChangeLog MANIFEST TODO 
 EXTRA_FILES = AUTHORS COPYING Doxyfile INSTALL Makefile README mainpage.html \
               images/pstreams1.png
@@ -59,7 +59,7 @@ docs: pstream.h mainpage.html
 ChangeLog:
 	@cvs2cl.pl
 
-TODO : pstream.h rpstream.h mainpage.html test_pstreams.cc
+TODO : pstream.h mainpage.html test_pstreams.cc
 	@grep -nH TODO $^ | sed -e 's@ *// *@@' > $@
 
 .PHONY: TODO test docs MANIFEST ChangeLog
