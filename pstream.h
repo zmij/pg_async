@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.19 2002/04/20 20:33:52 redi Exp $
+/* $Id: pstream.h,v 1.20 2002/04/21 01:40:30 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -345,7 +345,7 @@ namespace redi
       typedef std::basic_ostream<CharT, Traits>     ostream_type;
       typedef std::basic_istream<CharT, Traits>     istream_type;
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
-      typedef streambuf_type::pmode                 pmode;
+      typedef typename streambuf_type::pmode        pmode;
 
     public:
       /// Default constructor.
@@ -1605,7 +1605,7 @@ namespace redi
 
   /** @return @c *this */
   template <typename C, typename T>
-    inline basic_rpstream<C,T>::istream_type&
+    inline typename basic_rpstream<C,T>::istream_type&
     basic_rpstream<C,T>::out()
     {
       buf_.read_err(false);
@@ -1614,7 +1614,7 @@ namespace redi
 
   /** @return @c *this */
   template <typename C, typename T>
-    inline basic_rpstream<C,T>::istream_type&
+    inline typename basic_rpstream<C,T>::istream_type&
     basic_rpstream<C,T>::err()
     {
       buf_.read_err(true);
