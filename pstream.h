@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.29 2002/04/29 22:58:48 redi Exp $
+/* $Id: pstream.h,v 1.30 2002/04/29 23:03:03 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -1241,7 +1241,7 @@ namespace redi
 
   /**
    * @class pstream_base
-   * Abstract Base Class providiong common functionality for basic_ipsteam,
+   * Abstract Base Class providing common functionality for basic_ipsteam,
    * basic_opstream and basic_pstream. pstream_base manages the pstreambuf
    * which should be used by derived classes to initialise an IOStream
    * class, which will shares a std::basic_ios virtual base class with the
