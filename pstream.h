@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.50 2002/10/22 23:10:18 redi Exp $
+/* $Id: pstream.h,v 1.51 2002/10/22 23:23:53 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -973,17 +973,13 @@ namespace redi
       // pout and perr are input streams.
 
       if (!error_ && mode&pstdin && ::pipe(pin))
-      {
         error_ = errno;
-      }
+
       if (!error_ && mode&pstdout && ::pipe(pout))
-      {
         error_ = errno;
-      }
+
       if (!error_ && mode&pstderr && ::pipe(perr))
-      {
         error_ = errno;
-      }
 
       if (!error_)
       {
@@ -1170,13 +1166,9 @@ namespace redi
       if (is_open())
       {
         if (::kill(ppid_, signal))
-        {
           error_ = errno;
-        }
         else
-        {
           ret = this;
-        }
       }
       return ret;
     }
@@ -1283,18 +1275,61 @@ namespace redi
     basic_pstreambuf<C,T>::overflow(int_type c)
     {
       if (!empty_buffer())
-      {
         return traits_type::eof();
-      }
       else if (!traits_type::eq_int_type(c, traits_type::eof()))
-      {
         return sputc(c);
+      else
+        return traits_type::not_eof(c);
+    }
+
+
+  template <typename C, typename T>
+    int
+    basic_pstreambuf<C,T>::sync()
+    {
+      return (empty_buffer() ? 0 : -1);
+    }
+
+
+  template <typename C, typename T>
+    std::streamsize
+    basic_pstreambuf<C,T>::xsputn(const char_type* s, std::streamsize n)
+    {
+      if (n < epptr() - pptr())
+      {
+        memcpy(pptr(), s, n * sizeof(char_type));
+        pbump(n);
+        return n;
       }
       else
       {
-        return traits_type::not_eof(c);
+        for (std::streamsize i = 0; i < n; ++i)
+        {
+          if (traits_type::eq_int_type(sputc(s[i]), traits_type::eof()))
+            return i;
+        }
+        return n;
       }
     }
+
+
+  /**
+   * @return  true if the buffer was emptied, false otherwise.
+   */
+  template <typename C, typename T>
+    bool
+    basic_pstreambuf<C,T>::empty_buffer()
+    {
+      int count = pptr() - pbase();
+      std::streamsize written = write(wbuffer_, count);
+      if (count > 0 && written == count)
+      {
+        pbump(-written);
+        return true;
+      }
+      return false;
+    }
+
 #else
   /**
    * Called when the internal character buffer is not present or is full,
@@ -1414,57 +1449,6 @@ namespace redi
          return traits_type::eof();
       }
     }
-
-
-#if BUFFERED
-  template <typename C, typename T>
-    int
-    basic_pstreambuf<C,T>::sync()
-    {
-      return (empty_buffer() ? 0 : -1);
-    }
-
-
-  template <typename C, typename T>
-    std::streamsize
-    basic_pstreambuf<C,T>::xsputn(const char_type* s, std::streamsize n)
-    {
-      if (n < epptr() - pptr())
-      {
-        memcpy(pptr(), s, n * sizeof(char_type));
-        pbump(n);
-        return n;
-      }
-      else
-      {
-        for (std::streamsize i = 0; i < n; ++i)
-        {
-          if (traits_type::eq_int_type(sputc(s[i]), traits_type::eof()))
-            return i;
-        }
-        return n;
-      }
-    }
-
-
-  /**
-   * @return  true if the buffer was emptied, false otherwise.
-   */
-  template <typename C, typename T>
-    bool
-    basic_pstreambuf<C,T>::empty_buffer()
-    {
-      bool retval = false;
-      int count = pptr() - pbase();
-      std::streamsize written = write(wbuffer_, count);
-      if (count > 0 && written == count)
-      {
-        pbump(-written);
-        retval = true;
-      }
-      return retval;
-    }
-#endif
 
 
 #if BUFFERED
