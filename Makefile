@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.13 2002/09/10 00:10:59 redi Exp $
+# $Id: Makefile,v 1.14 2002/09/14 02:52:05 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -22,7 +22,9 @@
 
 CXX=g++3
 
-OPTIM=
+OPTIM=-g3
+EXTRA_CFLAGS=
+EXTRA_CXXFLAGS=
 
 CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
@@ -41,10 +43,10 @@ test: test_pstreams test_minimum
 	@./test_pstreams >/dev/null || echo "TEST EXITED WITH STATUS $$?"
 
 test_pstreams: test_pstreams.cc pstream.h
-	$(CXX) $(CXXFLAGS) -g3 -o $@ $<
+	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) -o $@ $<
 
 test_minimum: test_minimum.cc pstream.h
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) -o $@ $<
 
 MANIFEST:
 	@echo "$(DIST_FILES)" > $@
