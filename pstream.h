@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.46 2002/09/22 01:05:15 redi Exp $
+/* $Id: pstream.h,v 1.47 2002/10/22 00:56:33 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002 Jonathan Wakely
 
@@ -697,7 +697,7 @@ namespace redi
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
 #if BUFFERED
-      this->setp(NULL, NULL);
+      setp(NULL, NULL);
 #endif
     }
 
@@ -721,9 +721,9 @@ namespace redi
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
 #if BUFFERED
-      this->setp(NULL, NULL);
+      setp(NULL, NULL);
 #endif
-      this->open(command, mode);
+      open(command, mode);
     }
 
   /**
@@ -747,9 +747,9 @@ namespace redi
       rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
       take_from_buf_[rsrc_out] = take_from_buf_[rsrc_err] = false;
 #if BUFFERED
-      this->setp(NULL, NULL);
+      setp(NULL, NULL);
 #endif
-      this->open(file, argv, mode);
+      open(file, argv, mode);
     }
 
   /**
@@ -760,7 +760,7 @@ namespace redi
     inline
     basic_pstreambuf<C,T>::~basic_pstreambuf()
     {
-      this->close();
+      close();
     }
 
   /**
@@ -781,9 +781,9 @@ namespace redi
     {
       basic_pstreambuf<C,T>* ret = NULL;
 
-      if (!this->is_open())
+      if (!is_open())
       {
-        switch(this->fork(mode))
+        switch(fork(mode))
         {
           case 0 :
           {
@@ -807,18 +807,18 @@ namespace redi
             // check process not exited already
             // very unlikely, since not enough time for shell to parse cmd!
 
-            switch (this->wait(true))
+            switch (wait(true))
             {
               case 0 :
 #if BUFFERED
                 // activate buffer
-                this->setp(wbuffer_, wbuffer_ + bufsz_);
+                setp(wbuffer_, wbuffer_ + bufsz_);
 #endif
                 ret = this;
                 break;
               case 1:
                 // child exited already
-                this->sync();
+                sync();
                 close_fd_array(&wpipe_, 1);
                 close_fd_array(rpipe_, 2);
                 break;
@@ -828,7 +828,7 @@ namespace redi
 #else
 #if BUFFERED
             // activate buffer
-            this->setp(wbuffer_, wbuffer_ + bufsz_);
+            setp(wbuffer_, wbuffer_ + bufsz_);
 #endif
             ret = this;
 #endif
@@ -860,9 +860,9 @@ namespace redi
     {
       basic_pstreambuf<C,T>* ret = NULL;
 
-      if (!this->is_open())
+      if (!is_open())
       {
-        switch(this->fork(mode))
+        switch(fork(mode))
         {
           case 0 :
           {
@@ -897,18 +897,18 @@ namespace redi
             // check process not exited already
             // very unlikely, since not enough time for shell to parse cmd!
 
-            switch (this->wait(true))
+            switch (wait(true))
             {
               case 0 :
 #if BUFFERED
                 // activate buffer
-                this->setp(wbuffer_, wbuffer_ + bufsz_);
+                setp(wbuffer_, wbuffer_ + bufsz_);
 #endif
                 ret = this;
                 break;
               case 1:
                 // child exited already
-                this->sync();
+                sync();
                 close_fd_array(&wpipe_, 1);
                 close_fd_array(rpipe_, 2);
                 break;
@@ -918,7 +918,7 @@ namespace redi
 #else
 #if BUFFERED
             // activate buffer
-            this->setp(wbuffer_, wbuffer_ + bufsz_);
+            setp(wbuffer_, wbuffer_ + bufsz_);
 #endif
             ret = this;
 #endif
@@ -1059,7 +1059,7 @@ namespace redi
             if (rpipe_[rsrc_out] == -1 && rpipe_[rsrc_err] >= 0)
             {
               // reading stderr but not stdout, so use stderr for all reads
-              this->read_err(true);
+              read_err(true);
             }
           }
         }
@@ -1086,17 +1086,17 @@ namespace redi
     basic_pstreambuf<C,T>::close()
     {
       basic_pstreambuf<C,T>* ret = NULL;
-      if (this->is_open())
+      if (is_open())
       {
-        this->sync();
+        sync();
 #if BUFFERED
-        this->setp(NULL, NULL);
+        setp(NULL, NULL);
 #endif
 
         close_fd_array(&wpipe_, 1);
         close_fd_array(rpipe_, 2);
 
-        if (this->wait() == 1)
+        if (wait() == 1)
         {
           ret = this;
         }
@@ -1121,7 +1121,7 @@ namespace redi
     basic_pstreambuf<C,T>::wait(bool nohang)
     {
       int exited = -1;
-      if (this->is_open())
+      if (is_open())
       {
         int status;
         switch(::waitpid(ppid_, &status, nohang ? WNOHANG : 0))
@@ -1161,7 +1161,7 @@ namespace redi
     basic_pstreambuf<C,T>::kill(int signal)
     {
       basic_pstreambuf<C,T>* ret = NULL;
-      if (this->is_open())
+      if (is_open())
       {
         if (::kill(ppid_, signal))
         {
@@ -1185,7 +1185,7 @@ namespace redi
     basic_pstreambuf<C,T>::exited()
     {
       // TODO  should close() if is_open() and has exited
-      return this->wait(true)==1;
+      return wait(true)==1;
     }
 
 
@@ -1221,7 +1221,7 @@ namespace redi
     inline void
     basic_pstreambuf<C,T>::peof()
     {
-      this->sync();
+      sync();
       close_fd_array(&wpipe_, 1);
     }
 
@@ -1287,13 +1287,13 @@ namespace redi
     typename basic_pstreambuf<C,T>::int_type
     basic_pstreambuf<C,T>::overflow(int_type c)
     {
-      if (!this->empty_buffer())
+      if (!empty_buffer())
       {
         return traits_type::eof();
       }
       else if (!traits_type::eq_int_type(c, traits_type::eof()))
       {
-        return this->sputc(c);
+        return sputc(c);
       }
       else
       {
@@ -1317,7 +1317,7 @@ namespace redi
     {
       if (!traits_type::eq_int_type(c, traits_type::eof()))
       {
-        if (!this->write(traits_type::to_char_type(c)))
+        if (!write(traits_type::to_char_type(c)))
           return traits_type::eof();
         else
           return c;
@@ -1349,7 +1349,7 @@ namespace redi
       {
         char_type c;
 
-        if (!this->read(c))
+        if (!read(c))
           return traits_type::eof();
         else
         {
@@ -1380,7 +1380,7 @@ namespace redi
       {
         char_type c;
 
-        if (!this->read(c))
+        if (!read(c))
           return traits_type::eof();
         else
         {
@@ -1393,7 +1393,7 @@ namespace redi
 
   /**
    * Attempts to make @a c available as the next character to be read by
-   * @c this->sgetc(), or if @a c is equal to @c traits_type::eof() then
+   * @c sgetc(), or if @a c is equal to @c traits_type::eof() then
    * the previous character in the sequence is made the next available
    * (at least, I think that's the intention?!)
    *
@@ -1426,7 +1426,7 @@ namespace redi
     int
     basic_pstreambuf<C,T>::sync()
     {
-      return (this->empty_buffer() ? 0 : -1);
+      return (empty_buffer() ? 0 : -1);
     }
 
 
@@ -1461,7 +1461,7 @@ namespace redi
     {
       bool retval = false;
       int count = pptr() - pbase();
-      std::streamsize written = this->write(wbuffer_, count);
+      std::streamsize written = write(wbuffer_, count);
       if (count > 0 && written == count)
       {
         pbump(-written);
@@ -1484,7 +1484,7 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::write(char_type c)
     {
-      return (this->write(&c, 1) == 1);
+      return (write(&c, 1) == 1);
     }
 
   /**
@@ -1499,7 +1499,7 @@ namespace redi
     inline bool
     basic_pstreambuf<C,T>::read(char_type& c)
     {
-      return (this->read(&c, 1) == 1);
+      return (read(&c, 1) == 1);
     }
 
   /**
@@ -1636,7 +1636,7 @@ namespace redi
     , command_()
     , buf_()
     {
-      this->init(&buf_);
+      init(&buf_);
     }
 
   /**
@@ -1654,8 +1654,8 @@ namespace redi
     , command_(command)
     , buf_()
     {
-      this->init(&buf_);
-      this->open(command, mode);
+      init(&buf_);
+      open(command, mode);
     }
    
   /**
@@ -1674,8 +1674,8 @@ namespace redi
     , command_(file)
     , buf_()
     {
-      this->init(&buf_);
-      this->open(file, argv, mode);
+      init(&buf_);
+      open(file, argv, mode);
     }
 
   /**
@@ -1706,7 +1706,7 @@ namespace redi
     pstream_base<C,T>::open(const std::string& command, pmode mode)
     {
       if (!buf_.open((command_=command), mode))
-        this->setstate(std::ios_base::failbit);
+        setstate(std::ios_base::failbit);
     }
 
   /**
@@ -1723,7 +1723,7 @@ namespace redi
     pstream_base<C,T>::open(const std::string& file, const std::vector<std::string>& argv, pmode mode)
     {
       if (!buf_.open((command_=file), argv, mode))
-        this->setstate(std::ios_base::failbit);
+        setstate(std::ios_base::failbit);
     }
 
   /** Waits for the associated process to finish and closes the pipe. */
@@ -1732,7 +1732,7 @@ namespace redi
     pstream_base<C,T>::close()
     {
       if (!buf_.close())
-        this->setstate(std::ios_base::failbit);
+        setstate(std::ios_base::failbit);
     }
 
   /**
@@ -1799,23 +1799,23 @@ namespace redi
     {
       in = out = err = NULL;
       size_t open_files = 0;
-      if (this->wpipe() > -1)
+      if (wpipe() > -1)
       {
-        if (in = ::fdopen(this->wpipe(), "w"))
+        if (in = ::fdopen(wpipe(), "w"))
         {
             open_files |= pstdin;
         }
       }
-      if (this->rpipe(rsrc_out) > -1) 
+      if (rpipe(rsrc_out) > -1) 
       {
-        if (out = ::fdopen(this->rpipe(rsrc_out), "r"))
+        if (out = ::fdopen(rpipe(rsrc_out), "r"))
         {
             open_files |= pstdout;
         }
       }
-      if (this->rpipe(rsrc_err) > -1)
+      if (rpipe(rsrc_err) > -1)
       {
-        if (err = ::fdopen(this->rpipe(rsrc_err), "r"))
+        if (err = ::fdopen(rpipe(rsrc_err), "r"))
         {
             open_files |= pstderr;
         }
