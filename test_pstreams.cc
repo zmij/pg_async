@@ -19,16 +19,6 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-//#include <fcntl.h>
-#include <errno.h>
 
 #define REDI_PSTREAMS_POPEN_USES_BIDIRECTIONAL_PIPE 1
 
@@ -41,6 +31,19 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #define REDI_EVISCERATE_PSTREAMS 1
 
 #include "pstream.h"
+
+// include these after pstream.h to ensure it #includes everything it needs
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+//#include <fcntl.h>
+#include <errno.h>
+
 
 using namespace std;
 using namespace redi;

@@ -1,6 +1,9 @@
 #include "pstream.h"
 #include "rpstream.h"
 
+#include <iostream>
+
+
 int main()
 {
     using namespace redi;
