@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.17 2004/01/25 03:21:36 redi Exp $
+# $Id: Makefile,v 1.18 2004/03/19 15:54:52 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -61,6 +61,9 @@ ChangeLog:
 
 TODO : pstream.h mainpage.html test_pstreams.cc
 	@grep -nH TODO $^ | sed -e 's@ *// *@@' > $@
+
+clean:
+	@rm -f  test_minimum test_pstreams
 
 .PHONY: TODO test docs MANIFEST ChangeLog
 
