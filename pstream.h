@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.61 2003/09/03 23:53:16 redi Exp $
+/* $Id: pstream.h,v 1.62 2004/02/04 22:56:07 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003 Jonathan Wakely
 
@@ -94,7 +94,7 @@ namespace redi
   };
 
   /// Class template for stream buffer.
-  template <typename CharT, typename Traits>
+  template <typename CharT, typename Traits = std::char_traits<CharT> >
     class basic_pstreambuf
     : public std::basic_streambuf<CharT, Traits>
     , public pstreams
@@ -715,7 +715,7 @@ namespace redi
 
 
   /// Type definition for common template specialisation.
-  typedef basic_pstreambuf<char, std::char_traits<char> > pstreambuf;
+  typedef basic_pstreambuf<char> pstreambuf;
   /// Type definition for common template specialisation.
   typedef basic_ipstream<char> ipstream;
   /// Type definition for common template specialisation.

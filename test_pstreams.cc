@@ -44,7 +44,7 @@ using namespace std;
 using namespace redi;
 
 // explicit instantiations of template classes
-template class redi::basic_pstreambuf<char,std::char_traits<char> >;
+template class redi::basic_pstreambuf<char>;
 template class redi::pstream_common<char>;
 template class redi::basic_ipstream<char>;
 template class redi::basic_opstream<char>;
