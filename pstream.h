@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.15 2002/01/08 11:53:28 redi Exp $
+/* $Id: pstream.h,v 1.16 2002/01/09 03:28:41 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001-2002 Jonathan Wakely
 
@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define REDI_PSTREAM_H
 
 /// The library version.
-#define PSTREAMS_VERSION 0x000f   // 0.15
+#define PSTREAMS_VERSION 0x0010   // 0.16
 
 // check whether to provide pstream
 // popen() needs to use bidirectional pipe
@@ -49,6 +49,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <ios>
 #include <streambuf>
+#include <istream>
+#include <ostream>
 #include <string>
 #include <cstdio>
 #include <cerrno>
@@ -75,7 +77,7 @@ namespace redi
       basic_pstreambuf();
 
       /// Constructor that initialises the buffer.
-      basic_pstreambuf( const std::string& command, std::ios_base::openmode mode);
+      basic_pstreambuf(const std::string& command, std::ios_base::openmode mode);
 
       /// Destructor.
       ~basic_pstreambuf();
@@ -239,7 +241,7 @@ namespace redi
     : file_(0)
     , take_from_buf_(false)
     {
-      this->open(command, mode_);
+      this->open(command, mode);
     }
 
   /**
