@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.10 2002/07/24 23:00:21 redi Exp $
+# $Id: Makefile,v 1.11 2002/09/08 22:39:22 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -22,7 +22,9 @@
 
 CXX=g++3
 
-CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls
+OPTIM=
+
+CFLAGS=-Wall -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
 
 SOURCES = pstream.h rpstream.h
@@ -47,7 +49,9 @@ test_minimum: test_minimum.cc pstream.h
 MANIFEST:
 	@echo "$(DIST_FILES)" > $@
 
-docs: pstream.h
+docs: pstream.h mainpage.html
+	@ver=`sed -n -e 's:^#define *PSTREAMS_VERSION.*// *\([0-9\.]*\):\1:p' $<`;\
+	 perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $$ver\2/" mainpage.html
 	@doxygen Doxyfile
 
 ChangeLog:
