@@ -20,7 +20,7 @@ advantages that provides. I hope you find it useful.
 
 PStreams is free software, see the file COPYING.LIB for copying permission.
 The latest version can be found at http://pstreams.sourceforge.net/ and
-frequently asked questions at http://pstreams.sourceforge.net/doc/faq.html
+frequently asked questions at http://pstreams.sourceforge.net/faq.html
 The author can be contacted at pstreams@kayari.org
 
 To use the PStreams classes copy the required header files to somewhere
@@ -172,5 +172,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.16 2004/10/17 16:07:32 redi Exp $
+$Id: README,v 1.17 2004/10/17 16:12:19 redi Exp $
 :vim: set tw=78
