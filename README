@@ -23,11 +23,10 @@ PStreams has only been tested with gcc so far, if you have problems (or
 better still - solutions) with PStreams and other compilers please let
 me know.
 
-The PStream (Un)Buffer class
+The PStream Buffer class
 ============================
-The pstreambuf used by the PStreams classes doesn't do any buffering, so a
-read()/write() call is made for every character. This will change in the
-next release.
+The pstreambuf used by the PStreams classes buffers all reads and writes
+as of version 0.42 (released 2002-12-03).
 
 
 Signalling and Termination
@@ -65,5 +64,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.6 2002/09/21 23:49:14 redi Exp $
+$Id: README,v 1.7 2002/12/03 20:23:07 redi Exp $
 
