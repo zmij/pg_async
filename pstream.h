@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.3 2001/12/15 17:37:21 redi Exp $
+/* $Id: pstream.h,v 1.4 2001/12/15 17:44:24 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001 Jonathan Wakely
 
@@ -30,13 +30,13 @@ opstream();
 pstream();
    Creates a new object with no associated process.
 
-ipstream(const char* cmd);
-opstream(const char* cmd);
-pstream(const char* cmd);
-   Passes cmd to /bin/sh and opens a pipe to the new process.
+ipstream(const char* command, ios_base::openmode = ios_base::in);
+opstream(const char* command, ios_base::openmode = ios_base::out);
+pstream(const char* command, ios_base::openmode = ios_base::in|ios_base::out);
+   Passes command to /bin/sh and opens a pipe to the new process.
 
-void open(const char* cmd);
-   Passes cmd to /bin/sh and opens a pipe to the new process.
+void open(const char* command, ios_base::openmode);
+   Passes command to /bin/sh and opens a pipe to the new process.
 
 Writing to an open pstream writes to the standard input of the command;
 the command's standard output is the same as that of the process that
@@ -45,9 +45,12 @@ Conversely, reading from a pstream reads the command's standard output,
 and the command's standard input is the same as that of the process that
 created the object.
 
-N.B. the pstream class for both reading and writing to a process is only
+The pstream class for both reading and writing to a process is only
 available on some sytems, where popen(3) is implemented using a
-bidirectional pipe.
+bidirectional pipe. On other systems using any openmode except ios_base::in
+or ios_base::out is an error.
+
+N.B. The interface is slightly different for the non-ISO compliant pstreams.
 */
 
 #ifndef REDI_PSTREAM_H
@@ -400,14 +403,14 @@ namespace redi
 {
   class pstreambase : public fstreambase {
   public:
-    void open(const char* cmd)
-    { attach(fileno(popen(cmd, mode_))); errno=0; }
+    void open(const char* command)
+    { attach(fileno(popen(command, mode_))); errno=0; }
 
   protected:
     pstreambase(const char* mode) : fstreambase() { copy_mode(mode); }
 
-    pstreambase(const char* cmd, const char* mode)
-    : fstreambase(fileno(popen(cmd, mode))) { errno=0; copy_mode(mode); }
+    pstreambase(const char* command, const char* mode)
+    : fstreambase(fileno(popen(command, mode))) { errno=0; copy_mode(mode); }
 
     virtual ~pstreambase()
     { if (FILE* fp = fdopen(filedesc(), mode_)) pclose(fp); }
@@ -442,7 +445,7 @@ namespace redi
     static const char * const MODE = "r+";
   public:
     pstream() : pstreambase() { }
-    pstream(const char* cmd) : pstreambase(cmd, MODE) { }
+    pstream(const char* command) : pstreambase(command, MODE) { }
   };
 #endif
 
@@ -467,7 +470,7 @@ namespace redi
   class opstream : public std::ofstream {
     static const char MODE[] = "w";
   public:
-    opstream(const char* cmd) : std::ofstream(fileno(popen(cmd, MODE)))
+    opstream(const char* command) : std::ofstream(fileno(popen(command, MODE)))
     { errno=0; }
     ~opstream() { pclose(fdopen(rdbuf()->fd(), MODE)); }
   };
@@ -475,7 +478,7 @@ namespace redi
   class ipstream : public std::ifstream {
     static const char MODE[] = "r";
   public:
-    ipstream(const char* cmd) : std::ifstream(fileno(popen(cmd, MODE)))
+    ipstream(const char* command) : std::ifstream(fileno(popen(command, MODE)))
     { errno=0; }
     ~ipstream() { pclose(fdopen(rdbuf()->fd(), MODE)); }
   };
@@ -484,7 +487,7 @@ namespace redi
   class pstream : public std::fstream {
     static const char MODE[] = "r+";
   public:
-    pstream(const char* cmd) : std::fstream(fileno(popen(cmd, MODE)))
+    pstream(const char* command) : std::fstream(fileno(popen(command, MODE)))
     { errno=0; }
     ~pstream() { pclose(fdopen(rdbuf()->fd(), MODE)); }
   };
