@@ -325,7 +325,6 @@ int main()
         print_result(ps, ps.rdbuf()->exited());
         print_result(ps, !ps.is_open());
 
-#if 0
         string buf;
         while (getline(ps.out(), buf))
             cout << "STDOUT: " << buf << endl;
@@ -335,7 +334,6 @@ int main()
             cout << "STDERR: " << buf << endl;
         check_fail(ps);
         ps.clear();
-#endif
     }
 
 
