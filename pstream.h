@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.64 2004/03/19 16:36:01 redi Exp $
+/* $Id: pstream.h,v 1.65 2004/03/23 13:09:14 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -48,9 +48,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <signal.h>     // for kill()
 
 
-// TODO   add input buffering to pstreambuf
-
-// TODO   abstract process creation and control to a process class.
+// TODO   abstract process creation and control to a separate class.
 
 // TODO   capitalise class names ?
 // basic_pstreambuf -> BasicPStreamBuf
@@ -60,7 +58,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 // basic_rpstream   -> BasicRPStream
 
 /// The library version.
-#define PSTREAMS_VERSION 0x002c   // 0.44
+#define PSTREAMS_VERSION 0x002d   // 0.45
 
 /**
  *  @namespace redi
@@ -115,7 +113,9 @@ namespace redi
       basic_pstreambuf(const std::string& command, pmode mode);
 
       /// Constructor that initialises the buffer with @a file and @a argv..
-      basic_pstreambuf(const std::string& file, const std::vector<std::string>& argv, pmode mode);
+      basic_pstreambuf( const std::string& file,
+                        const std::vector<std::string>& argv,
+                        pmode mode );
 
       /// Destructor.
       ~basic_pstreambuf();
@@ -126,7 +126,9 @@ namespace redi
 
       /// Initialise the stream buffer with @a file and @a argv.
       basic_pstreambuf*
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode);
+      open( const std::string& file,
+            const std::vector<std::string>& argv,
+            pmode mode );
 
       /// Close the stream buffer and wait for the process to exit.
       basic_pstreambuf*
@@ -285,7 +287,9 @@ namespace redi
       pstream_common(const std::string& command, pmode mode);
 
       /// Constructor that initialises the stream by starting a process.
-      pstream_common(const std::string& file, const std::vector<std::string>& argv, pmode mode);
+      pstream_common( const std::string& file,
+                      const std::vector<std::string>& argv,
+                      pmode mode );
 
       /// Start a process.
       virtual void
@@ -293,7 +297,9 @@ namespace redi
 
       /// Start a process.
       virtual void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode);
+      open( const std::string& file,
+            const std::vector<std::string>& argv,
+            pmode mode );
 
       /// Close the pipe.
       void
@@ -354,7 +360,7 @@ namespace redi
       /// Default constructor, creates an uninitialised stream.
       basic_ipstream()
       : istream_type(NULL), pbase_type()
-      {}
+      { }
 
       /**
        * @brief Constructor that initialises the stream by starting a process.
@@ -368,7 +374,7 @@ namespace redi
        */
       basic_ipstream(const std::string& command, pmode mode = std::ios_base::in)
       : istream_type(NULL), pbase_type(command, mode)
-      {}
+      { }
 
       /**
        * @brief Constructor that initialises the stream by starting a process.
@@ -381,9 +387,11 @@ namespace redi
        * @param mode  the I/O mode to use when opening the pipe.
        * @see   open()
        */
-      basic_ipstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
+      basic_ipstream( const std::string& file,
+                      const std::vector<std::string>& argv,
+                      pmode mode = std::ios_base::in )
       : istream_type(NULL), pbase_type(file, argv, mode)
-      {}
+      { }
 
       /**
        * @brief Destructor
@@ -391,7 +399,7 @@ namespace redi
        * Closes the stream and waits for the child to exit.
        */
       ~basic_ipstream()
-      {}
+      { }
 
       /**
        * @brief Start a process.
@@ -405,7 +413,9 @@ namespace redi
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::in)
-      { pbase_type::open(command, mode); }
+      {
+        pbase_type::open(command, mode);
+      }
 
       /**
        * @brief Start a process.
@@ -419,8 +429,12 @@ namespace redi
        * @see   pstream_common::open()
        */
       void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in)
-      { pbase_type::open(file, argv, mode); }
+      open( const std::string& file,
+            const std::vector<std::string>& argv,
+            pmode mode = std::ios_base::in )
+      {
+        pbase_type::open(file, argv, mode);
+      }
 
       /**
        * @brief Set streambuf to read from process' @c stdout.
@@ -472,7 +486,7 @@ namespace redi
       /// Default constructor, creates an uninitialised stream.
       basic_opstream()
       : ostream_type(NULL), pbase_type()
-      {}
+      { }
 
       /**
        * @brief Constructor that initialises the stream by starting a process.
@@ -484,9 +498,10 @@ namespace redi
        * @param mode    the I/O mode to use when opening the pipe.
        * @see   open()
        */
-      basic_opstream(const std::string& command, pmode mode = std::ios_base::out)
+      basic_opstream( const std::string& command,
+                      pmode mode = std::ios_base::out )
       : ostream_type(NULL), pbase_type(command, mode)
-      {}
+      { }
 
       /**
        * @brief Constructor that initialises the stream by starting a process.
@@ -499,9 +514,11 @@ namespace redi
        * @param mode  the I/O mode to use when opening the pipe.
        * @see   open()
        */
-      basic_opstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
+      basic_opstream( const std::string& file,
+                      const std::vector<std::string>& argv,
+                      pmode mode = std::ios_base::out )
       : ostream_type(NULL), pbase_type(file, argv, mode)
-      {}
+      { }
 
       /**
        * @brief Destructor
@@ -518,7 +535,9 @@ namespace redi
        */
       void
       open(const std::string& command, pmode mode = std::ios_base::out)
-      { pbase_type::open(command, mode); }
+      {
+        pbase_type::open(command, mode);
+      }
 
       /**
        * @brief Start a process.
@@ -528,8 +547,12 @@ namespace redi
        * @see   pstream_common::open(const std::string&, const std::vector<std::string>&, pmode)
        */
       void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::out)
-      { pbase_type::open(file, argv, mode); }
+      open( const std::string& file,
+            const std::vector<std::string>& argv,
+            pmode mode = std::ios_base::out )
+      {
+        pbase_type::open(file, argv, mode);
+      }
     };
 
 
@@ -563,7 +586,7 @@ namespace redi
       /// Default constructor, creates an uninitialised stream.
       basic_pstream()
       : iostream_type(NULL), pbase_type()
-      {}
+      { }
 
       /**
        * @brief Constructor that initialises the stream by starting a process.
@@ -575,9 +598,10 @@ namespace redi
        * @param mode    the I/O mode to use when opening the pipe.
        * @see   open(const std::string&, pmode)
        */
-      basic_pstream(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out)
+      basic_pstream( const std::string& command,
+                     pmode mode = std::ios_base::in|std::ios_base::out )
       : iostream_type(NULL), pbase_type(command, mode)
-      {}
+      { }
 
       /**
        * @brief Constructor that initialises the stream by starting a process.
@@ -590,9 +614,11 @@ namespace redi
        * @param mode  the I/O mode to use when opening the pipe.
        * @see   open(const std::string&, const std::vector<std::string>&, pmode)
        */
-      basic_pstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
+      basic_pstream( const std::string& file,
+                    const std::vector<std::string>& argv,
+                    pmode mode = std::ios_base::in|std::ios_base::out )
       : iostream_type(NULL), pbase_type(file, argv, mode)
-      {}
+      { }
 
       /**
        * @brief Destructor
@@ -608,8 +634,11 @@ namespace redi
        * @see   pstream_common::open(const std::string&, pmode)
        */
       void
-      open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out)
-      { pbase_type::open(command, mode); }
+      open( const std::string& command,
+            pmode mode = std::ios_base::in|std::ios_base::out )
+      {
+        pbase_type::open(command, mode);
+      }
 
       /**
        * @brief Start a process.
@@ -619,8 +648,12 @@ namespace redi
        * @see   pstream_common::open(const std::string&, const std::vector<std::string>&, pmode)
        */
       void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out)
-      { pbase_type::open(file, argv, mode); }
+      open( const std::string& file,
+            const std::vector<std::string>& argv,
+            pmode mode = std::ios_base::in|std::ios_base::out )
+      {
+        pbase_type::open(file, argv, mode);
+      }
 
       /**
        * @brief Set streambuf to read from process' @c stdout.
@@ -687,21 +720,27 @@ namespace redi
       basic_rpstream();
 
       /// Constructor that initialises the stream by starting a process.
-      basic_rpstream(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
+      basic_rpstream( const std::string& command,
+                      pmode mode = std::ios_base::in|std::ios_base::out );
 
       /// Constructor that initialises the stream by starting a process.
-      basic_rpstream(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
+      basic_rpstream( const std::string& file,
+                      const std::vector<std::string>& argv,
+                      pmode mode = std::ios_base::in|std::ios_base::out );
 
       /// Destructor
       ~basic_rpstream() { }
 
       /// Start a process.
       void
-      open(const std::string& command, pmode mode = std::ios_base::in|std::ios_base::out);
+      open( const std::string& command,
+            pmode mode = std::ios_base::in|std::ios_base::out );
 
       /// Start a process.
       void
-      open(const std::string& file, const std::vector<std::string>& argv, pmode mode = std::ios_base::in|std::ios_base::out);
+      open( const std::string& file,
+            const std::vector<std::string>& argv,
+            pmode mode = std::ios_base::in|std::ios_base::out );
 
       /// Obtain a reference to the istream that reads the process' @c stderr
       istream_type&
@@ -744,7 +783,7 @@ namespace redi
    * @relates basic_pstreambuf
    */
   template <typename C, typename T>
-    std::basic_ostream<C,T>&
+    inline std::basic_ostream<C,T>&
     peof(std::basic_ostream<C,T>& s)
     {
       static_cast<basic_pstreambuf<C,T>*>(s.rdbuf())->peof();
@@ -864,7 +903,9 @@ namespace redi
             // can only reach this point if exec() failed
 
             // parent can get exit code from waitpid()
-            std::exit(errno);
+            ::_exit(errno);
+            // XXX using exit() will make static dtors run twice
+            // std::exit(errno);
           }
           case -1 :
           {
@@ -950,7 +991,9 @@ namespace redi
             // can only reach this point if exec() failed
 
             // parent can get exit code from waitpid()
-            std::exit(errno);
+            ::_exit(errno);
+            // XXX using exit() will make static dtors run twice
+            // std::exit(errno);
           }
           case -1 :
           {
@@ -1522,15 +1565,21 @@ namespace redi
     bool
     basic_pstreambuf<C,T>::fill_buffer()
     {
-      const std::streamsize npb = std::min(std::streamsize(this->gptr()-this->eback()), static_cast<std::streamsize>(pbsz));
+      const std::streamsize pb1 = this->gptr() - this->eback();
+      const std::streamsize pb2 = pbsz;
+      const std::streamsize npb = std::min(pb1, pb2);
 
-      std::memmove(rbuffer()+pbsz-npb, this->gptr()-npb, npb*sizeof(char_type));
+      std::memmove( rbuffer() + pbsz - npb,
+                    this->gptr() - npb,
+                    npb * sizeof(char_type) );
 
       const std::streamsize rc = read(rbuffer() + pbsz, bufsz - pbsz);
 
       if (rc > 0)
       {
-        this->setg(rbuffer()+pbsz-npb, rbuffer()+pbsz, rbuffer()+pbsz+rc);
+        this->setg( rbuffer() + pbsz - npb,
+                    rbuffer() + pbsz,
+                    rbuffer() + pbsz + rc );
         return true;
       }
       else
