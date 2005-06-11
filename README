@@ -46,6 +46,19 @@ The Makefile doesn't work with Solaris make, and probably other versions
 of make.
 
 
+Release notes for PStreams 0.5.2
+================================
+
+Support for streambuf::in_avail() added for platforms that support the
+FIONREAD ioctl request (known to work on Linux, FreeBSD and Solaris.)
+
+It is now possible to detect when the shell command failed to execute,
+as long as you open the pstream using the functions taking argv_type. If
+the command is not found or cannot be executed then pstreambuf::is_open()
+will return false.  This makes it possible to distinguish the cases where
+the command cannot be run and when it runs but exits with an error.
+
+
 Release notes for PStreams 0.5.0
 ================================
 
@@ -172,5 +185,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.17 2004/10/17 16:12:19 redi Exp $
+$Id: README,v 1.18 2005/06/11 09:59:20 redi Exp $
 :vim: set tw=78
