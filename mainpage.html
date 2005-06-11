@@ -1,7 +1,7 @@
 
 <!-- start of included file -->
 
-<!-- $Id: mainpage.html,v 1.13 2005/06/11 09:36:42 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.14 2005/06/11 09:45:47 redi Exp $ -->
 
 <h3>A C++ IOStream interface to POSIX Process I/O.</h3>
 
@@ -64,6 +64,9 @@ programmer's responsibility to interpret the resulting character strings.
 Since the classes are intended to be used to read/write data between
 processes, which will usually share an internal character representation,
 rather than to/from files, this behaviour should be sufficient.</p>
+<p>The PStreams code has not been optimised, the emphasis is on simplicity
+and correctness, not performance.  If you have any performance benchmarks
+or ideas for (portable) ways to speed up the code then pelase share them.
 
 <p>&nbsp;</p>
 <h2><a name='usage'>Usage</a></h2>
