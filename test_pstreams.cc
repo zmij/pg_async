@@ -483,6 +483,15 @@ int main()
         print_result(s, cmd == s.command());
     }
 
+
+    {
+        // testing streambuf::in_avail()
+        ipstream in("hostname");
+        streamsize avail = in.rdbuf()->in_avail();
+        cout << "STDOUT: " << avail << " characters: " << in.rdbuf();
+        print_result(in, avail > 0);
+    }
+
     // TODO more testing of other members
 
     clog << "# Testing writing to closed stream\n";
