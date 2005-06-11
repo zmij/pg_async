@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.23 2005/06/11 09:17:53 redi Exp $
+# $Id: Makefile,v 1.24 2005/06/11 09:38:40 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -36,7 +36,7 @@ EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
-VERS = 0.5.1
+VERS = 0.5.2
 
 all: docs $(GENERATED_FILES)
 
@@ -62,7 +62,7 @@ mainpage.html: Makefile
 ChangeLog:
 	@if [ -f CVS/Root ] ; then cvs2cl.pl ; fi
 
-packages: pstreams-$(VERS).tar.gz pstreams-docs-$(VERS).tar.gz
+dist: pstreams-$(VERS).tar.gz pstreams-docs-$(VERS).tar.gz
 
 pstreams-$(VERS).tar.gz: pstream.h $(GENERATED_FILES)
 	@ln -s . pstreams-$(VERS)
