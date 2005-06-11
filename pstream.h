@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.89 2005/03/16 02:12:16 redi Exp $
+/* $Id: pstream.h,v 1.90 2005/06/11 09:25:06 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004 Jonathan Wakely
 
@@ -44,6 +44,10 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <cstdlib>      // for exit()
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
+#include <sys/ioctl.h>  // for ioctl() and FIONREAD
+#if defined(__sun)
+# include <sys/filio.h> // for FIONREAD on Solaris 2.5
+#endif
 #include <unistd.h>     // for pipe() fork() exec() and filedes functions
 #include <signal.h>     // for kill()
 #include <fcntl.h>      // for fcntl()
@@ -53,7 +57,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0051   // 0.5.1
+#define PSTREAMS_VERSION 0x0052   // 0.5.2
 
 /**
  *  @namespace redi
@@ -195,6 +199,10 @@ namespace redi
       /// Extract a sequence of characters from the pipe.
       std::streamsize
       read(char_type* s, std::streamsize n);
+
+      /// Report how many characters can be read from active input without blocking.
+      std::streamsize
+      showmanyc();
 
     protected:
       /// Enumerated type to indicate whether stdout or stderr is to be read.
@@ -837,7 +845,7 @@ namespace redi
   /**
    * When inserted into an output pstream the manipulator calls
    * basic_pstreambuf<C,T>::peof() to close the output pipe,
-   * causing the child process to receive the End Of File indicator
+   * causing the child process to receive the end-of-file indicator
    * on subsequent reads from its @c stdin stream.
    *
    * @brief   Manipulator to close the pipe connected to the process' stdin.
@@ -1483,7 +1491,7 @@ namespace redi
 
   /**
    *  Closes the output pipe, causing the child process to receive the
-   *  End Of File indicator on subsequent reads from its @c stdin stream.
+   *  end-of-file indicator on subsequent reads from its @c stdin stream.
    */
   template <typename C, typename T>
     inline void
@@ -1642,6 +1650,21 @@ namespace redi
       }
       else
          return traits_type::eof();
+    }
+
+  template <typename C, typename T>
+    std::streamsize
+    basic_pstreambuf<C,T>::showmanyc()
+    {
+      int avail = 0;
+#ifdef FIONREAD
+      if (ioctl(rpipe(), FIONREAD, &avail) == -1)
+        avail = -1;
+      else
+#endif
+      if (const std::ptrdiff_t buflen = this->gptr() - this->eback())
+        avail += buflen;
+      return std::streamsize(avail);
     }
 
   /**
