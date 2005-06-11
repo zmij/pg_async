@@ -419,7 +419,9 @@ int main()
     {
         // test writing to bad command
         opstream ofail(badcmd);
+#if defined (__sun) || defined(__APPLE__)
         sleep(1);  // give shell time to try command and exit
+#endif
         // this would cause SIGPIPE: ofail<<"blahblah";
         // does not show failure: print_result(ofail, !ofail.is_open());
         pstreambuf* buf = ofail.rdbuf();
