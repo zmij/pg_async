@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.22 2004/10/20 23:43:32 redi Exp $
+# $Id: Makefile,v 1.23 2005/06/11 09:17:53 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -18,14 +18,14 @@
 # along with PStreams; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO configure script (allow doxgenatiing of EVISCERATE functions)
+# TODO configure script (allow doxgenating of EVISCERATE functions)
 
 OPTIM=-g3
 EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=
 
-CFLAGS=-std=c++98 -pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
-CXXFLAGS=$(CFLAGS) -Woverloaded-virtual
+CFLAGS=-pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
+CXXFLAGS=$(CFLAGS) -std=c++98 -Woverloaded-virtual
 
 INSTALL_PREFIX=/usr/local
 
@@ -45,10 +45,10 @@ test: test_pstreams test_minimum
 	@./test_pstreams >/dev/null || echo "TEST EXITED WITH STATUS $$?"
 
 test_pstreams: test_pstreams.cc pstream.h
-	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 test_minimum: test_minimum.cc pstream.h
-	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 MANIFEST: Makefile
 	@for i in $(DIST_FILES) ; do echo "pstreams-$(VERS)/$$i" ; done > $@
