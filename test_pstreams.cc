@@ -79,6 +79,9 @@ template class redi::basic_rpstream<char>;
 
 namespace  // anon
 {
+    // process' exit status
+    int exit_status = 0;
+
     // helper functions for printing test results
 
     char
@@ -114,6 +117,7 @@ namespace  // anon
         clog << "Test " << setw(4) << test_id(s) << ": "
             << (result ? "Pass" : "Fail!")
             << endl;
+        exit_status += !result;
     }
 
     template <typename T>
@@ -678,6 +682,6 @@ int main()
         ::close(fd);
     }
 
-    return 0;
+    return exit_status;
 }
 
