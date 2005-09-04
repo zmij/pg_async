@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.91 2005/07/16 00:04:10 redi Exp $
+/* $Id: pstream.h,v 1.92 2005/09/04 15:31:41 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -1660,10 +1660,7 @@ namespace redi
 #ifdef FIONREAD
       if (ioctl(rpipe(), FIONREAD, &avail) == -1)
         avail = -1;
-      else
 #endif
-      if (const std::ptrdiff_t buflen = this->gptr() - this->eback())
-        avail += buflen;
       return std::streamsize(avail);
     }
 
