@@ -50,6 +50,20 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #define PSTREAMS_VERSION_MINOR PSTREAMS_VERSION & 0x00f0
 #define PSTREAMS_VERSION_PATCHLEVEL PSTREAMS_VERSION & 0x000f
 
+#ifndef CONDITIONAL_SLEEP
+# if defined (__sun) || defined(__APPLE__)
+// takes a while for child to exit on this OS.
+#  define CONDITIONAL_SLEEP sleep(1);
+# else
+#  define CONDITIONAL_SLEEP
+# endif
+#endif
+
+#ifndef SLEEP_TIME
+// increase these if your OS takes a while for processes to exit
+#define SLEEP_TIME 2
+#endif
+
 using namespace std;
 using namespace redi;
 
@@ -62,7 +76,7 @@ template <>
     basic_pstreambuf<char>::sync()
     {
         std::cout.flush();  // makes terminated process clean up faster.
-        sleep(5);
+        sleep(SLEEP_TIME+3);
         std::cout.flush();  // makes terminated process clean up faster.
         return !exited() && empty_buffer() ? 0 : -1;
     }
@@ -141,6 +155,8 @@ namespace  // anon
 #endif
 }
 
+sig_atomic_t sig_counter = 0;
+void my_sig_handler(int) { ++sig_counter; }
 
 int main()
 {
@@ -328,7 +344,7 @@ int main()
         const int e2 = pbuf->error();
         print_result(ps, e1 == e2);
 
-        sleep(3);  // allow time for child process to exit completely
+        sleep(SLEEP_TIME);  // allow time for child process to exit completely
 
         // close() will call sync(), which shouldn't flush buffer after kill()
         pbuf->close();
@@ -348,7 +364,7 @@ int main()
         check_pass(ps.err());
 
         ps.rdbuf()->kill();
-        ::sleep(3);
+        ::sleep(SLEEP_TIME);
         print_result(ps, ps.is_open());
         print_result(ps, ps.rdbuf()->exited());
         print_result(ps, !ps.is_open());
@@ -378,14 +394,17 @@ int main()
         print_result(ps, !pbuf->exited());
         ps.close();
         print_result(ps, pbuf->exited());
+        check_pass(ps);
+        ps.close();  // should set failbit on second call:
+        check_fail(ps);
 
+        ps.clear();
         ps.open(cmd);
         print_result(ps, ps.is_open());
         print_result(ps, !pbuf->exited());
         ps.close();
         print_result(ps, pbuf->exited());
     }
-
 
     clog << "# Testing behaviour with bad commands" << endl;
 
@@ -396,10 +415,10 @@ int main()
         // check is_open() works 
         ipstream is(badcmd);
         // print_result(is, !is.is_open());  // XXX cannot pass this test!
-#if defined (__sun) || defined(__APPLE__)
-        // fail next test if OS slow to terminate child process, need sleep(1)
-        sleep(1);
-#endif
+
+        // fail next test if OS slow to terminate child process, need sleep()
+        CONDITIONAL_SLEEP
+
         print_result(is, is.rdbuf()->exited() && !is.is_open());
     }
 
@@ -423,9 +442,7 @@ int main()
     {
         // test writing to bad command
         opstream ofail(badcmd);
-#if defined (__sun) || defined(__APPLE__)
-        sleep(1);  // give shell time to try command and exit
-#endif
+        CONDITIONAL_SLEEP  // give shell time to try command and exit
         // this would cause SIGPIPE: ofail<<"blahblah";
         // does not show failure: print_result(ofail, !ofail.is_open());
         pstreambuf* buf = ofail.rdbuf();
@@ -492,10 +509,11 @@ int main()
 
     {
         // testing streambuf::in_avail()
-        ipstream in("hostname");
+        ipstream in("echo 'this is hardcore'");
         streamsize avail = in.rdbuf()->in_avail();
         cout << "STDOUT: " << avail << " characters: " << in.rdbuf();
         print_result(in, avail > 0);
+        print_result(in, avail == strlen("this is hardcore\n"));
     }
 
     // TODO more testing of other members
@@ -645,12 +663,24 @@ int main()
 
         ipstream in("hostname");
 
-        ::sleep(3);  // wait for process to exit
+        ::sleep(SLEEP_TIME);  // wait for process to exit
 
-        in.rdbuf()->exited();  // test for exit, destroy buffers
+        in.rdbuf()->exited();  // test for exit, does not destroy buffers
+
+        int fd = dup(0);
+        print_result(in, fd > next_fd);
+        ::close(fd);
+
+        // check we can still read the output
+        std::string s;
+        print_result(in,  in >> s || in.err() >> s);
+
+        in.close(); // destroys buffers, closes pipes
+
+        check_fail(in >> s);
 
         // check no open files except for stdin, stdout, stderr
-        int fd = dup(0);
+        fd = dup(0);
         print_result(in, next_fd == fd);
         ::close(fd);
     }
@@ -661,7 +691,7 @@ int main()
 
         pstream p("cat", all3streams);
 
-        ::sleep(3);  // wait for process to exit
+        ::sleep(SLEEP_TIME);  // wait for process to exit
         p.rdbuf()->exited();  // test for exit, destroy buffers
 
         // check no open files except for stdin, stdout, stderr
@@ -674,12 +704,77 @@ int main()
         p.close();
 
         p.open("cat", all3streams);
-        ::sleep(3);  // wait for process to exit
+        ::sleep(SLEEP_TIME);  // wait for process to exit
         p.rdbuf()->exited();  // test for exit, destroy buffers
 
         fd = dup(0);
         print_result(p, next_fd == fd);
         ::close(fd);
+    }
+
+    {
+        // let's see if we can leak in the face of signals...
+
+        const int next_fd = dup(0);
+        ::close(next_fd);
+
+        alarm(3);
+
+        typedef struct sigaction sa;
+        sa act = sa(), oldact;
+        act.sa_handler = my_sig_handler;
+        sigaction(SIGALRM, &act, &oldact);
+
+        ipstream in("echo sleeping && sleep 3");
+        // close() should hang until interrupted then finish closing
+        in.close();
+
+        sigaction(SIGALRM, &oldact, 0);
+
+        // check no open files except for stdin, stdout, stderr
+        int fd = dup(0);
+        print_result(in, fd == next_fd);
+        ::close(fd);
+
+        // test pguard
+
+        class pguard
+        {
+        public:
+            explicit pguard(ipstream& in, int signal=SIGKILL)
+            : buf_(*in.rdbuf()), signal_(signal) { }
+
+          ~pguard() { if (signal_) buf_.kill(signal_); }
+
+          void release() { signal_ = 0; }
+
+        private:
+          pstreambuf& buf_;
+          int signal_;
+        };
+
+        in.clear();
+        in.open("echo sleeping && sleep 5");
+        std::string s;
+        print_result(in, in.is_open() && in >> s);
+
+        sigaction(SIGALRM, &act, &oldact);
+        sig_counter = 0;
+        alarm(3);
+
+        
+        try
+        {
+            pguard pg(in, SIGTERM);  // should kill child
+            throw 0;
+        } catch(...) {
+            in.close();  // should return immediately if child killed
+            print_result(in, alarm(0) > 0 && sig_counter == 0);
+            sigaction(SIGALRM, &oldact, 0);
+
+            int status = in.rdbuf()->status();
+            print_result(in, WIFSIGNALED(status) && WTERMSIG(status)==SIGTERM);
+        }
     }
 
     return exit_status;
