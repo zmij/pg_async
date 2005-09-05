@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.92 2005/09/04 15:31:41 redi Exp $
+/* $Id: pstream.h,v 1.93 2005/09/05 00:18:21 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -167,7 +167,7 @@ namespace redi
       int
       status() const;
 
-      /// Return the error number for the most recent failed operation.
+      /// Return the error number (errno) for the most recent failed operation.
       int
       error() const;
 
@@ -1045,13 +1045,17 @@ namespace redi
    *
    * By convention @c argv[0] should be the file name of the file being
    * executed.
+   *
    * Will duplicate the actions of  the  shell  in searching for an
    * executable file if the specified file name does not contain a slash (/)
    * character.
    *
    * Iff @a file is successfully executed then is_open() will return true.
-   * Note that exited() will return true if file cannot be executed, since
-   * the child process will have exited.
+   * Otherwise, pstreambuf::error() can be used to obtain the value of
+   * @c errno that was set by <b>execvp</b>(3) in the child process.
+   *
+   * The exit status of the new process will be returned by
+   * pstreambuf::status() after pstreambuf::exited() returns true.
    *
    * @param   file  a string containing the pathname of a program to execute.
    * @param   argv  a vector of argument strings passed to the new program.
@@ -1284,23 +1288,25 @@ namespace redi
     basic_pstreambuf<C,T>*
     basic_pstreambuf<C,T>::close()
     {
-      basic_pstreambuf<C,T>* ret = NULL;
-      if (is_open())
+      const bool running = is_open();
+
+      sync(); // this might call wait() and reap the child process
+
+      // rather than trying to work out whether or not we need to clean up
+      // just do it anyway, all cleanup functions are safe to call twice.
+
+      destroy_buffers(pstdin|pstdout|pstderr);
+
+      // close pipes before wait() so child gets EOF/SIGPIPE
+      close_fd(wpipe_);
+      close_fd_array(rpipe_);
+
+      do
       {
-        sync();
+        error_ = 0;
+      } while (wait() == -1 && error() == EINTR);
 
-        destroy_buffers(pstdin|pstdout|pstderr);
-
-        // close pipes before wait() so child gets EOF/SIGPIPE
-        close_fd(wpipe_);
-        close_fd_array(rpipe_);
-
-        if (wait() == 1)
-        {
-          ret = this;
-        }
-      }
-      return ret;
+      return running ? this : NULL;
     }
 
   /**
@@ -1388,10 +1394,14 @@ namespace redi
    * Suspends execution and waits for the associated process to exit, or
    * until a signal is delivered whose action is to terminate the current
    * process or to call a signal handling function. If the process has
-   * already exited wait() returns immediately.
+   * already exited (i.e. it is a "zombie" process) then wait() returns
+   * immediately.  Waiting for the child process causes all its system
+   * resources to be freed.
+   *
+   * error() will return EINTR if wait() is interrupted by a signal.
    *
    * @param   nohang  true to return immediately if the process has not exited.
-   * @return  1 if the process has exited.
+   * @return  1 if the process has exited and wait() has not yet been called.
    *          0 if @a nohang is true and the process has not exited yet.
    *          -1 if no process has been started or if an error occurs,
    *          in which case the error can be found using error().
@@ -1418,9 +1428,11 @@ namespace redi
             ppid_ = 0;
             status_ = status;
             exited = 1;
-            destroy_buffers(pstdin|pstdout|pstderr);
+            // Close wpipe, would get SIGPIPE if we used it.
+            destroy_buffers(pstdin);
             close_fd(wpipe_);
-            close_fd_array(rpipe_);
+            // XXX Must free read buffers and pipes on destruction
+            // XXX (or gets done on next call to open()/close())
             break;
         }
       }
@@ -1456,8 +1468,11 @@ namespace redi
     }
 
   /**
+   *  This function can call pstreambuf::wait() and so may change the
+   *  object's state if the child process has already exited.
+   *
    *  @return  True if the associated process has exited, false otherwise.
-   *  @see     basic_pstreambuf<C,T>::close()
+   *  @see     basic_pstreambuf<C,T>::wait()
    */
   template <typename C, typename T>
     inline bool
@@ -1468,9 +1483,9 @@ namespace redi
 
 
   /**
-   *  @return  The exit status of the child process, or -1 if close()
+   *  @return  The exit status of the child process, or -1 if wait()
    *           has not yet been called to wait for the child to exit.
-   *  @see     basic_pstreambuf<C,T>::close()
+   *  @see     basic_pstreambuf<C,T>::wait()
    */
   template <typename C, typename T>
     inline int
@@ -1503,14 +1518,14 @@ namespace redi
     }
 
   /**
+   * Unlike pstreambuf::exited(), this function will not call wait() and
+   * so will not change the object's state.  This means that once a child
+   * process is executed successfully this function will continue to
+   * return true even after the process exits (until wait() is called.)
+   *
    * @return  true if a previous call to open() succeeded and wait() has
    *          not been called and determined that the process has exited,
    *          false otherwise.
-   * @warning This function can not be used to determine whether the
-   *          command used to initialise the buffer was successfully
-   *          executed or not. If the shell command failed this function
-   *          will still return true.
-   *          You can use exited() to see if it's still open.
    */
   template <typename C, typename T>
     inline bool
