@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.93 2005/09/05 00:18:21 redi Exp $
+/* $Id: pstream.h,v 1.94 2005/09/05 00:39:27 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -57,7 +57,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0052   // 0.5.2
+#define PSTREAMS_VERSION 0x0053   // 0.5.3
 
 /**
  *  @namespace redi
@@ -948,32 +948,36 @@ namespace redi
     }
 
   /**
-   * Starts a new process by passing @a command to the shell
+   * Starts a new process by passing @a command to the shell (/bin/sh)
    * and opens pipes to the process with the specified @a mode.
    *
    * Will duplicate the actions of  the  shell  in searching for an
    * executable file if the specified file name does not contain a slash (/)
    * character.
    *
+   * @warning
    * There is no way to tell whether the shell command succeeded, this
    * function will always succeed unless resource limits (such as
    * memory usage, or number of processes or open files) are exceeded.
    * This means is_open() will return true even if @a command cannot
    * be executed.
+   * Use pstreambuf::open(const std::string&, const argv_type&, pmode)
+   * if you need to know whether the command failed to execute.
    *
    * @param   command  a string containing a shell command.
    * @param   mode     a bitwise OR of one or more of @c out, @c in, @c err.
    * @return  NULL if the shell could not be started or the
    *          pipes could not be opened, @c this otherwise.
-   * @see     <b>execlp</b>(3)
+   * @see     <b>execl</b>(3)
    */
   template <typename C, typename T>
     basic_pstreambuf<C,T>*
     basic_pstreambuf<C,T>::open(const std::string& command, pmode mode)
     {
+      const char * shell_path = "/bin/sh";
 #if 0
       const std::string argv[] = { "sh", "-c", command };
-      return this->open("sh", std::vector<std::string>(argv, argv+3), mode);
+      return this->open(shell_path, std::vector<std::string>(argv, argv+3), mode);
 #else
       basic_pstreambuf<C,T>* ret = NULL;
 
@@ -983,7 +987,7 @@ namespace redi
         {
         case 0 :
           // this is the new process, exec command
-          ::execlp("sh", "sh", "-c", command.c_str(), (void*)NULL);
+          ::execl(shell_path, "sh", "-c", command.c_str(), (char*)NULL);
 
           // can only reach this point if exec() failed
 
