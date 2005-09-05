@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.94 2005/09/05 00:39:27 redi Exp $
+/* $Id: pstream.h,v 1.95 2005/09/05 01:15:27 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -977,7 +977,7 @@ namespace redi
       const char * shell_path = "/bin/sh";
 #if 0
       const std::string argv[] = { "sh", "-c", command };
-      return this->open(shell_path, std::vector<std::string>(argv, argv+3), mode);
+      return this->open(shell_path, argv_type(argv, argv+3), mode);
 #else
       basic_pstreambuf<C,T>* ret = NULL;
 
