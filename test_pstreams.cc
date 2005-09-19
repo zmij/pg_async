@@ -156,7 +156,7 @@ namespace  // anon
 }
 
 sig_atomic_t sig_counter = 0;
-void my_sig_handler(int) { ++sig_counter; }
+extern "C" void my_sig_handler(int) { ++sig_counter; }
 
 int main()
 {
