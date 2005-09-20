@@ -98,29 +98,31 @@ namespace  // anon
 
     // helper functions for printing test results
 
-    char
-    test_type(istream const&)
-    { return 'r'; }
+    void
+    test_type(istream const&, char& c, int& i)
+    { static int count=0; c='r'; i=++count; }
 
-    char
-    test_type(ostream const&)
-    { return 'w'; }
+    void
+    test_type(ostream const&, char& c, int& i)
+    { static int count=0; c='w'; i=++count; }
 
-    char
-    test_type(iostream const&)
-    { return 'b'; }
+    void
+    test_type(iostream const&, char& c, int& i)
+    { static int count=0; c='b'; i=++count; }
 
-    char
-    test_type(rpstream const&)
-    { return 'x'; }
+    void
+    test_type(rpstream const&, char& c, int& i)
+    { static int count=0; c='x'; i=++count; }
 
     template <typename T>
     string
     test_id(T const& s)
     {
-        static int count = 0;
+        char label = '?';
+        int count = 0;
+        test_type(s, label, count);
         ostringstream buf;
-        buf << test_type(s) << ++count;
+        buf << label << count;
         return buf.str();
     }
 
@@ -762,7 +764,6 @@ int main()
         sig_counter = 0;
         alarm(3);
 
-        
         try
         {
             pguard pg(in, SIGTERM);  // should kill child
