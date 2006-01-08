@@ -1,6 +1,6 @@
 /*
 PStreams - POSIX Process I/O for C++
-Copyright (C) 2002 Jonathan Wakely
+Copyright (C) 2002-2006 Jonathan Wakely
 
 This file is part of PStreams.
 
@@ -515,7 +515,7 @@ int main()
         streamsize avail = in.rdbuf()->in_avail();
         cout << "STDOUT: " << avail << " characters: " << in.rdbuf();
         print_result(in, avail > 0);
-        print_result(in, avail == strlen("this is hardcore\n"));
+        print_result(in, size_t(avail) == strlen("this is hardcore\n"));
     }
 
     // TODO more testing of other members
