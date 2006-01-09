@@ -657,57 +657,43 @@ int main()
 #endif
 
     clog << "# Testing resources freed correctly\n";
-    // TODO repeat tests for vector open()
-
-    {
-        const int next_fd = dup(0);
-        ::close(next_fd);
-
-        ipstream in("hostname");
-
-        ::sleep(SLEEP_TIME);  // wait for process to exit
-
-        in.rdbuf()->exited();  // test for exit, does not destroy buffers
-
-        int fd = dup(0);
-        print_result(in, fd > next_fd);
-        ::close(fd);
-
-        // check we can still read the output
-        std::string s;
-        print_result(in,  in >> s || in.err() >> s);
-
-        in.close(); // destroys buffers, closes pipes
-
-        check_fail(in >> s);
-
-        // check no open files except for stdin, stdout, stderr
-        fd = dup(0);
-        print_result(in, next_fd == fd);
-        ::close(fd);
-    }
 
     {
         const int next_fd = dup(0);
         ::close(next_fd);
 
         pstream p("cat", all3streams);
+        p << "fnord" << peof;
 
         ::sleep(SLEEP_TIME);  // wait for process to exit
-        p.rdbuf()->exited();  // test for exit, destroy buffers
+
+        p.rdbuf()->exited();  // test for exit, destroys write buffer
+
+        // check we can still read the output
+        std::string s;
+        print_result(p,  p >> s || p.err() >> s);
+
+        p.close(); // destroys read buffers, closes all pipes
+
+        check_fail(p >> s);
 
         // check no open files except for stdin, stdout, stderr
         int fd = dup(0);
         print_result(p, next_fd == fd);
         ::close(fd);
 
-        // now close and reopen and check again
+        // reopen and check again with vector-open
+
+        std::vector<std::string> argv;
+        argv.push_back("cat");
+        p.open(argv[0], argv, all3streams);
 
         p.close();
 
-        p.open("cat", all3streams);
-        ::sleep(SLEEP_TIME);  // wait for process to exit
-        p.rdbuf()->exited();  // test for exit, destroy buffers
+        // reopen and check again
+
+        p.open(argv[0], all3streams);
+        p.close();
 
         fd = dup(0);
         print_result(p, next_fd == fd);
@@ -720,14 +706,16 @@ int main()
         const int next_fd = dup(0);
         ::close(next_fd);
 
-        alarm(3);
-
         typedef struct sigaction sa;
         sa act = sa(), oldact;
         act.sa_handler = my_sig_handler;
         sigaction(SIGALRM, &act, &oldact);
 
-        ipstream in("echo sleeping && sleep 3");
+        std::vector<std::string> argv;
+        argv.push_back("sleep 5");
+
+        ipstream in(argv[0]);
+        alarm(3);
         // close() should hang until interrupted then finish closing
         in.close();
 
@@ -738,7 +726,16 @@ int main()
         print_result(in, fd == next_fd);
         ::close(fd);
 
-        // test pguard
+        in.open(argv[0], argv);
+        alarm(3);
+        in.close();
+
+        sigaction(SIGALRM, &oldact, 0);
+
+        // check no open files except for stdin, stdout, stderr
+        fd = dup(0);
+        print_result(in, fd == next_fd);
+        ::close(fd);
 
         class pguard
         {
