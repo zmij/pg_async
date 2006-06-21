@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.96 2006/01/21 21:02:06 redi Exp $
+/* $Id: pstream.h,v 1.97 2006/06/21 20:56:27 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -275,6 +275,11 @@ namespace redi
     {
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
+
+#ifdef __SUNPRO_CC
+      typedef pstreams::pmode                       pmode;
+      typedef pstreams::argv_type                   argv_type;
+#endif
 
       /// Default constructor.
       pstream_common();
@@ -2006,9 +2011,9 @@ namespace redi
    */
   template <typename C, typename T>
     inline std::size_t
-    pstream_common<C,T>::fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err)
+    pstream_common<C,T>::fopen(std::FILE*& fin, std::FILE*& fout, std::FILE*& ferr)
     {
-      return buf_.fopen(in, out, err);
+      return buf_.fopen(fin, fout, ferr);
     }
 
 #endif // REDI_EVISCERATE_PSTREAMS
