@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.97 2006/06/21 20:56:27 redi Exp $
+/* $Id: pstream.h,v 1.98 2006/07/21 15:00:19 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -1166,7 +1166,7 @@ namespace redi
    * the child's PID and the opened pipes and the child process replaces
    * its standard streams with the opened pipes.
    *
-   * If an error occurs the error code will be set to one of the possile
+   * If an error occurs the error code will be set to one of the possible
    * errors for @c pipe() or @c fork().
    * See your system's documentation for these error codes.
    *
