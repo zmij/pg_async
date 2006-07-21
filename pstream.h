@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.98 2006/07/21 15:00:19 redi Exp $
+/* $Id: pstream.h,v 1.99 2006/07/21 15:21:53 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -1681,11 +1681,12 @@ namespace redi
     basic_pstreambuf<C,T>::showmanyc()
     {
       int avail = 0;
+      const int sz = sizeof(C);
 #ifdef FIONREAD
       if (ioctl(rpipe(), FIONREAD, &avail) == -1)
-        avail = -sizeof(C);
+        avail = -sz;
 #endif
-      return std::streamsize(avail/sizeof(C));
+      return std::streamsize(avail/sz);
     }
 
   /**
