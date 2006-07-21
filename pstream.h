@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.100 2006/07/21 16:07:24 redi Exp $
+/* $Id: pstream.h,v 1.101 2006/07/21 20:30:12 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -1700,17 +1700,19 @@ namespace redi
       const std::streamsize pb2 = pbsz;
       const std::streamsize npb = std::min(pb1, pb2);
 
-      std::memmove( rbuffer() + pbsz - npb,
+      char_type* const rbuf = rbuffer();
+
+      std::memmove( rbuf + pbsz - npb,
                     this->gptr() - npb,
                     npb * sizeof(char_type) );
 
-      const std::streamsize rc = read(rbuffer() + pbsz, bufsz - pbsz);
+      const std::streamsize rc = read(rbuf + pbsz, bufsz - pbsz);
 
       if (rc > 0)
       {
-        this->setg( rbuffer() + pbsz - npb,
-                    rbuffer() + pbsz,
-                    rbuffer() + pbsz + rc );
+        this->setg( rbuf + pbsz - npb,
+                    rbuf + pbsz,
+                    rbuf + pbsz + rc );
         return true;
       }
       else
