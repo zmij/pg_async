@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.99 2006/07/21 15:21:53 redi Exp $
+/* $Id: pstream.h,v 1.100 2006/07/21 16:07:24 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -1722,8 +1722,6 @@ namespace redi
 
   /**
    * Writes up to @a n characters to the pipe from the buffer @a s.
-   * This currently only works for fixed width character encodings where
-   * each character uses @c sizeof(char_type) bytes.
    *
    * @param   s  character buffer.
    * @param   n  buffer length.
@@ -1738,8 +1736,6 @@ namespace redi
 
   /**
    * Reads up to @a n characters from the pipe to the buffer @a s.
-   * This currently only works for fixed width character encodings where
-   * each character uses @c sizeof(char_type) bytes.
    *
    * @param   s  character buffer.
    * @param   n  buffer length.
