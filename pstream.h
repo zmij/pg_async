@@ -1,6 +1,6 @@
-/* $Id: pstream.h,v 1.102 2006/07/22 01:20:43 redi Exp $
+/* $Id: pstream.h,v 1.103 2006/07/22 01:24:18 redi Exp $
 PStreams - POSIX Process I/O for C++
-Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
+Copyright (C) 2001,2002,2003,2004,2005,2006 Jonathan Wakely
 
 This file is part of PStreams.
 
