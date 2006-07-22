@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.101 2006/07/21 20:30:12 redi Exp $
+/* $Id: pstream.h,v 1.102 2006/07/22 01:20:43 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005 Jonathan Wakely
 
@@ -1627,11 +1627,16 @@ namespace redi
     basic_pstreambuf<C,T>::empty_buffer()
     {
       const std::streamsize count = this->pptr() - this->pbase();
-      const std::streamsize written = this->write(this->wbuffer_, count);
-      if (count > 0 && written == count)
+      if (count > 0)
       {
-        this->pbump(-written);
-        return true;
+        const std::streamsize written = this->write(this->wbuffer_, count);
+        if (written > 0)
+        {
+          if (const std::streamsize unwritten = count - written)
+            traits_type::move(this->pbase(), this->pbase()+written, unwritten);
+          this->pbump(-written);
+          return true;
+        }
       }
       return false;
     }
@@ -1733,7 +1738,14 @@ namespace redi
     inline std::streamsize
     basic_pstreambuf<C,T>::write(const char_type* s, std::streamsize n)
     {
-      return wpipe() >= 0 ? ::write(wpipe(), s, n * sizeof(char_type)) : 0;
+      std::streamsize nwritten = 0;
+      if (wpipe() >= 0)
+      {
+        nwritten = ::write(wpipe(), s, n * sizeof(char_type));
+        if (nwritten > 0)
+          nwritten /= sizeof(char_type);
+      }
+      return nwritten;
     }
 
   /**
@@ -1747,7 +1759,14 @@ namespace redi
     inline std::streamsize
     basic_pstreambuf<C,T>::read(char_type* s, std::streamsize n)
     {
-      return rpipe() >= 0 ? ::read(rpipe(), s, n * sizeof(char_type)) : 0;
+      std::streamsize nread = 0;
+      if (rpipe() >= 0)
+      {
+        nread = ::read(rpipe(), s, n * sizeof(char_type));
+        if (nread > 0)
+          nread /= sizeof(char_type);
+      }
+      return nread;
     }
 
   /** @return a reference to the output file descriptor */
