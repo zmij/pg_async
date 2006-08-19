@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.103 2006/07/22 01:24:18 redi Exp $
+/* $Id: pstream.h,v 1.104 2006/08/19 16:37:21 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006 Jonathan Wakely
 
@@ -38,7 +38,6 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <vector>
 #include <algorithm>    // for min()
-#include <cstring>      // for memcpy(), memmove() etc.
 #include <cerrno>       // for errno
 #include <cstddef>      // for size_t
 #include <cstdlib>      // for exit()
@@ -1604,7 +1603,7 @@ namespace redi
     {
       if (n < this->epptr() - this->pptr())
       {
-        std::memcpy(this->pptr(), s, n * sizeof(char_type));
+        traits_type::copy(this->pptr(), s, n);
         this->pbump(n);
         return n;
       }
@@ -1707,9 +1706,7 @@ namespace redi
 
       char_type* const rbuf = rbuffer();
 
-      std::memmove( rbuf + pbsz - npb,
-                    this->gptr() - npb,
-                    npb * sizeof(char_type) );
+      traits_type::move(rbuf + pbsz - npb, this->gptr() - npb, npb);
 
       const std::streamsize rc = read(rbuf + pbsz, bufsz - pbsz);
 
