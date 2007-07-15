@@ -1,7 +1,7 @@
 
 <!-- start of included file -->
 
-<!-- $Id: mainpage.html,v 1.15 2005/06/11 10:06:59 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.16 2007/07/15 16:39:08 redi Exp $ -->
 
 <h3>A C++ IOStream interface to POSIX Process I/O.</h3>
 
@@ -96,7 +96,7 @@ argv.push_back("-rf");
 argv.push_back("./foo.txt");
 argv.push_back("./bar.html");
 argv.push_back("./fnord/");
-redi::ipstream in("rm", argv, pstreambuf::pstderr);
+redi::ipstream in("rm", argv, redi::pstreambuf::pstderr);
 std::string errmsg;
 while (std::getline(in, errmsg)) {
     errors.push_back(errmsg);
