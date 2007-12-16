@@ -538,8 +538,6 @@ int main()
         check_pass(in);
         check_fail(in >> c);
         print_result(in, in.eof());
-        print_result(in, in.bad());
-        print_result(in, in.fail());
     }
 
     // TODO more testing of other members
