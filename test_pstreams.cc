@@ -40,11 +40,13 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 //#include <fcntl.h>
 #include <errno.h>
+
 
 #define PSTREAMS_VERSION_MAJOR PSTREAMS_VERSION & 0xff00
 #define PSTREAMS_VERSION_MINOR PSTREAMS_VERSION & 0x00f0
@@ -164,6 +166,9 @@ int main()
 {
     ios_base::sync_with_stdio();
 
+    const pstreams::pmode all3streams =
+        pstreams::pstdin|pstreams::pstdout|pstreams::pstderr;
+
     string str;
 
     clog << "# Testing basic I/O\n";
@@ -270,18 +275,11 @@ int main()
 
     clog << "# Testing bidirectional PStreams\n";
 
-    const pstreams::pmode all3streams =
-        pstreams::pstdin|pstreams::pstdout|pstreams::pstderr;
-
     {
         // test reading from bidirectional pstream
 
-#if defined(__sun)
-        // Solaris' grep doesn't like "--" and "-"
         const string cmd = "grep '^127' /etc/hosts /no/such/file /dev/stdin";
-#else
-        const string cmd = "grep '^127' -- /etc/hosts /no/such/file -";
-#endif
+
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -305,12 +303,8 @@ int main()
         // test input on bidirectional pstream
         // and test child moves onto next file after peof on stdin
 
-#if defined (__sun)
-        // Solaris' grep doesn't like "--" and "-"
         const string cmd = "grep fnord /etc/hosts /dev/stdin";
-#else
-        const string cmd = "grep fnord -- /etc/hosts -";
-#endif
+
         pstream ps(cmd, all3streams);
 
         print_result(ps, ps.is_open());
@@ -511,11 +505,41 @@ int main()
 
     {
         // testing streambuf::in_avail()
-        ipstream in("echo 'this is hardcore'");
+        ipstream in("{ printf 'this is ' ; sleep 2 ; printf 'hardcore' ; }");
+        sleep(1);
         streamsize avail = in.rdbuf()->in_avail();
-        cout << "STDOUT: " << avail << " characters: " << in.rdbuf();
         print_result(in, avail > 0);
-        print_result(in, size_t(avail) == strlen("this is hardcore\n"));
+        print_result(in, size_t(avail) == strlen("this is "));
+
+        std::vector<char> buf;
+        int tries = 0;
+        while (in && avail >= 0)
+        {
+            if (avail > 0)
+            {
+                if (tries)
+                {
+                    cout << "Nothing to read " << tries << " times." << endl;
+                    tries = 0;
+                }
+                buf.resize(avail);
+                in.readsome(&buf.front(), avail);
+                cout << "STDOUT: " << avail << " characters: "
+                    << string(buf.begin(), buf.end()) << endl;
+            }
+            else
+                ++tries;
+            avail = in.rdbuf()->in_avail();
+        }
+
+        if (tries)
+            cout << "Nothing to read " << tries << " times." << endl;
+        char c;
+        check_pass(in);
+        check_fail(in >> c);
+        print_result(in, in.eof());
+        print_result(in, in.bad());
+        print_result(in, in.fail());
     }
 
     // TODO more testing of other members
@@ -774,6 +798,32 @@ int main()
             print_result(in, WIFSIGNALED(status) && WTERMSIG(status)==SIGTERM);
         }
     }
+
+    clog << "# Testing wide chars\n";
+    {
+        ipstream dummy("true");
+        basic_ipstream<wchar_t> in("cat ./pstreams.wout");
+        wstring s;
+        in >> s;
+        wcout << s;
+        print_result(dummy, in);
+
+        wchar_t wc;
+        int count=0, gcount=0;
+        while (in.get(wc))
+        {
+            wcout << wc;
+            ++count;
+            gcount += in.gcount();
+        }
+        wcout << L'\n';
+        print_result(dummy, in.eof() && in.fail());
+        print_result(dummy, gcount == count);
+        wcout << L"Read: " << gcount << L" chars." << endl;
+    }
+
+
+
 
     return exit_status;
 }
