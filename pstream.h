@@ -1,6 +1,6 @@
-/* $Id: pstream.h,v 1.104 2006/08/19 16:37:21 redi Exp $
+/* $Id: pstream.h,v 1.105 2007/12/16 23:34:22 redi Exp $
 PStreams - POSIX Process I/O for C++
-Copyright (C) 2001,2002,2003,2004,2005,2006 Jonathan Wakely
+Copyright (C) 2001,2002,2003,2004,2005,2006,2007 Jonathan Wakely
 
 This file is part of PStreams.
 
@@ -56,7 +56,7 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0053   // 0.5.3
+#define PSTREAMS_VERSION 0x0060   // 0.6.0
 
 /**
  *  @namespace redi
@@ -238,7 +238,7 @@ namespace redi
       empty_buffer();
 
       bool
-      fill_buffer();
+      fill_buffer(bool non_blocking = false);
 
       /// Return the active input buffer.
       char_type*
@@ -1439,8 +1439,8 @@ namespace redi
             // Close wpipe, would get SIGPIPE if we used it.
             destroy_buffers(pstdin);
             close_fd(wpipe_);
-            // XXX Must free read buffers and pipes on destruction
-            // XXX (or gets done on next call to open()/close())
+            // Must free read buffers and pipes on destruction
+            // or next call to open()/close()
             break;
         }
       }
@@ -1468,7 +1468,11 @@ namespace redi
           error_ = errno;
         else
         {
+#if 0
           // TODO call exited() to check for exit and clean up? leave to user?
+          if (signal==SIGTERM || signal==SIGKILL)
+            this->exited();
+#endif
           ret = this;
         }
       }
@@ -1685,12 +1689,18 @@ namespace redi
     basic_pstreambuf<C,T>::showmanyc()
     {
       int avail = 0;
-      const int sz = sizeof(C);
+      if (sizeof(char_type) == 1)
+        avail = fill_buffer(true) ? this->egptr() - this->gptr() : -1;
 #ifdef FIONREAD
-      if (ioctl(rpipe(), FIONREAD, &avail) == -1)
-        avail = -sz;
+      else
+      {
+        if (::ioctl(rpipe(), FIONREAD, &avail) == -1)
+          avail = -1;
+        else if (avail)
+          avail /= sizeof(char_type);
+      }
 #endif
-      return std::streamsize(avail/sz);
+      return std::streamsize(avail);
     }
 
   /**
@@ -1698,7 +1708,7 @@ namespace redi
    */
   template <typename C, typename T>
     bool
-    basic_pstreambuf<C,T>::fill_buffer()
+    basic_pstreambuf<C,T>::fill_buffer(bool non_blocking)
     {
       const std::streamsize pb1 = this->gptr() - this->eback();
       const std::streamsize pb2 = pbsz;
@@ -1708,9 +1718,33 @@ namespace redi
 
       traits_type::move(rbuf + pbsz - npb, this->gptr() - npb, npb);
 
-      const std::streamsize rc = read(rbuf + pbsz, bufsz - pbsz);
+      std::streamsize rc = -1;
 
-      if (rc > 0)
+      if (non_blocking)
+      {
+        const int flags = ::fcntl(rpipe(), F_GETFL);
+        if (flags != -1)
+        {
+          const bool blocking = !(flags & O_NONBLOCK);
+          if (blocking)
+            ::fcntl(rpipe(), F_SETFL, flags | O_NONBLOCK);  // set non-blocking
+
+          error_ = 0;
+          rc = read(rbuf + pbsz, bufsz - pbsz);
+
+          if (rc == -1 && error_ == EAGAIN)  // nothing available
+            rc = 0;
+          else if (rc == 0)  // EOF
+            rc = -1;
+
+          if (blocking)
+            ::fcntl(rpipe(), F_SETFL, flags); // restore
+        }
+      }
+      else
+        rc = read(rbuf + pbsz, bufsz - pbsz);
+
+      if (rc > 0 || (rc == 0 && non_blocking))
       {
         this->setg( rbuf + pbsz - npb,
                     rbuf + pbsz,
@@ -1739,7 +1773,9 @@ namespace redi
       if (wpipe() >= 0)
       {
         nwritten = ::write(wpipe(), s, n * sizeof(char_type));
-        if (nwritten > 0)
+        if (nwritten == -1)
+          error_ = errno;
+        else
           nwritten /= sizeof(char_type);
       }
       return nwritten;
@@ -1760,7 +1796,9 @@ namespace redi
       if (rpipe() >= 0)
       {
         nread = ::read(rpipe(), s, n * sizeof(char_type));
-        if (nread > 0)
+        if (nread == -1)
+          error_ = errno;
+        else
           nread /= sizeof(char_type);
       }
       return nread;
