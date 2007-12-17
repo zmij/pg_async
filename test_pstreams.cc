@@ -52,18 +52,13 @@ along with PStreams; if not, write to the Free Software Foundation, Inc.,
 #define PSTREAMS_VERSION_MINOR PSTREAMS_VERSION & 0x00f0
 #define PSTREAMS_VERSION_PATCHLEVEL PSTREAMS_VERSION & 0x000f
 
-#ifndef CONDITIONAL_SLEEP
-# if defined (__sun) || defined(__APPLE__)
-// takes a while for child to exit on this OS.
-#  define CONDITIONAL_SLEEP sleep(1);
-# else
-#  define CONDITIONAL_SLEEP
-# endif
-#endif
-
 #ifndef SLEEP_TIME
 // increase these if your OS takes a while for processes to exit
-#define SLEEP_TIME 2
+# if defined (__sun) || defined(__APPLE__)
+#  define SLEEP_TIME 2
+# else
+#  define SLEEP_TIME 1
+# endif
 #endif
 
 using namespace std;
@@ -412,8 +407,9 @@ int main()
         ipstream is(badcmd);
         // print_result(is, !is.is_open());  // XXX cannot pass this test!
 
-        // fail next test if OS slow to terminate child process, need sleep()
-        CONDITIONAL_SLEEP
+        (void) is.err();
+        while (!is.rdbuf()->in_avail())  // need to wait for exit
+            ::sleep(1);
 
         print_result(is, is.rdbuf()->exited() && !is.is_open());
     }
@@ -438,7 +434,7 @@ int main()
     {
         // test writing to bad command
         opstream ofail(badcmd);
-        CONDITIONAL_SLEEP  // give shell time to try command and exit
+        ::sleep(SLEEP_TIME);
         // this would cause SIGPIPE: ofail<<"blahblah";
         // does not show failure: print_result(ofail, !ofail.is_open());
         pstreambuf* buf = ofail.rdbuf();
