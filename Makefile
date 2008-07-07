@@ -1,13 +1,13 @@
-# $Id: Makefile,v 1.25 2005/07/19 08:24:29 redi Exp $
+# $Id: Makefile,v 1.26 2008/07/07 21:38:14 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
 # This file is part of PStreams.
 # 
 # PStreams is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of
-# the License, or (at your option) any later version.
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
 # 
 # PStreams is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,8 +15,7 @@
 # GNU Lesser General Public License for more details.
 # 
 # You should have received a copy of the GNU Lesser General Public License
-# along with PStreams; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TODO configure script (allow doxgenating of EVISCERATE functions)
 
