@@ -46,6 +46,15 @@ The Makefile doesn't work with Solaris make, and probably other versions
 of make.
 
 
+Release notes for PStreams 0.6.0
+================================
+
+If the read buffer is empty pstreambuf::in_avail() now performs a
+non-blocking read to fetch only as many characters as are available.
+This means that istream::readsome() won't block and can be used to test
+if characters are available on the child process' stdout or stderr pipes
+without blocking.
+
 Release notes for PStreams 0.5.2
 ================================
 
@@ -185,5 +194,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.18 2005/06/11 09:59:20 redi Exp $
+$Id: README,v 1.19 2008/07/07 22:12:17 redi Exp $
 :vim: set tw=78
