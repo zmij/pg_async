@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.26 2008/07/07 21:38:14 redi Exp $
+# $Id: Makefile,v 1.27 2008/07/07 22:15:14 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -35,18 +35,14 @@ EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
-VERS = 0.5.2
+VERS = 0.6.0
 
 all: docs $(GENERATED_FILES)
 
 test: test_pstreams test_minimum
-	@./test_minimum >/dev/null 2>&1 || echo "TEST EXITED WITH STATUS $$?"
-	@./test_pstreams >/dev/null || echo "TEST EXITED WITH STATUS $$?"
+	@for test in $^ ; do echo $$test ; ./$$test >/dev/null 2>&1 || echo "$$test EXITED WITH STATUS $$?" ; done
 
-test_pstreams: test_pstreams.cc pstream.h
-	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) $(LDFLAGS) -o $@ $<
-
-test_minimum: test_minimum.cc pstream.h
++test_%: test_%.cc pstream.h
 	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 MANIFEST: Makefile
@@ -59,7 +55,7 @@ mainpage.html: Makefile
 	@perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $(VERS)\2/" $@
 
 ChangeLog:
-	@if [ -f CVS/Root ] ; then cvs2cl.pl ; fi
+	@if [ -f CVS/Root ] ; then cvs2cl.pl --no-times -U usermap ; fi
 
 dist: pstreams-$(VERS).tar.gz pstreams-docs-$(VERS).tar.gz
 
