@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.28 2008/07/07 22:24:14 redi Exp $
+# $Id: Makefile,v 1.29 2008/07/07 22:33:17 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -55,7 +55,7 @@ mainpage.html: Makefile
 	@perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $(VERS)\2/" $@
 
 ChangeLog:
-	@if [ -f CVS/Root ] ; then cvs2cl.pl --no-times -U usermap ; fi
+	@if [ -f CVS/Root ] ; then cvs2cl.pl --no-times -U usermap -F trunk ; fi
 
 dist: pstreams-$(VERS).tar.gz pstreams-docs-$(VERS).tar.gz
 
