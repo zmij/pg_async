@@ -49,6 +49,8 @@ of make.
 Release notes for PStreams 0.6.0
 ================================
 
+The Library's licence has changed to LGPL version 3.
+
 If the read buffer is empty pstreambuf::in_avail() now performs a
 non-blocking read to fetch only as many characters as are available.
 This means that istream::readsome() won't block and can be used to test
@@ -194,5 +196,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.19 2008/07/07 22:12:17 redi Exp $
+$Id: README,v 1.20 2008/07/09 22:39:41 redi Exp $
 :vim: set tw=78
