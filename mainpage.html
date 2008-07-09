@@ -1,7 +1,7 @@
 
 <!-- start of included file -->
 
-<!-- $Id: mainpage.html,v 1.17 2008/07/07 22:25:47 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.18 2008/07/09 22:05:08 redi Exp $ -->
 
 <h3>A C++ IOStream interface to POSIX Process I/O.</h3>
 
@@ -116,6 +116,43 @@ while (std::getline(in<strong>.err()</strong>, errmsg)) {
 </code></pre>
 <p>This form can also be used with the unrestricted <code>pstream</code>
 and <code>ipstream</code> classes, but it is not strictly necessary.</p>
+
+<p>Here is a more complete example, showing how to use
+<code>std::istream::readsome()</code> to read without blocking:</p>
+<pre>
+const pstreams::pmode mode = pstreams::pstdout|pstreams::pstderr;
+ipstream child("echo OUT1; sleep 1; echo ERR &gt;&amp;2; sleep 1; echo OUT2", mode);
+char buf[1024];
+std::streamsize n;
+bool finished[2] = { false, false };
+while (!finished[0] || !finished[1])
+{
+    if (!finished[0])
+    {
+        while ((n = child.err().readsome(buf, sizeof(buf))) &gt; 0)
+            std::cerr.write(buf, n).flush();
+        if (child.eof())
+        {
+            finished[0] = true;
+            if (!finished[1])
+                child.clear();
+        }
+    }
+
+    if (!finished[1])
+    {
+        while ((n = child.out().readsome(buf, sizeof(buf))) &gt; 0)
+            std::cout.write(buf, n).flush();
+        if (child.eof())
+        {
+            finished[1] = true;
+            if (!finished[0])
+                child.clear();
+        }
+    }
+}
+</pre>
+
 
 <p>Since the underlying streams controlled by the <code>pstreambuf</code>
 are pipes, seek operations will not succeed. <code>pstreambuf::seekoff()</code>
