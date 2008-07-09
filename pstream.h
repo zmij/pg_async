@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.106 2008/07/07 21:38:14 redi Exp $
+/* $Id: pstream.h,v 1.107 2008/07/09 22:12:08 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -61,7 +61,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *  @namespace redi
  *  @brief  All PStreams classes are declared in namespace redi.
  *
- *  Like the standard IOStreams, PStreams is a set of class templates,
+ *  Like the standard iostreams, PStreams is a set of class templates,
  *  taking a character type and traits type. As with the standard streams
  *  they are most likely to be used with @c char and the default
  *  traits type, so typedefs for this most common case are provided.
@@ -1845,7 +1845,7 @@ namespace redi
    * Abstract Base Class providing common functionality for basic_ipstream,
    * basic_opstream and basic_pstream.
    * pstream_common manages the basic_pstreambuf stream buffer that is used
-   * by the derived classes to initialise an IOStream class.
+   * by the derived classes to initialise an iostream class.
    */
 
   /** Creates an uninitialised stream. */
