@@ -1,19 +1,19 @@
 
 <!-- start of included file -->
 
-<!-- $Id: mainpage.html,v 1.18 2008/07/09 22:05:08 redi Exp $ -->
+<!-- $Id: mainpage.html,v 1.19 2008/07/12 17:25:07 redi Exp $ -->
 
-<h3>A C++ IOStream interface to POSIX Process I/O.</h3>
+<h3>A C++ iostream interface to POSIX process I/O.</h3>
 
 <p>The library is a work in progress. It is intended to provide a C++
 re-implementation of the POSIX.2 functions <kbd class="man_page">popen</kbd>(3)
-and <kbd class="man_page">pclose</kbd>(3), using IOStreams to read from and
+and <kbd class="man_page">pclose</kbd>(3), using iostreams to read from and
 write to the opened process.</p>
 <p>The advantages over the standard <code>popen()</code> function are:
 <ul>
 <li>Standard C++ interface. PStreams classes can be used in any code that
-expects an IOStream class, giving all the advantages of type-safety and
-localisation that IOStreams have over the
+expects an iostream class, giving all the advantages of type-safety and
+localisation that iostreams have over the
 <code>printf()</code>/<code>scanf()</code> functions in standard C.</li>
 <li>Bidirectional I/O. Implementations of <code>popen()</code> vary
 between systems. Some systems use bidirectional pipes, allowing reading
