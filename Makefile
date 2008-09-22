@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2008/09/22 19:58:58 redi Exp $
+# $Id: Makefile,v 1.31 2008/09/22 20:04:38 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -83,7 +83,7 @@ install:
 	@install -v -m0644 pstream.h $(INSTALL_PREFIX)/include/pstreams
 
 pstreams.wout:
-	@echo "Wide Load" | iconv -f ascii -t UTF32 > $@
+	@echo "Wide Load" | iconv -f ascii -t UTF-32 > $@
 
 .PHONY: TODO test ChangeLog run_tests
 
