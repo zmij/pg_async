@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.29 2008/07/07 22:33:17 redi Exp $
+# $Id: Makefile,v 1.30 2008/09/22 19:58:58 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -39,7 +39,9 @@ VERS = 0.6.0
 
 all: docs $(GENERATED_FILES)
 
-test: test_pstreams test_minimum
+test: pstreams.wout run_tests
+
+run_tests: test_pstreams test_minimum
 	@for test in $^ ; do echo $$test ; ./$$test >/dev/null 2>&1 || echo "$$test EXITED WITH STATUS $$?" ; done
 
 test_%: test_%.cc pstream.h
@@ -80,5 +82,8 @@ install:
 	@install -d $(INSTALL_PREFIX)/include/pstreams
 	@install -v -m0644 pstream.h $(INSTALL_PREFIX)/include/pstreams
 
-.PHONY: TODO test ChangeLog
+pstreams.wout:
+	@echo "Wide Load" | iconv -f ascii -t UTF32 > $@
+
+.PHONY: TODO test ChangeLog run_tests
 
