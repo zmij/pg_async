@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.32 2008/11/21 01:05:44 redi Exp $
+# $Id: Makefile,v 1.33 2008/11/21 01:26:17 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -26,9 +26,10 @@ EXTRA_CXXFLAGS=
 CFLAGS=-pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -std=c++98 -Woverloaded-virtual
 
-INSTALL_PREFIX = /usr/local
-INSTALL_HDR = install -p -v -m0644
-INSTALL_DIR = install -d
+prefix = /usr/local
+includedir = $(prefix)/include
+INSTALL = install
+INSTALL_DATA = $(INSTALL) -p -v -m 0644
 
 SOURCES = pstream.h
 GENERATED_FILES = ChangeLog MANIFEST
@@ -81,8 +82,8 @@ clean:
 	@rm -rf doc TODO
 
 install:
-	@$(INSTALL_DIR) $(DESTDIR)$(INSTALL_PREFIX)/include/pstreams
-	@$(INSTALL_HDR) pstream.h $(DESTDIR)$(INSTALL_PREFIX)/include/pstreams
+	@install -d $(DESTDIR)$(includedir)/pstreams
+	@$(INSTALL_DATA) pstream.h $(DESTDIR)$(includedir)/pstreams/pstream.h
 
 pstreams.wout:
 	@echo "Wide Load" | iconv -f ascii -t UTF-32 > $@
