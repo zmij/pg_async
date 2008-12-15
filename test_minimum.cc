@@ -29,7 +29,7 @@ int main()
     using namespace redi;
 
     char c;
-    ipstream who("whoami");
+    ipstream who("id -un");
     if (!(who >> c))
         return 1;
 
@@ -48,7 +48,7 @@ int main()
         return 3;
     std::cerr << s << '\n';
     
-    rpstream who2("whoami");
+    rpstream who2("id -un");
     if (!(who2.out() >> c))
         return 4;
 
