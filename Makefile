@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.33 2008/11/21 01:26:17 redi Exp $
+# $Id: Makefile,v 1.34 2008/12/15 00:02:04 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -19,7 +19,7 @@
 
 # TODO configure script (allow doxgenating of EVISCERATE functions)
 
-OPTIM=-g3
+OPTIM= -O1 -g3
 EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=
 
