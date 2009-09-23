@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.107 2008/07/09 22:12:08 redi Exp $
+/* $Id: pstream.h,v 1.108 2009/09/23 15:53:09 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -158,7 +158,7 @@ namespace redi
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
       std::size_t
-      fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err);
+      fopen(FILE*& in, FILE*& out, FILE*& err);
 #endif
 
       /// Return the exit status of the process.
@@ -320,7 +320,7 @@ namespace redi
 #if REDI_EVISCERATE_PSTREAMS
       /// Obtain FILE pointers for each of the process' standard streams.
       std::size_t
-      fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err);
+      fopen(FILE*& in, FILE*& out, FILE*& err);
 #endif
 
     protected:
@@ -2023,7 +2023,7 @@ namespace redi
    */
   template <typename C, typename T>
     std::size_t
-    basic_pstreambuf<C,T>::fopen(std::FILE*& in, std::FILE*& out, std::FILE*& err)
+    basic_pstreambuf<C,T>::fopen(FILE*& in, FILE*& out, FILE*& err)
     {
       in = out = err = NULL;
       std::size_t open_files = 0;
@@ -2063,7 +2063,7 @@ namespace redi
    */
   template <typename C, typename T>
     inline std::size_t
-    pstream_common<C,T>::fopen(std::FILE*& fin, std::FILE*& fout, std::FILE*& ferr)
+    pstream_common<C,T>::fopen(FILE*& fin, FILE*& fout, FILE*& ferr)
     {
       return buf_.fopen(fin, fout, ferr);
     }
