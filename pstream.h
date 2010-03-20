@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.111 2010/03/20 14:47:09 redi Exp $
+/* $Id: pstream.h,v 1.112 2010/03/20 14:50:47 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -1581,9 +1581,10 @@ namespace redi
    * to transfer the buffer contents to the pipe.
    *
    * @param   c  a character to be written to the pipe.
-   * @return  @c traits_type::not_eof(c) if @a c is equal to @c
-   *          traits_type::eof(). Otherwise returns @a c if @a c can be
-   *          written to the pipe, or @c traits_type::eof() if not.
+   * @return  @c traits_type::eof() if an error occurs, otherwise if @a c
+   *          is not equal to @c traits_type::eof() it will be buffered and
+   *          a value other than @c traits_type::eof() returned to indicate
+   *          success.
    */
   template <typename C, typename T>
     typename basic_pstreambuf<C,T>::int_type
