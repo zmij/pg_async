@@ -611,6 +611,35 @@ int main()
         check_fail(in.err().get(c));
     }
 
+    clog << "# Testing initial pmode set correctly\n";
+    {
+        char c;
+        string s;
+        ipstream in("echo 'abc' >&2", pstreambuf::pstderr);
+        print_result(in, getline(in, s));
+        print_result(in, s == "abc");
+        check_fail(in.get(c));
+        in.close();
+        in.clear(); // clear EOF
+        s.erase();
+
+        in.open("echo 'abc'", pstreambuf::pstdout);
+        print_result(in, getline(in, s));
+        print_result(in, s == "abc");
+        check_fail(in.get(c));
+        in.close();
+        in.clear(); // clear EOF
+        s.erase();
+
+        in.open("echo 'abc' >&2", pstreambuf::pstderr);
+        print_result(in, getline(in, s));
+        print_result(in, s == "abc");
+        check_fail(in.get(c));
+        in.close();
+        in.clear(); // clear EOF
+        s.erase();
+    }
+
 #if REDI_EVISCERATE_PSTREAMS
     clog << "# Testing eviscerated pstream\n";
 
