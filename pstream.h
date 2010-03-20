@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.110 2010/03/20 14:40:59 redi Exp $
+/* $Id: pstream.h,v 1.111 2010/03/20 14:47:09 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -274,10 +274,8 @@ namespace redi
     protected:
       typedef basic_pstreambuf<CharT, Traits>       streambuf_type;
 
-#ifdef __SUNPRO_CC
       typedef pstreams::pmode                       pmode;
       typedef pstreams::argv_type                   argv_type;
-#endif
 
       /// Default constructor.
       pstream_common();
