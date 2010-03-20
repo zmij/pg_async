@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.109 2010/03/20 14:36:50 redi Exp $
+/* $Id: pstream.h,v 1.110 2010/03/20 14:40:59 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -961,6 +961,10 @@ namespace redi
    * Starts a new process by passing @a command to the shell (/bin/sh)
    * and opens pipes to the process with the specified @a mode.
    *
+   * If @a mode contains @c pstdout the initial read source will be
+   * the child process' stdout, otherwise if @a mode  contains @c pstderr
+   * the initial read source will be the child's stderr.
+   *
    * Will duplicate the actions of  the  shell  in searching for an
    * executable file if the specified file name does not contain a slash (/)
    * character.
@@ -1059,6 +1063,10 @@ namespace redi
    *
    * By convention @c argv[0] should be the file name of the file being
    * executed.
+   *
+   * If @a mode contains @c pstdout the initial read source will be
+   * the child process' stdout, otherwise if @a mode  contains @c pstderr
+   * the initial read source will be the child's stderr.
    *
    * Will duplicate the actions of  the  shell  in searching for an
    * executable file if the specified file name does not contain a slash (/)
