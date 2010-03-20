@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.108 2009/09/23 15:53:09 redi Exp $
+/* $Id: pstream.h,v 1.109 2010/03/20 14:36:50 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -55,7 +55,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0060   // 0.6.0
+#define PSTREAMS_VERSION 0x0070   // 0.7.0
 
 /**
  *  @namespace redi
@@ -350,6 +350,13 @@ namespace redi
 
       using pbase_type::buf_;  // declare name in this scope
 
+      pmode readable(pmode mode)
+      {
+        if (!(mode & (pstdout|pstderr)))
+          mode |= pstdout;
+        return mode;
+      }
+
     public:
       /// Type used to specify how to connect to the process.
       typedef typename pbase_type::pmode            pmode;
@@ -373,7 +380,7 @@ namespace redi
        * @see   do_open(const std::string&, pmode)
        */
       basic_ipstream(const std::string& command, pmode mode = pstdout)
-      : istream_type(NULL), pbase_type(command, mode|pstdout)
+      : istream_type(NULL), pbase_type(command, readable(mode))
       { }
 
       /**
@@ -390,7 +397,7 @@ namespace redi
       basic_ipstream( const std::string& file,
                       const argv_type& argv,
                       pmode mode = pstdout )
-      : istream_type(NULL), pbase_type(file, argv, mode|pstdout)
+      : istream_type(NULL), pbase_type(file, argv, readable(mode))
       { }
 
       /**
@@ -413,7 +420,7 @@ namespace redi
       void
       open(const std::string& command, pmode mode = pstdout)
       {
-        this->do_open(command, mode|pstdout);
+        this->do_open(command, readable(mode));
       }
 
       /**
@@ -431,7 +438,7 @@ namespace redi
             const argv_type& argv,
             pmode mode = pstdout )
       {
-        this->do_open(file, argv, mode|pstdout);
+        this->do_open(file, argv, readable(mode));
       }
 
       /**
@@ -1265,12 +1272,6 @@ namespace redi
               rpipe_[rsrc_err] = perr[RD];
               ::close(perr[WR]);
             }
-
-            if (rpipe_[rsrc_out] == -1 && rpipe_[rsrc_err] >= 0)
-            {
-              // reading stderr but not stdout, so use stderr for all reads
-              read_err(true);
-            }
           }
         }
       }
@@ -1342,17 +1343,20 @@ namespace redi
       {
         delete[] rbuffer_[rsrc_out];
         rbuffer_[rsrc_out] = new char_type[bufsz];
-        if (rsrc_ == rsrc_out)
-          this->setg(rbuffer_[rsrc_out] + pbsz, rbuffer_[rsrc_out] + pbsz,
-              rbuffer_[rsrc_out] + pbsz);
+        rsrc_ = rsrc_out;
+        this->setg(rbuffer_[rsrc_out] + pbsz, rbuffer_[rsrc_out] + pbsz,
+            rbuffer_[rsrc_out] + pbsz);
       }
       if (mode & pstderr)
       {
         delete[] rbuffer_[rsrc_err];
         rbuffer_[rsrc_err] = new char_type[bufsz];
-        if (rsrc_ == rsrc_err)
+        if (!(mode & pstdout))
+        {
+          rsrc_ = rsrc_err;
           this->setg(rbuffer_[rsrc_err] + pbsz, rbuffer_[rsrc_err] + pbsz,
               rbuffer_[rsrc_err] + pbsz);
+        }
       }
     }
 
