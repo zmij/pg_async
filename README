@@ -46,6 +46,15 @@ The Makefile doesn't work with Solaris make, and probably other versions
 of make.
 
 
+Release notes for PStreams 0.7.0
+================================
+
+When opening a pstream for reading with mode pstderr, the pstdout mode is
+no longer added, and the initial read source will be set the the child
+process' stdout stream.
+
+The RPM spec file from the Fedora pstreams-devel package is now included.
+
 Release notes for PStreams 0.6.0
 ================================
 
@@ -196,5 +205,5 @@ is expected and does not cause a problem, so errno is set to zero before
 returning from pstreambuf::fopen().
 
 
-$Id: README,v 1.20 2008/07/09 22:39:41 redi Exp $
+$Id: README,v 1.21 2010/05/12 13:33:54 redi Exp $
 :vim: set tw=78

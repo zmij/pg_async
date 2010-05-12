@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.36 2010/05/12 13:17:14 redi Exp $
+# $Id: Makefile,v 1.37 2010/05/12 13:33:54 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -38,7 +38,7 @@ EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
-VERS = 0.6.0
+VERS = 0.7.0
 
 all: docs $(GENERATED_FILES)
 

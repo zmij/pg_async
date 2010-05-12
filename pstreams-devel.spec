@@ -1,17 +1,14 @@
 %define packagename pstreams
 
 Name:           pstreams-devel
-Version:        0.6.0
-Release:        8%{?dist}
+Version:        0.7.0
+Release:        1%{?dist}
 Summary:        POSIX Process Control in C++
 
 Group:          Development/Libraries
 License:        LGPLv3+
 URL:            http://%{packagename}.sourceforge.net/
 Source0:        http://downloads.sourceforge.net/%{packagename}/%{packagename}-%{version}.tar.gz
-# Submitted patch upstream - Till Mass
-# http://sourceforge.net/tracker2/?func=detail&atid=453894&aid=2234202&group_id=48695
-Patch:          pstreams-0.6.0-destdir_timestamp.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  doxygen
@@ -42,6 +39,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/pstreams
 
 %changelog
+* Wed May 12 2010 Jonathan Wakely <pstreams@kayari.org> - 0.7.0-1
+- Add spec file to upstream repo and update.
+
 * Sun Jul 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.6.0-8
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
