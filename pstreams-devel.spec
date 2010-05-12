@@ -21,14 +21,13 @@ library.
 
 %prep
 %setup -q -n %{packagename}-%{version}
-%patch -p1 -b .destdir_timestamp
 
 %build
 make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install  INSTALL_PREFIX=$RPM_BUILD_ROOT/usr
+make install  DESTDIR=$RPM_BUILD_ROOT prefix=/usr
 
 %clean
 rm -rf $RPM_BUILD_ROOT
