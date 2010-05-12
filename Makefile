@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.37 2010/05/12 13:33:54 redi Exp $
+# $Id: Makefile,v 1.38 2010/05/12 15:45:21 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -34,7 +34,7 @@ INSTALL_DATA = $(INSTALL) -p -v -m 0644
 SOURCES = pstream.h
 GENERATED_FILES = ChangeLog MANIFEST
 EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
-	    mainpage.html test_pstreams.cc test_minimum.cc
+	    mainpage.html test_pstreams.cc test_minimum.cc pstreams-devel.spec
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
