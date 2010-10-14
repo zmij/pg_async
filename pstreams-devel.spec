@@ -1,7 +1,7 @@
 %define packagename pstreams
 
 Name:           pstreams-devel
-Version:        0.7.0
+Version:        0.7.1
 Release:        1%{?dist}
 Summary:        POSIX Process Control in C++
 
@@ -27,7 +27,7 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install  DESTDIR=$RPM_BUILD_ROOT prefix=/usr
+make install  DESTDIR=$RPM_BUILD_ROOT includedir=%{_includedir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -38,6 +38,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/pstreams
 
 %changelog
+* Thu Oct 14 2010 Jonathan Wakely <pstreams@kayari.org> - 0.7.1-1
+- Update version and override includedir make variable instead of prefix.
+
 * Wed May 12 2010 Jonathan Wakely <pstreams@kayari.org> - 0.7.0-1
 - Add spec file to upstream repo and update.
 
