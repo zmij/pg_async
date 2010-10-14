@@ -1,6 +1,6 @@
 /*
 PStreams - POSIX Process I/O for C++
-Copyright (C) 2002-2008 Jonathan Wakely
+Copyright (C) 2002-2010 Jonathan Wakely
 
 This file is part of PStreams.
 
