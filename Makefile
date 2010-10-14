@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.38 2010/05/12 15:45:21 redi Exp $
+# $Id: Makefile,v 1.39 2010/10/14 21:35:22 redi Exp $
 # PStreams Makefile
 # Copyright (C) Jonathan Wakely
 #
@@ -38,7 +38,7 @@ EXTRA_FILES = AUTHORS COPYING.LIB Doxyfile INSTALL Makefile README \
 
 DIST_FILES = $(SOURCES) $(GENERATED_FILES) $(EXTRA_FILES)
 
-VERS = 0.7.0
+VERS := $(shell awk -F' ' '/^\#define *PSTREAMS_VERSION/{ print $$NF }' pstream.h)
 
 all: docs $(GENERATED_FILES)
 
@@ -58,7 +58,7 @@ MANIFEST: Makefile
 docs: pstream.h mainpage.html
 	@doxygen Doxyfile
 
-mainpage.html: Makefile
+mainpage.html: pstream.h Makefile
 	@perl -pi -e "s/^(<p>Version) [0-9\.]*(<\/p>)/\1 $(VERS)\2/" $@
 
 ChangeLog:
