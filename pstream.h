@@ -1,4 +1,4 @@
-/* $Id: pstream.h,v 1.112 2010/03/20 14:50:47 redi Exp $
+/* $Id: pstream.h,v 1.113 2010/10/14 19:55:19 redi Exp $
 PStreams - POSIX Process I/O for C++
 Copyright (C) 2001,2002,2003,2004,2005,2006,2007,2008 Jonathan Wakely
 
@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <algorithm>    // for min()
 #include <cerrno>       // for errno
-#include <cstddef>      // for size_t
+#include <cstddef>      // for size_t, NULL
 #include <cstdlib>      // for exit()
 #include <sys/types.h>  // for pid_t
 #include <sys/wait.h>   // for waitpid()
@@ -55,7 +55,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /// The library version.
-#define PSTREAMS_VERSION 0x0070   // 0.7.0
+#define PSTREAMS_VERSION 0x0071   // 0.7.1
 
 /**
  *  @namespace redi
@@ -1867,7 +1867,7 @@ namespace redi
     , command_()
     , buf_()
     {
-      this->init(&buf_);
+      this->std::basic_ios<C,T>::rdbuf(&buf_);
     }
 
   /**
@@ -1885,7 +1885,7 @@ namespace redi
     , command_(command)
     , buf_()
     {
-      this->init(&buf_);
+      this->std::basic_ios<C,T>::rdbuf(&buf_);
       do_open(command, mode);
     }
 
@@ -1907,7 +1907,7 @@ namespace redi
     , command_(file)
     , buf_()
     {
-      this->init(&buf_);
+      this->std::basic_ios<C,T>::rdbuf(&buf_);
       do_open(file, argv, mode);
     }
 
