@@ -84,6 +84,8 @@ namespace redi
     /// Type used for file descriptors.
     typedef int                               fd_type;
 
+    static constexpr fd_type invalid_fd = -1;
+
     static const pmode pstdin  = std::ios_base::out; ///< Write to stdin
     static const pmode pstdout = std::ios_base::in;  ///< Read from stdout
     static const pmode pstderr = std::ios_base::app; ///< Read from stderr
@@ -110,7 +112,8 @@ namespace redi
       typedef fd_type                           fd_t;
 
       /// Default constructor.
-      basic_pstreambuf();
+      /** Creates an uninitialised stream buffer. */
+      basic_pstreambuf() = default;
 
       /// Constructor that initialises the buffer with @a command.
       basic_pstreambuf(const std::string& command, pmode mode);
@@ -251,22 +254,19 @@ namespace redi
       switch_read_buffer(buf_read_src);
 
     private:
-      basic_pstreambuf(const basic_pstreambuf&);
-      basic_pstreambuf& operator=(const basic_pstreambuf&);
+      basic_pstreambuf(const basic_pstreambuf&) = delete;
+      basic_pstreambuf& operator=(const basic_pstreambuf&) = delete;
 
-      void
-      init_rbuffers();
-
-      pid_t         ppid_;        // pid of process
-      fd_type       wpipe_;       // pipe used to write to process' stdin
-      fd_type       rpipe_[2];    // two pipes to read from, stdout and stderr
-      char_type*    wbuffer_;
-      char_type*    rbuffer_[2];
-      char_type*    rbufstate_[3];
+      pid_t         ppid_ = invalid_fd;        // pid of process
+      fd_type       wpipe_ = invalid_fd;       // pipe used to write to process' stdin
+      fd_type       rpipe_[2] = { invalid_fd, invalid_fd };    // two pipes to read from, stdout and stderr
+      char_type*    wbuffer_ = { };
+      char_type*    rbuffer_[2] = { };
+      char_type*    rbufstate_[3] = { };
       /// Index into rpipe_[] to indicate active source for read operations.
-      buf_read_src  rsrc_;
-      int           status_;      // hold exit status of child process
-      int           error_;       // hold errno if fork() or exec() fails
+      buf_read_src  rsrc_ = rsrc_out;
+      int           status_ = -1;      // hold exit status of child process
+      int           error_ = 0;       // hold errno if fork() or exec() fails
     };
 
   /// Class template for common base class.
@@ -352,11 +352,9 @@ namespace redi
 
       using pbase_type::buf_;  // declare name in this scope
 
-      pmode readable(pmode mode)
+      constexpr pmode readable(pmode mode)
       {
-        if (!(mode & (pstdout|pstderr)))
-          mode |= pstdout;
-        return mode;
+        return mode & pstderr ? mode : mode | pstdout;
       }
 
     public:
@@ -944,20 +942,6 @@ namespace redi
    * Provides underlying streambuf functionality for the PStreams classes.
    */
 
-  /** Creates an uninitialised stream buffer. */
-  template <typename C, typename T>
-    inline
-    basic_pstreambuf<C,T>::basic_pstreambuf()
-    : ppid_(-1)   // initialise to -1 to indicate no process run yet.
-    , wpipe_(-1)
-    , wbuffer_(NULL)
-    , rsrc_(rsrc_out)
-    , status_(-1)
-    , error_(0)
-    {
-      init_rbuffers();
-    }
-
   /**
    * Initialises the stream buffer by calling open() with the supplied
    * arguments.
@@ -969,14 +953,7 @@ namespace redi
   template <typename C, typename T>
     inline
     basic_pstreambuf<C,T>::basic_pstreambuf(const std::string& command, pmode mode)
-    : ppid_(-1)   // initialise to -1 to indicate no process run yet.
-    , wpipe_(-1)
-    , wbuffer_(NULL)
-    , rsrc_(rsrc_out)
-    , status_(-1)
-    , error_(0)
     {
-      init_rbuffers();
       open(command, mode);
     }
 
@@ -994,14 +971,7 @@ namespace redi
     basic_pstreambuf<C,T>::basic_pstreambuf( const std::string& file,
                                              const argv_type& argv,
                                              pmode mode )
-    : ppid_(-1)   // initialise to -1 to indicate no process run yet.
-    , wpipe_(-1)
-    , wbuffer_(NULL)
-    , rsrc_(rsrc_out)
-    , status_(-1)
-    , error_(0)
     {
-      init_rbuffers();
       open(file, argv, mode);
     }
 
@@ -1095,7 +1065,7 @@ namespace redi
   close_fd(pstreams::fd_type& fd)
   {
     if (fd >= 0 && ::close(fd) == 0)
-      fd = -1;
+      fd = pstreams::invalid_fd;
   }
 
   /**
@@ -1112,8 +1082,8 @@ namespace redi
     inline void
     close_fd_array(pstreams::fd_type (&fds)[N])
     {
-      for (std::size_t i = 0; i < N; ++i)
-        close_fd(fds[i]);
+      for (pstreams::fd_type f : fds)
+        close_fd(f);
     }
 
   /**
@@ -1391,18 +1361,6 @@ namespace redi
       } while (wait() == -1 && error() == EINTR);
 
       return running ? this : NULL;
-    }
-
-  /**
-   *  Called on construction to initialise the arrays used for reading.
-   */
-  template <typename C, typename T>
-    inline void
-    basic_pstreambuf<C,T>::init_rbuffers()
-    {
-      rpipe_[rsrc_out] = rpipe_[rsrc_err] = -1;
-      rbuffer_[rsrc_out] = rbuffer_[rsrc_err] = NULL;
-      rbufstate_[0] = rbufstate_[1] = rbufstate_[2] = NULL;
     }
 
   template <typename C, typename T>
