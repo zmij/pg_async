@@ -22,7 +22,7 @@
 OPTIM= -O1 -g3
 EXTRA_CXXFLAGS=
 
-CFLAGS=-pedantic -Werror -Wall -W -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
+CFLAGS=-pedantic -Werror -Wall -Wextra -Wpointer-arith -Wcast-qual -Wcast-align -Wredundant-decls $(OPTIM)
 CXXFLAGS=$(CFLAGS) -std=c++11 -Woverloaded-virtual
 
 prefix = /usr/local
