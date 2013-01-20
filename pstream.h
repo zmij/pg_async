@@ -411,7 +411,7 @@ namespace redi
        * @see   do_open(const std::string&, const argv_type&, pmode)
        */
       basic_ipstream(const argv_type& argv, pmode mode = pstdout)
-      : istream_type(NULL), pbase_type(argv.at(0), argv, mode|pstdout)
+      : basic_ipstream(argv.at(0), argv, mode)
       { }
 
       /**
@@ -553,7 +553,7 @@ namespace redi
        * @see   do_open(const std::string&, const argv_type&, pmode)
        */
       basic_opstream(const argv_type& argv, pmode mode = pstdin)
-      : ostream_type(NULL), pbase_type(argv.at(0), argv, mode|pstdin)
+      : basic_opstream(argv.at(0), argv, mode)
       { }
 
       /**
@@ -676,7 +676,7 @@ namespace redi
        * @see   do_open(const std::string&, const argv_type&, pmode)
        */
       basic_pstream(const argv_type& argv, pmode mode = pstdout|pstdin)
-      : iostream_type(NULL), pbase_type(argv.at(0), argv, mode)
+      : basic_pstream(argv.at(0), argv, mode)
       { }
 
       /**
@@ -831,8 +831,7 @@ namespace redi
        * @see   do_open(const std::string&, const argv_type&, pmode)
        */
       basic_rpstream(const argv_type& argv, pmode mode = pstdout|pstdin)
-      : ostream_type(NULL), istream_type(NULL),
-        pbase_type(argv.at(0), argv, mode)
+      : basic_rpstream(argv.at(0), argv, mode)
       { }
 
       /// Destructor
