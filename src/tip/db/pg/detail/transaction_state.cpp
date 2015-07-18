@@ -12,13 +12,16 @@
 
 #include <tip/db/pg/error.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
+#endif
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -34,7 +37,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-
+#endif
 
 transaction_state::transaction_state(connection_base& conn,
 		simple_callback cb, error_callback err, bool autocommit)
@@ -47,9 +50,11 @@ transaction_state::transaction_state(connection_base& conn,
 void
 transaction_state::do_enter()
 {
+	#ifdef WITH_TIP_LOG
 	{
 		local_log() << "Begin transaction";
 	}
+	#endif
 	message m(query_tag);
 	m.write("begin");
 	conn.send(m);
@@ -65,13 +70,17 @@ void
 transaction_state::do_handle_unlocked()
 {
 	if (!message_pending_ && !complete_) {
+		#ifdef WITH_TIP_LOG
 		{
 			local_log(logger::WARNING) << "Rollback transaction in connection unlock";
 		}
+		#endif
 		dirty_exit(simple_callback());
 		handle_unlocked();
 	} else if (!message_pending_) {
+		#ifdef WITH_TIP_LOG
 		local_log() << "Pop state from handle unlocked";
+		#endif
 		conn.pop_state(this);
 	}
 }
@@ -84,7 +93,9 @@ transaction_state::do_handle_message(message_ptr m)
 		case command_complete_tag: {
 			std::string stat;
 			m->read(stat);
+			#ifdef WITH_TIP_LOG
 			local_log(logger::DEBUG) << "Command is complete " << stat;
+			#endif
 
 			message_pending_ = false;
 
@@ -94,7 +105,9 @@ transaction_state::do_handle_message(message_ptr m)
 				cb();
 			}
 			if (complete_ && !exited) {
+				#ifdef WITH_TIP_LOG
 				local_log() << "Pop state from handle message";
+				#endif
 				conn.pop_state(this);
 			}
 			return true;
@@ -110,8 +123,10 @@ transaction_state::do_handle_message(message_ptr m)
 bool
 transaction_state::do_handle_error(notice_message const& msg)
 {
+	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << "Error when starting transaction: "
 			<< msg;
+	#endif
 	if (error_) {
 		error_(query_error(msg.message, msg.severity, msg.sqlstate, msg.detail));
 	}
@@ -122,9 +137,11 @@ void
 transaction_state::do_commit_transaction(simple_callback cb, error_callback err)
 {
 	if (!complete_) {
+		#ifdef WITH_TIP_LOG
 		{
 			local_log() << "Commit transaction";
 		}
+		#endif
 		std::shared_ptr<transaction_state> _this = shared_this<transaction_state>();
 		command_complete_ = [_this, cb]() {
 			_this->complete_ = true;
@@ -144,9 +161,11 @@ void
 transaction_state::do_rollback_transaction(simple_callback cb, error_callback err)
 {
 	if (!complete_) {
+		#ifdef WITH_TIP_LOG
 		{
 			local_log() << "Rollback transaction";
 		}
+		#endif
 		std::shared_ptr<transaction_state> _this = shared_this<transaction_state>();
 		command_complete_ = [_this, cb]() {
 			_this->complete_ = true;
@@ -166,12 +185,14 @@ transaction_state::do_rollback_transaction(simple_callback cb, error_callback er
 void
 transaction_state::do_terminate(simple_callback cb)
 {
+	#ifdef WITH_TIP_LOG
 	{
 		local_log() << "Terminate state "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< name()
 				<< logger::severity_color();
 	}
+	#endif
 	if (!complete_) {
 		dirty_exit(cb);
 	} else {
@@ -184,9 +205,11 @@ transaction_state::do_terminate(simple_callback cb)
 void
 transaction_state::dirty_exit(simple_callback cb)
 {
+	#ifdef WITH_TIP_LOG
 	{
 		local_log(logger::WARNING) << "Dirty exit";
 	}
+	#endif
 	//std::shared_ptr<transaction_state> _this = shared_this<transaction_state>();
 	if (autocommit_) {
 		simple_callback commit = [this, cb] {
@@ -198,9 +221,11 @@ transaction_state::dirty_exit(simple_callback cb)
 		simple_callback rollback = [this, cb]() {
 			this->conn.pop_state(this);
 			if (error_) {
+				#ifdef WITH_TIP_LOG
 				{
 					local_log(logger::WARNING) << "Transaction rolled back on dirty exit";
 				}
+				#endif
 				error_( query_error("Transaction rolled back") );
 			}
 			if (cb) cb();

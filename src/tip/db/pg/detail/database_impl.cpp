@@ -9,14 +9,17 @@
 #include <tip/db/pg/detail/connection_pool.hpp>
 #include <stdexcept>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/version.hpp>
+#endif
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -32,18 +35,22 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-
+#endif
 
 database_impl::database_impl(size_t pool_size, connection_params const& defaults)
 	: pool_size_(pool_size), defaults_(defaults)
 {
+	#ifdef WITH_TIP_LOG
 	local_log() << "Initializing postgre db service version " << tip::VERSION;
+	#endif
 }
 
 database_impl::~database_impl()
 {
 	stop();
+	#ifdef WITH_TIP_LOG
 	local_log() << "* database_impl::~database_impl";
+	#endif
 }
 
 void
@@ -83,15 +90,19 @@ database_impl::add_pool(connection_options const& co, db_service::optional_size 
 		if (!pool_size.is_initialized()) {
 			pool_size = pool_size_;
 		}
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Create a new connection pool " << co.alias.value;
+		#endif
 		connection_params parms(params);
 		for (auto p : defaults_) {
 			if (!parms.count(p.first)) {
 				parms.insert(p);
 			}
 		}
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Register new connection " << co.uri
 				<< "[" << co.database << "]" << " with alias " << co.alias;
+		#endif
 		connections_.insert(std::make_pair(co.alias,
 				connection_pool_ptr(connection_pool::create(service_,
 						*pool_size, co, parms) )));

@@ -13,6 +13,7 @@ set(
     resultset.cpp
     query.cpp
     sqlstates.cpp
+    detail/md5.cpp
     detail/protocol.cpp
     detail/basic_connection.cpp
     detail/connection_impl.cpp
@@ -35,14 +36,17 @@ set_target_properties(
     SOVERSION 0
 )
 
-target_link_libraries(tip-pgsql
+set(pgsql_lib_LIBRARIES
     ${Boost_SYSTEM_LIBRARIES}
     ${Boost_THREAD_LIBRARIES}
     ${Boost_REGEX_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
-    tip-log
-    boost_md5
+    ${TIP_LOG_LIBRARY}
 )
+
+message(STATUS ${pgsql_lib_LIBRARIES})
+
+target_link_libraries(tip-pgsql ${pgsql_lib_LIBRARIES})
 
 add_executable(pg-async-test pg_async.cpp)
 

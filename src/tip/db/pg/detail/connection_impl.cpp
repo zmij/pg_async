@@ -5,10 +5,12 @@
  * @author: zmij
  */
 
-#include "tip/db/pg/detail/connection_impl.hpp"
-#include "tip/db/pg/detail/startup.hpp"
+#include <tip/db/pg/detail/connection_impl.hpp>
+#include <tip/db/pg/detail/startup.hpp>
 
-#include "tip/log/log.hpp"
+#ifdef WITH_TIP_LOG
+#include <tip/log/log.hpp>
+#endif
 
 #include <boost/bind.hpp>
 
@@ -17,6 +19,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -31,7 +34,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 
 }  // namespace
 using tip::log::logger;
-
+#endif
 
 //****************************************************************************
 // tcp_layer
@@ -117,7 +120,9 @@ socket_transport::connect_async(connection_options const& conn,
 	std::string uri = conn.uri;
 
 	if (uri.empty()) {
+		#ifdef WITH_TIP_LOG
 		local_log(logger::WARNING) << "Socket name is empty. Trying default";
+		#endif
 		uri = "/tmp/.s.PGSQL.5432";
 	}
 	socket.async_connect(stream_protocol::endpoint(uri),

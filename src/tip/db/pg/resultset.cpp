@@ -8,7 +8,9 @@
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/detail/result_impl.hpp>
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
+#endif
 
 #include <algorithm>
 #include <assert.h>
@@ -17,6 +19,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -32,6 +35,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 
 const resultset::size_type resultset::npos = std::numeric_limits<resultset::size_type>::max();

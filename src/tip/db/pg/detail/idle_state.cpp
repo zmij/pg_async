@@ -11,14 +11,17 @@
 
 #include <tip/db/pg/detail/basic_connection.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/log/ansi_colors.hpp>
+#endif
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -34,6 +37,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 namespace {
 const std::string STATE_NAME = "idle";
@@ -52,12 +56,14 @@ idle_state::do_handle_message(message_ptr m)
 		case ready_for_query_tag: {
 			char stat(0);
 			m->read(stat);
+			#ifdef WITH_TIP_LOG
 			local_log() << "Database "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< conn.uri()
 				<< "[" << conn.database() << "]"
 				<< logger::severity_color()
 				<< " is ready for query (" << stat << ")";
+			#endif
 			conn.ready();
 			return true;
 		}
@@ -70,12 +76,14 @@ idle_state::do_handle_message(message_ptr m)
 void
 idle_state::do_handle_unlocked()
 {
+	#ifdef WITH_TIP_LOG
 	local_log() << "Database "
 		<< (util::CLEAR) << (util::RED | util::BRIGHT)
 		<< conn.uri()
 		<< "[" << conn.database() << "] "
 		<< logger::severity_color()
 		<< "is unlocked and ready for query";
+	#endif
 	conn.ready();
 }
 
@@ -102,15 +110,19 @@ idle_state::do_execute_query(std::string const& q, result_callback cb, query_err
 void
 idle_state::do_terminate(simple_callback cb)
 {
+	#ifdef WITH_TIP_LOG
 	local_log() << "Terminate state "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
 			<< name()
 			<< logger::severity_color();
+	#endif
 	message m(terminate_tag);
 	std::shared_ptr<idle_state> _this = shared_this<idle_state>();
 	conn.send(m,
 	[_this, cb](boost::system::error_code const& ec, size_t bytes) {
+		#ifdef WITH_TIP_LOG
 		local_log() << "Termination message sent";
+		#endif
 		_this->conn.pop_state(_this.get());
 		if (cb)
 			cb();

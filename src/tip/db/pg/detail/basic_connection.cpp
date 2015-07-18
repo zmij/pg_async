@@ -11,8 +11,10 @@
 #include <tip/db/pg/detail/terminated_state.hpp>
 #include <tip/db/pg/error.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/log/ansi_colors.hpp>
+#endif
 
 #include <boost/bind.hpp>
 #include <assert.h>
@@ -22,6 +24,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -36,6 +39,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 
 }  // namespace
 using tip::log::logger;
+#endif
 
 namespace options {
 
@@ -158,9 +162,11 @@ void
 connection_base::lock()
 {
 	assert(!locked_ && "Attempt to obtain a lock on a locked connection");
+	#ifdef WITH_TIP_LOG
 	{
 		local_log() << (util::CLEAR) << (util::MAGENTA | util::BRIGHT) << "* Lock connection";
 	}
+	#endif
 	locked_ = true;
 }
 
@@ -168,9 +174,11 @@ void
 connection_base::unlock()
 {
 	assert(locked_ && "Attempt to release a lock from an unlocked connection");
+	#ifdef WITH_TIP_LOG
 	{
 		local_log() << (util::CLEAR) << (util::MAGENTA | util::BRIGHT) << "* Unlock connection";
 	}
+	#endif
 	locked_ = false;
 	state_.handle_unlocked();
 }
@@ -241,10 +249,13 @@ connection_base::handle_message(message_ptr m)
 			m->read(msg);
 
 			if (!state_.handle_error(msg)) {
+				#ifdef WITH_TIP_LOG
 				local_log(logger::ERROR)
 						<< "Error " << msg << " is not handled in "
 						<< state_.name() << " state";
+				#endif
 			}
+
 		} else {
 			switch(tag) {
 				// TODO Handle server general messages
@@ -269,21 +280,27 @@ connection_base::handle_message(message_ptr m)
 					notice_message msg;
 					m->read(msg);
 
+					#ifdef WITH_TIP_LOG
 					local_log(logger::INFO) << "Notice " << msg;
+					#endif
 					break;
 				}
 				default: {
 					if (!state_.handle_message(m)) {
+						#ifdef WITH_TIP_LOG
 						local_log(logger::WARNING) << "Tag '" << (char)tag
 								<< "' is not handled in " << state_.name()
 								<< " state";
+						#endif
 					}
 					break;
 				}
 			}
 		}
+#ifdef WITH_TIP_LOG
 	} else {
 		local_log(logger::ERROR) << "Unknown command from the backend " << (char)tag;
+#endif
 	}
 }
 
@@ -320,20 +337,26 @@ void
 connection_base::handle_connect(error_code const& ec)
 {
 	if (!ec) {
+		#ifdef WITH_TIP_LOG
 		local_log() << "Postgre server @"
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< uri()
 				<< "[" << database() << "]"
 				<< logger::severity_color()
 				<< " connected";
+		#endif
 		start_read();
 
 		message m(detail::empty_tag);
 		create_startup_message(m);
+		#ifdef WITH_TIP_LOG
 		local_log() << "Startup message size " << m.size();
+		#endif
 		send(m);
 	} else {
+		#ifdef WITH_TIP_LOG
 		local_log(logger::ERROR) << "Error connecting to db: " << ec.message();
+		#endif
 		error(connection_error(ec.message()));
 	}
 }
@@ -341,11 +364,13 @@ connection_base::handle_connect(error_code const& ec)
 void
 connection_base::handle_write(error_code const& ec, size_t bytes_transfered)
 {
+	#ifdef WITH_TIP_LOG
 	if (!ec) {
 		local_log() << "Send message: " << bytes_transfered << " bytes sent";
 	} else {
 		local_log(logger::ERROR) << "Error sending message: " << ec.message();
 	}
+	#endif
 }
 
 void

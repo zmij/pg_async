@@ -8,8 +8,10 @@
 #include <tip/db/pg/database.hpp>
 #include <tip/db/pg/detail/database_impl.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/log/ansi_colors.hpp>
+#endif
 
 #include <stdexcept>
 #include <mutex>
@@ -18,6 +20,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -33,6 +36,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 typedef std::recursive_mutex mutex_type;
 typedef std::lock_guard<mutex_type> lock_type;
@@ -64,7 +68,6 @@ db_service::initialize(size_t pool_size, connection_params const& defaults)
 {
 	lock_type lock(db_service_lock());
 	if (!pimpl_) {
-		local_log() << "Create new impl";
 		pimpl_.reset(new detail::database_impl(pool_size, defaults));
 	} else {
 		pimpl_->set_defaults(pool_size, defaults);
@@ -111,7 +114,6 @@ db_service::stop()
 boost::asio::io_service&
 db_service::io_service()
 {
-	local_log() << "db_service::io_service";
 	return impl()->io_service();
 }
 

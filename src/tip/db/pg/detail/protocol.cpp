@@ -17,14 +17,18 @@
 
 #include <netinet/in.h>
 
-#include "tip/db/pg/common.hpp"
+#include <tip/db/pg/common.hpp>
+
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
+#endif
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -40,7 +44,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-
+#endif
 
 namespace {
 	tag_set_type FRONTEND_COMMANDS {
@@ -351,8 +355,10 @@ message::read(notice_message& notice)
 		} else {
 			std::string fval;
 			read(fval);
+			#ifdef WITH_TIP_LOG
 			local_log(logger::WARNING) << "Unknown error/notice field ("
 					<< code << ") with value " << fval;
+			#endif
 		}
 	}
 	return true;

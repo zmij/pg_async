@@ -11,13 +11,17 @@
 #include <tip/db/pg/detail/result_impl.hpp>
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/error.hpp>
+
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
+#endif
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -33,6 +37,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 simple_query_state::simple_query_state(connection_base& conn,
 		std::string const& q, result_callback cb, query_error_callback err)
@@ -44,7 +49,9 @@ result_ptr
 simple_query_state::result()
 {
 	if (!result_) {
+		#ifdef WITH_TIP_LOG
 		local_log() << "Create a new resultset";
+		#endif
 		result_.reset(new result_impl);
 	}
 	return result_;
@@ -66,9 +73,11 @@ simple_query_state::do_handle_message(message_ptr m)
 				field_description fd;
 				if (m->read(fd)) {
 					desc.push_back(fd);
+				#ifdef WITH_TIP_LOG
 				} else {
 					local_log(logger::ERROR)
 							<< "Failed to read field description " << i;
+				#endif
 				}
 			}
 			return true;
@@ -88,9 +97,11 @@ simple_query_state::do_handle_message(message_ptr m)
 			std::string stat;
 			m->read(stat);
 			resultset res(result());
+			#ifdef WITH_TIP_LOG
 			local_log(logger::DEBUG) << "Command is complete " << stat
 					<< " resultset columns " << res.columns_size()
 					<< " rows " << res.size();
+			#endif
 			// TODO Add the stat to result
 			if (callback_) {
 				callback_(resultset(result()), true);
@@ -114,8 +125,10 @@ simple_query_state::do_handle_message(message_ptr m)
 bool
 simple_query_state::do_handle_error(notice_message const& msg)
 {
+	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << "Error when executing command \""
 			<< exp_ << "\" " << msg;
+	#endif
 	if (error_) {
 		error_(query_error(msg.message, msg.severity, msg.sqlstate, msg.detail));
 	}
@@ -136,6 +149,7 @@ simple_query_state::on_package_complete(size_t bytes)
 void
 simple_query_state::do_enter()
 {
+	#ifdef WITH_TIP_LOG
 	{
 		local_log() << "Send query "
 				<< (util::MAGENTA | util::BRIGHT)
@@ -143,6 +157,7 @@ simple_query_state::do_enter()
 				<< logger::severity_color()
 				<< " to server";
 	}
+	#endif
 	message m(query_tag);
 	m.write(exp_);
 	conn.send(m);

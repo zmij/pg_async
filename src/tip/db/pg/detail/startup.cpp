@@ -9,16 +9,20 @@
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/detail/idle_state.hpp>
 #include <tip/db/pg/detail/basic_connection.hpp>
+
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/log/ansi_colors.hpp>
+#endif
 
-#include <boost/md5.hpp>
+#include <tip/db/pg/detail/md5.hpp>
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -34,6 +38,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 
 using tip::log::logger;
+#endif
 
 startup_state::startup_state(connection_base& conn)
 		: basic_state(conn), conn_state_(connection::DISCONNECTED)
@@ -52,6 +57,7 @@ startup_state::do_handle_message(message_ptr m)
 			if (m->read(auth_state)) {
 				switch (auth_state) {
 					case OK: {
+						#ifdef WITH_TIP_LOG
 						{
 							auto local = local_log(logger::INFO);
 							local << "Database "
@@ -61,18 +67,23 @@ startup_state::do_handle_message(message_ptr m)
 								<< logger::severity_color(local->severity())
 								<< " connected";
 						}
+						#endif
 						conn.transit_state(state_ptr(new idle_state(conn)));
 						break;
 					}
 					case Cleartext: {
+						#ifdef WITH_TIP_LOG
 						local_log() << "Cleartext password requested";
+						#endif
 						message pm(password_message_tag);
 						pm.write(conn.options().password);
 						conn.send(pm);
 						break;
 					}
 					case MD5Password: {
+						#ifdef WITH_TIP_LOG
 						local_log() << "MD5 password requested";
+						#endif
 						// Read salt
 						std::string salt;
 						m->read(salt, 4);
@@ -87,8 +98,10 @@ startup_state::do_handle_message(message_ptr m)
 						break;
 					}
 					default:
+						#ifdef WITH_TIP_LOG
 						local_log(logger::ERROR) << "Unsupported authentication scheme "
 							<< auth_state << " requested by server.";
+						#endif
 						// FIXME Bail out
 						break;
 				}

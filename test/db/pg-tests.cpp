@@ -21,7 +21,9 @@
 #include <tip/db/pg/detail/connection_pool.hpp>
 #include <tip/db/pg/detail/connection_lock.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
+#endif
 
 #include <boost/test/unit_test.hpp>
 
@@ -35,6 +37,7 @@
 
 #include "db/config.hpp"
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -50,6 +53,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 namespace {
 
@@ -58,7 +62,9 @@ int num_requests			= 10;
 int num_threads				= 4;
 int connection_pool			= 4;
 int deadline				= 5;
+#ifdef WITH_TIP_LOG
 logger::event_severity log_level = logger::DEBUG;
+#endif
 
 }  // namespace
 
@@ -67,8 +73,10 @@ boost::unit_test::test_suite*
 init_unit_test_suite( int argc, char* argv[] )
 {
 	namespace po = boost::program_options;
+	#ifdef WITH_TIP_LOG
 	logger::set_proc_name(argv[0]);
 	logger::set_stream(std::cerr);
+	#endif
 	po::options_description desc("Test options");
 
 	desc.add_options()
@@ -76,8 +84,10 @@ init_unit_test_suite( int argc, char* argv[] )
 			("pool-size,s", po::value<int>(&connection_pool)->default_value(4), "connection pool size")
 			("threads,x", po::value<int>(&num_threads)->default_value(10), "requests threads number")
 			("requests,q", po::value<int>(&num_requests)->default_value(10), "number of requests per thread")
+			#ifdef WITH_TIP_LOG
 			("tip-log-level,v", po::value<logger::event_severity>(&log_level)->default_value(logger::INFO),
 					"log level (TRACE, DEBUG, INFO, WARNING, ERROR)")
+			#endif
 			("run-deadline", po::value<int>(&deadline)->default_value(5),
 					"Maximum time to execute requests")
 			("log-colors", "output colored log")
@@ -96,8 +106,10 @@ init_unit_test_suite( int argc, char* argv[] )
 	if (num_threads < 1) num_threads = 1;
 	if (connection_pool < 1) connection_pool = 1;
 
+	#ifdef WITH_TIP_LOG
 	logger::min_severity(log_level);
 	logger::use_colors(vm.count("log-colors"));
+	#endif
 
 	return nullptr;
 }
@@ -176,7 +188,9 @@ BOOST_AUTO_TEST_CASE(TransactionCleanExitTest)
 		using namespace tip::db::pg;
 		connection_options opts = connection_options::parse(test_database);
 
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions clean exit test";
+		#endif
 		boost::asio::io_service io_service;
 		int transactions = 0;
 		connection_ptr conn(connection::create(io_service,
@@ -239,7 +253,9 @@ BOOST_AUTO_TEST_CASE(TransactionDirtyTerminateTest)
 		using namespace tip::db::pg;
 		connection_options opts = connection_options::parse(test_database);
 
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions dirty terminate exit test";
+		#endif
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
 		connection_ptr conn(connection::create(io_service,
@@ -270,7 +286,9 @@ BOOST_AUTO_TEST_CASE(TransactionAutocommitTest)
 	if (!test_database.empty()) {
 		using namespace tip::db::pg;
 		connection_options opts = connection_options::parse(test_database);
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions dirty terminate autocommit exit test";
+		#endif
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
 		connection_ptr conn(connection::create(io_service,
@@ -302,7 +320,9 @@ BOOST_AUTO_TEST_CASE(TransactionDirtyUnlockTest)
 	if (!test_database.empty()) {
 		using namespace tip::db::pg;
 		connection_options opts = connection_options::parse(test_database);
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions dirty unlock exit test";
+		#endif
 		boost::asio::io_service io_service;
 
 		boost::asio::deadline_timer timer(io_service, boost::posix_time::milliseconds(100));
@@ -314,12 +334,16 @@ BOOST_AUTO_TEST_CASE(TransactionDirtyUnlockTest)
 			if (!transactions) {
 				BOOST_CHECK_NO_THROW(c->begin_transaction(
 				[&](connection_lock_ptr c_lock){
+					#ifdef WITH_TIP_LOG
 					local_log() << "Transaction begin callback";
+					#endif
 					BOOST_CHECK(c_lock);
 					BOOST_CHECK((*c_lock)->in_transaction());
 					timer.async_wait([&](boost::system::error_code const& ec){
 						if (!ec) {
+							#ifdef WITH_TIP_LOG
 							local_log(logger::WARNING) << "Transaction dirty unlock test timer expired";
+							#endif
 							conn->terminate();
 						}
 					});
@@ -370,7 +394,9 @@ BOOST_AUTO_TEST_CASE( ConnectionPoolTest )
 		boost::asio::deadline_timer timer(io_service, boost::posix_time::seconds(deadline));
 		timer.async_wait([&](boost::system::error_code const& ec){
 			if (!ec) {
+				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Connection pool test timer expired";
+				#endif
 				pool->close();
 				timer.cancel();
 				if (!io_service.stopped())
@@ -388,18 +414,22 @@ BOOST_AUTO_TEST_CASE( ConnectionPoolTest )
 					[&] (connection_lock_ptr c) {
 						int req_no = i;
 						BOOST_CHECK(c);
+						#ifdef WITH_TIP_LOG
 						local_log(logger::TRACE) << "Obtained connection thread  "
 								<< t_no << " request " << req_no;
+						#endif
 						(*c)->execute_query( "select * from pg_catalog.pg_class",
 						[&] (connection_lock_ptr c, resultset r, bool complete) {
 							BOOST_CHECK(c);
 							if (complete)
 								++res_count;
+							#ifdef WITH_TIP_LOG
 							local_log() << "Received a resultset columns: " << r.columns_size()
 									<< " rows: " << r.size()
 									<< " completed: " << std::boolalpha << complete;
 							local_log() << "Sent requests: " << sent_count
 									<< " Received results: " << res_count;
+							#endif
 
 							if (res_count >= req_count * thread_count) {
 								pool->close();
@@ -430,10 +460,12 @@ BOOST_AUTO_TEST_CASE( ConnectionPoolTest )
 		tp = clock_type::now();
 		clock_type::duration run = tp.time_since_epoch() - start;
 		double seconds = (double)run.count() * clock_type::period::num / clock_type::period::den;;
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Running "
 				<< req_count * thread_count << " requests in "
 				<< thread_count << " threads with "
 				<< pool_size << " connections took " << seconds << "s";
+		#endif
 	} else {
 		BOOST_MESSAGE("Not running database connected tests");
 	}
@@ -444,7 +476,9 @@ BOOST_AUTO_TEST_CASE(TransactionQueryTest)
 	if (!test_database.empty()) {
 		using namespace tip::db::pg;
 		connection_options opts = connection_options::parse(test_database);
+		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transaction query test";
+		#endif
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
 		connection_ptr conn(connection::create(io_service,
@@ -455,9 +489,11 @@ BOOST_AUTO_TEST_CASE(TransactionQueryTest)
 				BOOST_CHECK((*c_lock)->in_transaction());
 				(*c_lock)->execute_query( "select * from pg_catalog.pg_class",
 				[&] (connection_lock_ptr c_lock, resultset r, bool complete) {
+					#ifdef WITH_TIP_LOG
 					local_log() << "Received a resultset columns: " << r.columns_size()
 							<< " rows: " << r.size()
 							<< " completed: " << std::boolalpha << complete;
+					#endif
 					if (complete)
 						(*c_lock)->terminate();
 				}, [] (db_error const&) {}, c_lock);
@@ -497,7 +533,9 @@ BOOST_AUTO_TEST_CASE(DatabaseServiceTest)
 				boost::posix_time::seconds(deadline));
 		timer.async_wait([&](boost::system::error_code const& ec){
 			if (!ec) {
+				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Database service test timer expired";
+				#endif
 				db_service::stop();
 			}
 		});
@@ -530,7 +568,9 @@ BOOST_AUTO_TEST_CASE(QueryTest)
 				boost::posix_time::seconds(deadline));
 		timer.async_wait([&](boost::system::error_code const& ec){
 			if (!ec) {
+				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Run query test timer expired";
+				#endif
 				db_service::stop();
 			}
 		});
@@ -542,20 +582,28 @@ BOOST_AUTO_TEST_CASE(QueryTest)
 		{
 			query (opts.alias, "create temporary table pg_async_test(b bigint)", true).run_async(
 			[&](connection_lock_ptr c, resultset, bool){
+				#ifdef WITH_TIP_LOG
 				local_log() << "Query one finished";
+				#endif
 				BOOST_CHECK(c);
 				query(c, "insert into pg_async_test values(1),(2),(3)").run_async(
 				[&](connection_lock_ptr c, resultset, bool){
+					#ifdef WITH_TIP_LOG
 					local_log() << "Query two finished";
+					#endif
 					BOOST_CHECK(c);
 					query(c, "select * from pg_async_test").run_async(
 					[&](connection_lock_ptr c, resultset r, bool) {
+						#ifdef WITH_TIP_LOG
 						local_log() << "Query three finished";
+						#endif
 						BOOST_CHECK(c);
 						res = r;
 						query(c, "drop table pg_async_test").run_async(
 						[&](connection_lock_ptr c, resultset r, bool) {
+							#ifdef WITH_TIP_LOG
 							local_log() << "Query four finished";
+							#endif
 							BOOST_CHECK(c);
                             timer.cancel();
 							db_service::stop();
@@ -583,14 +631,18 @@ BOOST_AUTO_TEST_CASE(ResultParsingTest)
 		BOOST_CHECK_NO_THROW(db_service::add_connection(test_database));
 		std::string script_name = test::SCRIPT_SOURCE_DIR + "results-parse-test.sql";
 		std::ifstream script(script_name);
+		#ifdef WITH_TIP_LOG
 		local_log() << "Script file name " << script_name;
+		#endif
 		if (script) {
 			boost::asio::deadline_timer timer(db_service::io_service(),
 					boost::posix_time::seconds(deadline));
 			timer.async_wait([&](boost::system::error_code const& ec){
                 timer.cancel();
 				if (!ec) {
+					#ifdef WITH_TIP_LOG
 					local_log(logger::WARNING) << "Parse result set test timer expired";
+					#endif
 					db_service::stop();
 				}
 			});
@@ -602,12 +654,15 @@ BOOST_AUTO_TEST_CASE(ResultParsingTest)
 			connection_options opts = connection_options::parse(test_database);
 			query(opts.alias, script_str).run_async(
 			[&](connection_lock_ptr c, resultset res, bool complete) {
+				#ifdef WITH_TIP_LOG
 				{
 					local_log() << "Received a resultset. Columns: " << res.columns_size()
 							<< " rows: " << res.size() << " empty: " << res.empty();
 				}
+				#endif
 				if (!res.empty()) {
 					for (resultset::const_iterator row = res.begin(); row != res.end(); ++row) {
+						#ifdef WITH_TIP_LOG
 						tip::log::local local = local_log();
 						local << "Row " << (row - res.begin()) << ": ";
 
@@ -620,7 +675,7 @@ BOOST_AUTO_TEST_CASE(ResultParsingTest)
 						for (resultset::const_field_iterator f = row.begin(); f != row.end(); ++f) {
 							local << f.as< std::string >() << " ";
 						}
-
+						#endif
 					}
 				}
 			}, [&](db_error const&) {});

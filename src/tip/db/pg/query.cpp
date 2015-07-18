@@ -10,8 +10,11 @@
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/database.hpp>
 #include <tip/db/pg/detail/connection_lock.hpp>
+
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/log/ansi_colors.hpp>
+#endif
 
 #include <functional>
 
@@ -19,6 +22,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -34,6 +38,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 struct query::impl : std::enable_shared_from_this<query::impl> {
 	dbalias alias_;
@@ -95,12 +100,14 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 			error_callback err)
 	{
 		using namespace std::placeholders;
+		#ifdef WITH_TIP_LOG
 		{
 			local_log() << "Execute query "
 					<< (util::MAGENTA | util::BRIGHT)
 					<< expression_
 					<< logger::severity_color();
 		}
+		#endif
 		conn_ = c;
 		(*conn_)->execute_query(expression_,
 			std::bind(&impl::handle_get_results,

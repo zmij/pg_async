@@ -11,7 +11,9 @@
 #include <tip/db/pg/detail/connection_impl.hpp>
 #include <tip/db/pg/detail/connection_lock.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
+#endif
 
 #include <sstream>
 #include <exception>
@@ -27,7 +29,7 @@ namespace asio = boost::asio;
 using asio::ip::tcp;
 using boost::system::error_code;
 
-
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -42,6 +44,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 
 }  // namespace
 using tip::log::logger;
+#endif
 
 connection_ptr
 connection::create(io_service& service,
@@ -100,7 +103,9 @@ connection::init(io_service& service,
 
 connection::~connection()
 {
+#ifdef WITH_TIP_LOG
 	local_log(logger::DEBUG) << "**** connection::~connection()";
+#endif
 }
 
 connection::state_type
@@ -179,7 +184,9 @@ void
 connection::implementation_event(connection_event_callback event, pimpl i)
 {
 	if (event) {
+		#ifdef WITH_TIP_LOG
 		local_log() << "Dispatch connection event";
+		#endif
 		event(shared_from_this());
 	}
 }

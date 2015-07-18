@@ -12,8 +12,10 @@
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/error.hpp>
 
+#ifdef WITH_TIP_LOG
 #include <tip/log/log.hpp>
 #include <tip/log/ansi_colors.hpp>
+#endif
 
 #include <assert.h>
 
@@ -22,6 +24,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -37,7 +40,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-
+#endif
 
 basic_state::basic_state(connection_base& conn)
 		: conn(conn), exited(false)
@@ -59,6 +62,7 @@ basic_state::state() const
 void
 basic_state::enter()
 {
+	#ifdef WITH_TIP_LOG
 	{
 		auto local = local_log();
 		local << "Enter "
@@ -67,12 +71,14 @@ basic_state::enter()
 				<< logger::severity_color()
 				<< " state";
 	}
+	#endif
 	do_enter();
 }
 
 void
 basic_state::exit()
 {
+	#ifdef WITH_TIP_LOG
 	{
 		auto local = local_log();
 		local << "Exit "
@@ -81,6 +87,7 @@ basic_state::exit()
 				<< logger::severity_color()
 				<< " state";
 	}
+	#endif
 	exited = true;
 	do_exit();
 }
@@ -142,7 +149,9 @@ basic_state::do_begin_transaction(simple_callback cb, error_callback err, bool a
 {
 	std::ostringstream msg;
 	msg << "Cannot start transaction in " << name() << " state";
+	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << msg.str();
+	#endif
 	if (!err)
 		throw query_error(msg.str());
 	else
@@ -154,7 +163,9 @@ basic_state::do_commit_transaction(simple_callback cb, error_callback err)
 {
 	std::ostringstream msg;
 	msg << "Cannot commit transaction in " << name() << " state";
+	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << msg.str();
+	#endif
 	if (!err)
 		throw query_error(msg.str());
 	else
@@ -166,7 +177,9 @@ basic_state::do_rollback_transaction(simple_callback cb, error_callback err)
 {
 	std::ostringstream msg;
 	msg << "Cannot rollback transaction in " << name() << " state";
+	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << msg.str();
+	#endif
 	if (!err)
 		throw query_error(msg.str());
 	else
@@ -182,7 +195,9 @@ basic_state::execute_query(std::string const& q, result_callback cb, query_error
 void
 basic_state::do_execute_query(std::string const& q, result_callback cb, query_error_callback)
 {
+	#ifdef WITH_TIP_LOG
 	local_log() << "Query executing is not available in " << name() << " state";
+	#endif
 }
 
 void
@@ -194,10 +209,12 @@ basic_state::terminate(simple_callback cb)
 void
 basic_state::do_terminate(simple_callback cb)
 {
+	#ifdef WITH_TIP_LOG
 	local_log() << "Terminate state "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
 			<< name()
 			<< logger::severity_color();
+	#endif
 	conn.pop_state(this);
 	if (cb)
 		cb();
@@ -229,8 +246,10 @@ state_stack::push_state(state_ptr state)
 			stack_.push(state);
 		}
 		state->enter();
+	#ifdef WITH_TIP_LOG
 	} else {
 		local_log(logger::ERROR) << "Attempt to push an empty state";
+	#endif
 	}
 }
 
@@ -247,8 +266,10 @@ state_stack::pop_state(basic_state* sender)
 		if (state.get() == sender) {
 			stack_.pop();
 		} else {
+			#ifdef WITH_TIP_LOG
 			local_log(logger::WARNING) << sender->name() << " trying to pop "
 					<< state->name();
+			#endif
 			state.reset();
 		}
 		//last_ = state->name();
@@ -258,11 +279,13 @@ state_stack::pop_state(basic_state* sender)
 	}
 	if (state)
 		state->exit();
+	#ifdef WITH_TIP_LOG
 	if (empty) {
 		local_log() << "#### State stack is empty";
 	} else {
 		local_log() << "Top state is " << top_name;
 	}
+	#endif
 }
 
 void
@@ -275,8 +298,10 @@ state_stack::transit_state(state_ptr state)
 			pop_state(s.get());
 		}
 		push_state(state);
+	#ifdef WITH_TIP_LOG
 	} else {
 		local_log(logger::ERROR) << "Attempt to transit to an empty state";
+	#endif
 	}
 }
 
@@ -305,13 +330,6 @@ basic_state::state_const_ptr
 state_stack::current() const
 {
 	lock_type lock(mutex_);
-//	if (stack_.empty()) {
-//		auto local = local_log(logger::ERROR);
-//		local << "Connection state stack is empty.";
-//		if (!last_.empty()) {
-//			local << " Last state popped " << last_;
-//		}
-//	}
 	assert(!stack_.empty() && "State stack is empty");
 	return stack_.top();
 }
@@ -376,7 +394,9 @@ state_stack::do_terminate(simple_callback cb)
 	if (!stack_.empty()) {
 		state_ptr top = current();
 		if (std::dynamic_pointer_cast<terminated_state>(top)) {
+			#ifdef WITH_TIP_LOG
 			local_log() << "Already terminated";
+			#endif
 		} else {
 			current()->terminate(
 			[this, cb]() {
