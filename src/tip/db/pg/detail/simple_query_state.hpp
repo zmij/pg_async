@@ -2,7 +2,7 @@
  * simple_query_state.h
  *
  *  Created on: 11 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #ifndef TIP_DB_PG_DETAIL_SIMPLE_QUERY_STATE_HPP_

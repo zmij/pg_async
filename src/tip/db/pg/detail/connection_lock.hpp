@@ -2,7 +2,7 @@
  * connection_lock.h
  *
  *  Created on: 14 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #ifndef TIP_DB_PG_DETAIL_CONNECTION_LOCK_HPP_

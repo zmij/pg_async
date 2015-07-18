@@ -2,7 +2,7 @@
  * connection_base.cpp
  *
  *  Created on: 11 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #include <tip/db/pg/detail/basic_connection.hpp>

@@ -2,7 +2,7 @@
  * db_error.cpp
  *
  *  Created on: 16 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #include <tip/db/pg/error.hpp>

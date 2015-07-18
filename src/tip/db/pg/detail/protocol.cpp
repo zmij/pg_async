@@ -2,7 +2,7 @@
  * protocol.cpp
  *
  *  Created on: 09 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #include <tip/db/pg/detail/protocol.hpp>
