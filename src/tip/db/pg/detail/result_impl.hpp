@@ -2,7 +2,7 @@
  * result_impl.hpp
  *
  *  Created on: 12 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #ifndef TIP_DB_PG_DETAIL_RESULT_IMPL_HPP_

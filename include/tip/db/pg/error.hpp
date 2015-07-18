@@ -1,8 +1,8 @@
-/*
+/**
  * error.hpp
  *
  *  Created on: 16 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #ifndef TIP_DB_PG_ERROR_HPP_

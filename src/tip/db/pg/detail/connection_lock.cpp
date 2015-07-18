@@ -2,7 +2,7 @@
  * connection_lock.cpp
  *
  *  Created on: 14 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #include <tip/db/pg/connection.hpp>

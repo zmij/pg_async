@@ -2,7 +2,7 @@
  * pg_commands.hpp
  *
  *  Created on: 07 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #ifndef TIP_DB_PG_DETAIL_COMMANDS_HPP_

@@ -2,7 +2,7 @@
  * result_impl.cpp
  *
  *  Created on: 12 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #include <tip/db/pg/detail/result_impl.hpp>

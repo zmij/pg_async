@@ -1,8 +1,8 @@
-/*
+/**
  * common.hpp
  *
  *  Created on: 11 июля 2015 г.
- *      Author: brysin
+ *     @author: zmij
  */
 
 #ifndef TIP_DB_PG_COMMON_HPP_
