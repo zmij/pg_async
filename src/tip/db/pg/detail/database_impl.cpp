@@ -10,9 +10,9 @@
 #include <stdexcept>
 
 #ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
 #include <tip/version.hpp>
 #endif
+#include <tip/db/pg/log.hpp>
 
 namespace tip {
 namespace db {

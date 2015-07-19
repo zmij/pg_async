@@ -11,9 +11,7 @@
 #include <tip/db/pg/detail/connection_impl.hpp>
 #include <tip/db/pg/detail/connection_lock.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 #include <sstream>
 #include <exception>

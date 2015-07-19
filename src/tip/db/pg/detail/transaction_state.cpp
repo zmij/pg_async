@@ -12,9 +12,7 @@
 
 #include <tip/db/pg/error.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 namespace tip {
 namespace db {

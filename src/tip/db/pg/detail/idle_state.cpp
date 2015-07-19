@@ -11,10 +11,7 @@
 
 #include <tip/db/pg/detail/basic_connection.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#include <tip/log/ansi_colors.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 namespace tip {
 namespace db {

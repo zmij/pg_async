@@ -8,9 +8,8 @@
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/detail/result_impl.hpp>
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+
+#include <tip/db/pg/log.hpp>
 
 #include <algorithm>
 #include <assert.h>

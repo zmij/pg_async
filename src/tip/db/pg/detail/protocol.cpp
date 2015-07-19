@@ -19,9 +19,7 @@
 
 #include <tip/db/pg/common.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 namespace tip {
 namespace db {

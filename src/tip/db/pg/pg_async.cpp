@@ -3,7 +3,6 @@
 // Author      : Sergei A. Fedorov
 // Version     :
 // Copyright   : Copyright (c) Sergei A. Fedorov 2015
-// Description : Hello World in C++, Ansi-style
 //============================================================================
 
 #include <iostream>
@@ -14,9 +13,7 @@
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/resultset.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 #ifdef WITH_TIP_LOG
 namespace {

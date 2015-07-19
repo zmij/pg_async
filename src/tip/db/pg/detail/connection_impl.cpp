@@ -8,9 +8,7 @@
 #include <tip/db/pg/detail/connection_impl.hpp>
 #include <tip/db/pg/detail/startup.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 #include <boost/bind.hpp>
 

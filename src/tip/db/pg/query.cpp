@@ -11,10 +11,7 @@
 #include <tip/db/pg/database.hpp>
 #include <tip/db/pg/detail/connection_lock.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#include <tip/log/ansi_colors.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 #include <functional>
 

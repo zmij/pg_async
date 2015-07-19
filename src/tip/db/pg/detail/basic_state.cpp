@@ -12,10 +12,7 @@
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/error.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#include <tip/log/ansi_colors.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 #include <assert.h>
 
