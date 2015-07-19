@@ -106,7 +106,8 @@ struct query_parser< T, TEXT_DATA_FORMAT > {
 	bool
 	operator() (std::istream& in)
 	{
-		bool result = (in >> value);
+		in >> value;
+		bool result = !in.fail();
 		if (!result)
 			in.setstate(std::ios_base::failbit);
 		return result;

@@ -10,6 +10,7 @@
 
 #include <boost/logic/tribool.hpp>
 #include <algorithm>
+#include <cctype>
 
 namespace tip {
 namespace db {
