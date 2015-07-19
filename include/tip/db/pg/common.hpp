@@ -16,8 +16,8 @@
  *	smallint			| tip::db::pg::smallint
  *	integer				| tip::db::pg::integer
  *	bigint				| tip::db::pg::bigint
- *	decimal				| no mapping
- *	numeric				| no mapping
+ *	decimal				| @todo decide MPFR or GMP - ?
+ *	numeric				| @todo decide MPFR or GMP - ?
  *  real				| float
  *  double precision	| double
  *  smallserial			| tip::db::pg::smallint
@@ -36,7 +36,7 @@
  *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-money.html)
  *	PostgreSQL			| C++
  *	------------------- | -------------------
- *	money				| no mapping
+ *	money				| @todo decide MPFR or GMP - ?
  *
  *  ### Binary type
  *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-binary.html)
@@ -44,9 +44,10 @@
  *	------------------- | -------------------
  *	bytea				| tip::db::pg::bytea
  *
- *  ### Datetime typs
+ *  ### Datetime type
  *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-datetime.html)
  *  [PostgreSQL date/time support](http://www.postgresql.org/docs/9.4/static/datetime-appendix.html)
+ *  [Boost.DateTime library](http://www.boost.org/doc/libs/1_58_0/doc/html/date_time.html)
  *	PostgreSQL			| C++
  *	------------------- | -------------------
  *  timestamp			|
@@ -71,18 +72,19 @@
  *
  *  ### Network address types
  *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-net-types.html)
+ *
  *	PostgreSQL			| C++
  *	------------------- | -------------------
  *	cidr				|
- *	inet				|
+ *	inet				| boost::asio::ip::address
  *	macaddr				|
  *
  *  ### Bit String types
  *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-bit.html)
  *	PostgreSQL			| C++
  *	------------------- | -------------------
- *	bit(n)				|
- *	bit varying(n)		|
+ *	bit(n)				| std::bitset<n>
+ *	bit varying(n)		| std::bitset<n> @todo create a signature structure
  *
  *	### Text search types
  *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-textsearch.html)
@@ -95,9 +97,15 @@
  *
  *	### XML type
  *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-xml.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	xml					| std::string
  *
  *	### JSON types
  *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-json.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	json				| std::string
  *
  *	### Arrays
  *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/arrays.html)
