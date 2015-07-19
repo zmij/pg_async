@@ -15,7 +15,7 @@
 #include <sstream>
 #include <map>
 
-#include <netinet/in.h>
+#include <boost/endian/conversion.hpp>
 
 #include <tip/db/pg/common.hpp>
 
@@ -133,7 +133,7 @@ message::length() const
 		unsigned char* p = reinterpret_cast<unsigned char*>(&len);
 		auto q = payload.begin() + 1;
 		std::copy(q, q + sizeof(size_type), p);
-		len = ntohl(len);
+		len = boost::endian::big_to_native(len);
 	}
 
 	return len;
@@ -144,7 +144,7 @@ message::buffer() const
 {
 	// Encode length of message
 	size_type len = size();
-	len = htonl(len);
+	len = boost::endian::native_to_big(len);
 	unsigned char* p = reinterpret_cast<unsigned char*>(&len);
 	std::copy(p, p + sizeof(size_type), payload.begin() + 1);
 
@@ -194,25 +194,25 @@ message::read(char& c)
 int16_t
 net_to_host(int16_t v)
 {
-	return ntohs(v);
+	return boost::endian::big_to_native(v);
 }
 
 int32_t
 net_to_host(int32_t v)
 {
-	return ntohl(v);
+	return boost::endian::big_to_native(v);
 }
 
 int16_t
 host_to_net(int16_t v)
 {
-	return htons(v);
+	return boost::endian::native_to_big(v);
 }
 
 int32_t
 host_to_net(int32_t v)
 {
-	return htonl(v);
+	return boost::endian::native_to_big(v);
 }
 
 template < typename T >
