@@ -86,7 +86,7 @@ public:
 	typedef std::pair<const_iterator, const_iterator> const_range;
 
 	/** Length type for the message */
-	typedef uint32_t size_type;
+	typedef integer size_type;
 public:
 	/**
 	 * Construct message for reading from the stream
@@ -150,7 +150,7 @@ public:
 	 * @return true if the operation was successful
 	 */
 	bool
-	read(int16_t&);
+	read(smallint&);
 
 	/**
 	 * Read a 4-byte integer from the message buffer
@@ -158,7 +158,7 @@ public:
 	 * @return true if the operation was successful
 	 */
 	bool
-	read(int32_t&);
+	read(integer&);
 
 	/**
 	 * Read a null-terminated string from the message buffer
@@ -215,13 +215,13 @@ public:
 	 * @param v the integer
 	 */
 	void
-	write(int16_t);
+	write(smallint);
 	/**
 	 * Write a 4-byte integer to the message buffer
 	 * @param v the integer
 	 */
 	void
-	write(int32_t);
+	write(integer);
 	/**
 	 * Write a NULL-terminated string to the message buffer
 	 * @param s the string
@@ -256,7 +256,7 @@ struct row_data {
 	typedef std::pair<const_data_iterator, const_data_iterator> data_buffer_bounds;
 
 	typedef uint16_t size_type;
-	typedef std::vector< int32_t > offsets_type;
+	typedef std::vector< integer > offsets_type;
 	typedef std::set< size_type > null_map_type;
 
 	offsets_type offsets;

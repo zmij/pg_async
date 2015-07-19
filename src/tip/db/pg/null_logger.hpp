@@ -125,8 +125,8 @@ operator << (logger& out, T const& v)
 }
 
 template < typename T >
-local&
-operator << (local& out, T const& v)
+local
+operator << (local out, T const& v)
 {
 	return out;
 }

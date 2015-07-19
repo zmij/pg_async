@@ -14,11 +14,11 @@
 namespace tip {
 namespace util {
 
-template <typename charT, typename traits = std::char_traits<charT> >
+template <typename charT, typename container = std::vector<charT>, typename traits = std::char_traits<charT> >
 class basic_input_iterator_buffer : public std::basic_streambuf<charT, traits> {
 public:
 	typedef charT char_type;
-	typedef std::vector<char_type> container_type;
+	typedef container container_type;
 	typedef typename container_type::const_iterator const_iterator;
 	typedef std::ios_base ios_base;
 
@@ -27,7 +27,7 @@ public:
 	typedef typename base::off_type off_type;
 public:
 	basic_input_iterator_buffer(const_iterator s, const_iterator e)
-		: base(), start_(const_cast<char_type*>(&*s)),
+		: base(), s_(s), start_(const_cast<char_type*>(&*s)),
 		  count_(e - s)
 	{
 		base::setg(start_, start_, start_ + count_);
@@ -37,6 +37,21 @@ public:
 	{
 		auto n = rhs.gptr();
 		base::setg(start_, n, start_ + count_);
+	}
+	const_iterator
+	begin() const
+	{
+		return s_;
+	}
+	const_iterator
+	end() const
+	{
+		return s_ + count_;
+	}
+	bool
+	empty() const
+	{
+		return count_ == 0;
 	}
 protected:
 	pos_type
@@ -72,6 +87,7 @@ protected:
 		return tgt - start_;
 	}
 private:
+	const_iterator s_;
 	char_type* start_;
 	size_t count_;
 };

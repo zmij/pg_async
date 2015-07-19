@@ -21,9 +21,7 @@
 #include <tip/db/pg/detail/connection_pool.hpp>
 #include <tip/db/pg/detail/connection_lock.hpp>
 
-#ifdef WITH_TIP_LOG
-#include <tip/log/log.hpp>
-#endif
+#include <tip/db/pg/log.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -34,10 +32,10 @@
 #include <thread>
 #include <chrono>
 #include <fstream>
+#include <sstream>
 
 #include "db/config.hpp"
 
-#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -53,7 +51,6 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-#endif
 
 namespace {
 
@@ -687,3 +684,111 @@ BOOST_AUTO_TEST_CASE(ResultParsingTest)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(BoolValueTextParseTest)
+{
+	using namespace tip::db::pg;
+	typedef tip::util::input_iterator_buffer buffer_type;
+
+	std::string true_values = "TRUE t true y yes on 1";
+	std::string false_values = "FALSE f false n no off 0";
+	std::string non_bool_values = "foo bar trololo";
+
+	{
+		std::istringstream tv(true_values);
+		std::string curr;
+		while (tv >> curr) {
+			{
+				local_log() << "Parse bool value " << curr;
+			}
+			std::istringstream is(curr);
+
+			bool val;
+			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(is));
+			BOOST_CHECK(val);
+
+			std::vector<char> data(curr.begin(), curr.end());
+			buffer_type buffer(data.begin(), data.end());
+			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(buffer));
+			BOOST_CHECK(val);
+		}
+	}
+
+	{
+		std::istringstream fv(false_values);
+		std::string curr;
+		while (fv >> curr) {
+			{
+				local_log() << "Parse bool value " << curr;
+			}
+			std::istringstream is(curr);
+
+			bool val;
+			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(is));
+			BOOST_CHECK(!val);
+
+			std::vector<char> data(curr.begin(), curr.end());
+			buffer_type buffer(data.begin(), data.end());
+			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(buffer));
+			BOOST_CHECK(!val);
+		}
+	}
+
+	{
+		std::istringstream nv(non_bool_values);
+		std::string curr;
+		while (nv >> curr) {
+			{
+				local_log() << "Parse non-bool value " << curr;
+			}
+			std::istringstream is(curr);
+
+			bool val = true;
+			BOOST_CHECK(!query_parse< TEXT_DATA_FORMAT >(val)(is));
+			BOOST_CHECK(val);
+
+			std::vector<char> data(curr.begin(), curr.end());
+			buffer_type buffer(data.begin(), data.end());
+			BOOST_CHECK(!query_parse< TEXT_DATA_FORMAT >(val)(buffer));
+			BOOST_CHECK(val);
+		}
+	}
+}
+
+
+BOOST_AUTO_TEST_CASE(ByteaValueTextParse)
+{
+	using namespace tip::db::pg;
+	std::vector< std::pair< std::string, int > > valid_strings {
+		{ "\\xdeadbeef", 4 },
+		{ "\\x5c784445414442454546", 10 },
+		{ "\\x", 0 }
+	};
+
+	std::vector< std::string > invalid_strings {
+		"\\xdeadbee",
+		"\\x5c78444g414442454546",
+		"\\",
+		""
+	};
+	for (auto vs : valid_strings) {
+		{
+			local_log() << "Parse bytea string '" << vs.first << "'";
+		}
+		std::istringstream is(vs.first);
+		bytea val;
+
+		BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(is));
+		BOOST_CHECK_EQUAL(val.data.size(), vs.second);
+	}
+
+	for (auto ivs : invalid_strings) {
+		{
+			local_log() << "Parse invalid bytea string '" << ivs << "'";
+		}
+		std::istringstream is(ivs);
+		bytea val { {1, 2, 3, 4} };
+
+		BOOST_CHECK(!query_parse< TEXT_DATA_FORMAT >(val)(is));
+		BOOST_CHECK_EQUAL(val.data.size(), 4); // Not modified
+	}
+}

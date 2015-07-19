@@ -191,30 +191,6 @@ message::read(char& c)
 	return false;
 }
 
-int16_t
-net_to_host(int16_t v)
-{
-	return boost::endian::big_to_native(v);
-}
-
-int32_t
-net_to_host(int32_t v)
-{
-	return boost::endian::big_to_native(v);
-}
-
-int16_t
-host_to_net(int16_t v)
-{
-	return boost::endian::native_to_big(v);
-}
-
-int32_t
-host_to_net(int32_t v)
-{
-	return boost::endian::native_to_big(v);
-}
-
 template < typename T >
 bool
 read_int(message::buffer_type const& payload,
@@ -232,7 +208,7 @@ read_int(message::buffer_type const& payload,
 			// Error here
 			return false;
 		}
-		val = net_to_host(i);
+		val = boost::endian::big_to_native(i);
 		curr_ = c;
 		return true;
 	}
@@ -243,7 +219,7 @@ template <typename T>
 void
 write_int(message::buffer_type& payload, T val)
 {
-	val = host_to_net(val);
+	val = boost::endian::native_to_big(val);
 	const char* p = reinterpret_cast<const char*>(&val);
 	for (int i = 0; i < sizeof(T); ++i, ++p)
 		payload.push_back(*p);
@@ -251,13 +227,13 @@ write_int(message::buffer_type& payload, T val)
 
 
 bool
-message::read(int16_t& val)
+message::read(smallint& val)
 {
 	return read_int(payload, curr_, val);
 }
 
 bool
-message::read(int32_t& val)
+message::read(integer& val)
 {
 	return read_int(payload, curr_, val);
 }
@@ -298,6 +274,7 @@ bool
 message::read(field_description& fd)
 {
 	field_description tmp;
+	tmp.max_size = 0;
 	if (read(tmp.name) &&
 			read(tmp.table_oid) &&
 			read(tmp.attribute_number) &&
@@ -316,14 +293,14 @@ message::read(row_data& row)
 {
 	int16_t col_count(0);
 	if (read(col_count)) {
-		int32_t len = length();
+		integer len = length();
 		row_data tmp;
 		tmp.offsets.reserve(col_count);
-		size_t expected_sz = len - sizeof(int32_t)*(col_count + 1) - sizeof(int16_t);
+		size_t expected_sz = len - sizeof(integer)*(col_count + 1) - sizeof(int16_t);
 		tmp.data.reserve( expected_sz );
 		for (int16_t i = 0; i < col_count; ++i) {
 			tmp.offsets.push_back(tmp.data.size());
-			int32_t col_size(0);
+			integer col_size(0);
 			if (!read(col_size))
 				return false;
 			if (col_size == -1) {
@@ -369,13 +346,13 @@ message::write(char c)
 }
 
 void
-message::write(int16_t v)
+message::write(smallint v)
 {
 	write_int(payload, v);
 }
 
 void
-message::write(int32_t v)
+message::write(integer v)
 {
 	write_int(payload, v);
 }

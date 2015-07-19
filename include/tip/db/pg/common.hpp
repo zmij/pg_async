@@ -5,6 +5,121 @@
  *     @author: zmij
  */
 
+/**
+ * @page Datatype conversions
+ *	## PostrgreSQL to C++ datatype conversions
+ *
+ *	### Numeric types
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-numeric.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	smallint			| tip::db::pg::smallint
+ *	integer				| tip::db::pg::integer
+ *	bigint				| tip::db::pg::bigint
+ *	decimal				| no mapping
+ *	numeric				| no mapping
+ *  real				| float
+ *  double precision	| double
+ *  smallserial			| tip::db::pg::smallint
+ *  serial				| tip::db::pg::integer
+ *  bigserial			| tip::db::pg::bigint
+ *
+ *  ### Character types
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-character.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *  varchar(n)			| std::string
+ *  character(n)		| std::string
+ *  text				| std::string
+ *
+ *  ### Monetary type
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-money.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	money				| no mapping
+ *
+ *  ### Binary type
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-binary.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	bytea				| tip::db::pg::bytea
+ *
+ *  ### Datetime typs
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-datetime.html)
+ *  [PostgreSQL date/time support](http://www.postgresql.org/docs/9.4/static/datetime-appendix.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *  timestamp			|
+ *  timestamptz			|
+ *  date				|
+ *  time				|
+ *  time with tz		|
+ *  interval			|
+ *
+ *
+ *	### Boolean type
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-boolean.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	boolean				| bool
+ *
+ *  ### Enumerated types
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-enum.html)
+ *
+ *  ### Geometric types
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-geometric.html)
+ *
+ *  ### Network address types
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-net-types.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	cidr				|
+ *	inet				|
+ *	macaddr				|
+ *
+ *  ### Bit String types
+ *  [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-bit.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	bit(n)				|
+ *	bit varying(n)		|
+ *
+ *	### Text search types
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-textsearch.html)
+ *
+ *	### UUID type
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-uuid.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	uuid				| boost::uuid
+ *
+ *	### XML type
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-xml.html)
+ *
+ *	### JSON types
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/datatype-json.html)
+ *
+ *	### Arrays
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/arrays.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	type array(n)		| std::vector< type mapping >
+ *
+ *	### Composite types
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/rowtypes.html)
+ *
+ *	### Range types
+ *	[PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/rangetypes.html)
+ *	PostgreSQL			| C++
+ *	------------------- | -------------------
+ *	int4range			|
+ *	int8range			|
+ *	numrange			|
+ *	tsrange				|
+ *	tstzrange			|
+ *	daterange			|
+ */
+
 #ifndef TIP_DB_PG_COMMON_HPP_
 #define TIP_DB_PG_COMMON_HPP_
 
@@ -21,15 +136,19 @@ namespace tip {
 namespace db {
 namespace pg {
 
-typedef boost::int_t<16>::exact 	int16_t;
-typedef boost::uint_t<16>::exact	uint16_t;
-typedef boost::int_t<32>::fast		int32_t;
-typedef boost::uint_t<32>::fast		uint32_t;
-typedef boost::int_t<64>::fast		int64_t;
+typedef boost::int_t<16>::exact 	smallint;
+typedef boost::uint_t<16>::exact	usmallint;
+typedef boost::int_t<32>::exact		integer;
+typedef boost::uint_t<32>::exact	uinteger;
+typedef boost::int_t<64>::exact		bigint;
 
 const int32_t PROTOCOL_VERSION = (3 << 16); // 3.0
 
 typedef char byte;
+
+struct bytea {
+	std::vector<byte> data;
+};
 
 typedef tip::util::input_iterator_buffer field_buffer;
 
@@ -107,17 +226,18 @@ struct connection_options {
  * Description of a field returned by the backend
  */
 struct field_description {
-	std::string name;			/**< The field name. */
-	int32_t table_oid;			/**< If the field can be identified as a column of a specific table, the object ID of the table; otherwise zero. */
-	int16_t attribute_number;	/**< If the field can be identified as a column of a specific table, the attribute number of the column; otherwise zero. */
-	int32_t type_oid;			/**< The object ID of the field's data type. */
-	int16_t type_size;			/**< The data type size (see pg_type.typlen). Note that negative values denote variable-width types. */
-	int32_t type_mod;			/**< The type modifier (see pg_attribute.atttypmod). The meaning of the modifier is type-specific. */
+	std::string	name;				/**< The field name. */
+	integer		table_oid;			/**< If the field can be identified as a column of a specific table, the object ID of the table; otherwise zero. */
+	smallint	attribute_number;	/**< If the field can be identified as a column of a specific table, the attribute number of the column; otherwise zero. */
+	integer		type_oid;			/**< The object ID of the field's data type. */
+	smallint 	type_size;			/**< The data type size (see pg_type.typlen). Note that negative values denote variable-width types. */
+	integer		type_mod;			/**< The type modifier (see pg_attribute.atttypmod). The meaning of the modifier is type-specific. */
 	/**
 	 * The format code being used for the field. Currently will be zero (text) or one (binary). In a RowDescription returned from the statement
 	 * variant of Describe, the format code is not yet known and will always be zero.
 	 */
-	int16_t format_code;
+	smallint	format_code;
+	integer		max_size;			/**< Maximum size of the field in the result set */
 };
 
 //@{

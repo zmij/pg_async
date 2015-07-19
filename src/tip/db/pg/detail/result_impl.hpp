@@ -42,16 +42,16 @@ public:
 	empty() const;
 
 	field_buffer
-	at(uint32_t row, uint16_t col) const;
+	at(uinteger row, usmallint col) const;
 
 	row_data::data_buffer_bounds
-	buffer_bounds(uint32_t row, uint16_t col) const;
+	buffer_bounds(uinteger row, usmallint col) const;
 
 	bool
-	is_null(uint32_t row, uint16_t col) const;
+	is_null(uinteger row, usmallint col) const;
 private:
 	void
-	check_row_index(uint32_t row) const;
+	check_row_index(uinteger row) const;
 	row_description_type row_description_;
 	row_set_type rows_;
 };

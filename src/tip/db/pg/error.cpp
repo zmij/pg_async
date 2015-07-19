@@ -50,6 +50,11 @@ query_error::query_error(std::string const& message,
 {
 }
 
+value_is_null::value_is_null(std::string const& field_name)
+	: db_error("Value in field " + field_name + " is null")
+{
+}
+
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

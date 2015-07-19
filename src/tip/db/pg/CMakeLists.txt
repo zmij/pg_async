@@ -13,8 +13,10 @@ set(
     resultset.cpp
     query.cpp
     sqlstates.cpp
+    protocol_io_traits.cpp
     detail/md5.cpp
     detail/protocol.cpp
+    detail/protocol_parsers.cpp
     detail/basic_connection.cpp
     detail/connection_impl.cpp
     detail/basic_state.cpp

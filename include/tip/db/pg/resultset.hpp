@@ -9,6 +9,9 @@
 #define TIP_DB_PG_RESULT_HPP_
 
 #include <tip/db/pg/common.hpp>
+#include <tip/db/pg/error.hpp>
+#include <tip/db/pg/protocol_io_traits.hpp>
+
 #include <iterator>
 #include <istream>
 #include <memory>
@@ -51,8 +54,8 @@ struct result_impl;
  */
 class resultset {
 public:
-	typedef uint32_t	size_type;
-	typedef int32_t difference_type;
+	typedef uinteger	size_type;
+	typedef integer		difference_type;
 
 	class row;
 	class field;
@@ -217,7 +220,7 @@ public:
 	 */
 	class row {
 	public:
-		typedef uint16_t 					size_type;
+		typedef smallint 					size_type;
 		typedef resultset::difference_type	difference_type;
 
 		//@{
@@ -326,10 +329,27 @@ public:
 		bool
 		to( T& val ) const
 		{
+			if (is_null())
+				throw value_is_null(name());
 			field_buffer b = input_buffer();
-			std::istream in(&b);
-			if (in >> val)
+			return query_parse< TEXT_DATA_FORMAT >(val)(b);
+		}
+
+		template < typename T >
+		bool
+		to( boost::optional< T >& val ) const
+		{
+			if (is_null()) {
+				val = boost::optional< T >();
 				return true;
+			} else {
+				typename std::decay<T>::type tmp;
+				field_buffer b = input_buffer();
+				if (query_parse< TEXT_DATA_FORMAT >(tmp)(b)) {
+					val = boost::optional< T > (tmp);
+					return true;
+				}
+			}
 			return false;
 		}
 
@@ -598,22 +618,6 @@ operator - (resultset::row const& a, resultset::row const& b)
 {
 	return a.row_index() - b.row_index();
 }
-
-/**
- * Template member specialization for booleans
- * @param
- */
-template < >
-bool
-resultset::field::to(bool&) const;
-
-/**
- * Template member specialization for booleans
- * @param
- */
-template < >
-bool
-resultset::field::to(std::string&) const;
 
 }  // namespace pg
 }  // namespace db

@@ -162,60 +162,6 @@ resultset::field::input_buffer() const
 	return result_->at(row_index_, field_index_);
 }
 
-namespace {
-
-const std::set< std::string > TRUE_LITERALS {
-	"TRUE",
-	"t",
-	"true",
-	"y",
-	"yes",
-	"on",
-	"1"
-};
-
-const std::set< std::string > FALSE_LITERALS {
-	"FALSE",
-	"f",
-	"false",
-	"n",
-	"no",
-	"off",
-	"0"
-};
-
-}  // namespace
-
-template < >
-bool
-resultset::field::to(bool& val) const
-{
-	std::string literal;
-	if (to(literal)) {
-		if (TRUE_LITERALS.count(literal)) {
-			val = true;
-			return true;
-		}
-		if (FALSE_LITERALS.count(literal)) {
-			val = false;
-			return true;
-		}
-	}
-	return false;
-}
-
-template < >
-bool
-resultset::field::to(std::string& val) const
-{
-	if (is_null())
-		return false;
-	detail::row_data::data_buffer_bounds bounds =
-			result_->pimpl_->buffer_bounds(row_index_, field_index_);
-	std::string(bounds.first, bounds.second).swap(val);
-	return true;
-}
-
 //----------------------------------------------------------------------------
 // result::const_field_iterator implementation
 //----------------------------------------------------------------------------

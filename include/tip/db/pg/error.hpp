@@ -43,6 +43,11 @@ public:
 	sqlstates	sqlstate;
 };
 
+class value_is_null : public db_error {
+public:
+	explicit value_is_null(std::string const& field_name);
+};
+
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

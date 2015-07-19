@@ -33,7 +33,7 @@ result_impl::empty() const
 }
 
 void
-result_impl::check_row_index(uint32_t row) const
+result_impl::check_row_index(uinteger row) const
 {
 	if (row >= rows_.size()) {
 		std::ostringstream out;
@@ -44,7 +44,7 @@ result_impl::check_row_index(uint32_t row) const
 }
 
 field_buffer
-result_impl::at(uint32_t row, uint16_t col) const
+result_impl::at(uinteger row, usmallint col) const
 {
 	check_row_index(row);
 	row_data const& rd = rows_[row];
@@ -52,7 +52,7 @@ result_impl::at(uint32_t row, uint16_t col) const
 }
 
 bool
-result_impl::is_null(uint32_t row, uint16_t col) const
+result_impl::is_null(uinteger row, usmallint col) const
 {
 	check_row_index(row);
 	row_data const& rd = rows_[row];
@@ -60,7 +60,7 @@ result_impl::is_null(uint32_t row, uint16_t col) const
 }
 
 row_data::data_buffer_bounds
-result_impl::buffer_bounds(uint32_t row, uint16_t col) const
+result_impl::buffer_bounds(uinteger row, usmallint col) const
 {
 	check_row_index(row);
 	row_data const& rd = rows_[row];
