@@ -225,7 +225,7 @@ connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_byte
             in = copy(in, eos, to_read, out);
             max_bytes -= to_read;
         }
-        if (message_->length() == message_->size()) {
+        if (message_->size() >= 4 && message_->length() == message_->size()) {
             message_ptr m = message_;
             m->reset_read();
             handle_message(m);

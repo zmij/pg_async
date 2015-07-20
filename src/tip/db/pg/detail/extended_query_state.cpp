@@ -9,6 +9,7 @@
 #include <tip/db/pg/detail/md5.hpp>
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
+#include <tip/db/pg/detail/result_impl.hpp>
 
 #include <tip/db/pg/log.hpp>
 
@@ -195,7 +196,8 @@ execute_state::execute_state(connection_base& conn,
 		std::string const& portal_name,
 		result_callback cb,
 		query_error_callback err)
-	: fetch_state(conn, cb, err), portal_name_(portal_name), sync_sent_(false)
+	: fetch_state(conn, cb, err), portal_name_(portal_name),
+	  sync_sent_(false), prev_rows_(0)
 {
 }
 
@@ -257,11 +259,27 @@ void
 execute_state::on_package_complete(size_t bytes)
 {
 	fetch_state::on_package_complete(bytes);
-	if (!complete_ && !sync_sent_) {
+	{
+		local_log() << "Package complete in execute state";
+	}
+	if (!result_) {
 		message m(sync_tag);
 		conn.send(m);
-		sync_sent_ = true;
+		prev_rows_ = 0;
+		local_log() << "Send sync";
+	} else if (result_) {
+		if (result_->size() == prev_rows_) {
+			message m(sync_tag);
+			conn.send(m);
+			local_log() << "Send sync";
+		}
+		prev_rows_ = result_->size();
 	}
+//	if (!complete_ && !sync_sent_) {
+//		message m(sync_tag);
+//		conn.send(m);
+//		sync_sent_ = true;
+//	}
 }
 
 } /* namespace detail */

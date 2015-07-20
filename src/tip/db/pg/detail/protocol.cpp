@@ -269,9 +269,15 @@ message::read(field_description& fd)
 bool
 message::read(row_data& row)
 {
-	int16_t col_count(0);
+	integer len = length();
+	assert( len == size() && "Invalid message length");
+	local_log(logger::OFF) << "Row data message size " << len;
+	if (len < sizeof(integer) + sizeof(smallint)) {
+		std::cerr << "Size of invalid data row message is " << len << "\n";
+		assert ( len >= sizeof(integer) + sizeof(smallint) && "Invalid data row message");
+	}
+	smallint col_count(0);
 	if (read(col_count)) {
-		integer len = length();
 		row_data tmp;
 		tmp.offsets.reserve(col_count);
 		size_t expected_sz = len - sizeof(integer)*(col_count + 1) - sizeof(int16_t);

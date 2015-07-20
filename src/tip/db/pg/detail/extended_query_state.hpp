@@ -106,6 +106,7 @@ private:
 private:
 	std::string portal_name_;
 	bool sync_sent_;
+	size_t prev_rows_;
 };
 
 } /* namespace detail */
