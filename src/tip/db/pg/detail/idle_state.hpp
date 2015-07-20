@@ -40,7 +40,7 @@ private:
 	do_execute_query(std::string const& q, result_callback cb, query_error_callback err);
 
 	virtual void
-	do_prepare(std::string const& q, result_callback, query_error_callback);
+	do_execute_prepared(std::string const& q, result_callback, query_error_callback);
 
 	virtual void
 	do_terminate(simple_callback);

@@ -125,10 +125,7 @@ public:
 			query_error_callback err);
 
 	void
-	execute_prepared();
-
-	void
-	prepare(std::string const& query, result_callback, query_error_callback);
+	execute_prepared(std::string const& query, result_callback, query_error_callback);
 	//@}
 
 	//@{

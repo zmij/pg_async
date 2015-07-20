@@ -131,7 +131,7 @@ connection::execute_prepared(std::string const& query,
 				error_callback err,
 				connection_lock_ptr l)
 {
-	pimpl_->prepare(query,
+	pimpl_->execute_prepared(query,
 			std::bind(&connection::query_executed,
 					shared_from_this(), cb,
 					std::placeholders::_1, std::placeholders::_2, l),

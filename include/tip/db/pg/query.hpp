@@ -43,12 +43,18 @@ public:
 	 */
 	query(dbalias const&, std::string const& expression,
 			bool start_tran = false, bool autocommit = false);
+	template < typename ... T >
+	query(dbalias const&, std::string const& expression,
+			bool start_tran, bool autocommit, T ... params);
 	/**
 	 * Construct a query.
 	 * @param connection
 	 * @param expression
 	 */
 	query(connection_lock_ptr, std::string const& expression);
+	template < typename ... T >
+	query(connection_lock_ptr, std::string const& expression,
+			T ... params);
 	/**
 	 * Run a query in a database identified by the alias asynchronously.
 	 * @pre Database alias must be registered with the @c database.

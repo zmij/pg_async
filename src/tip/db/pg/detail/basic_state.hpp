@@ -74,10 +74,22 @@ public:
 	//@}
 	//@{
 	/** @name Querying interface */
+	/**
+	 * Execute a simple query
+	 * @param q SQL script
+	 * @param result callback
+	 * @param error callback
+	 */
 	void
 	execute_query(std::string const& q, result_callback, query_error_callback);
+	/**
+	 * Execute a query with prepare and bind
+	 * @param q SQL script
+	 * @param result callback
+	 * @param error callback
+	 */
 	void
-	prepare(std::string const& query, result_callback, query_error_callback );
+	execute_prepared(std::string const& query, result_callback, query_error_callback );
 	//@}
 
 	void
@@ -127,7 +139,7 @@ private:
 	virtual void
 	do_execute_query(std::string const& q, result_callback, query_error_callback);
 	virtual void
-	do_prepare(std::string const& q, result_callback, query_error_callback);
+	do_execute_prepared(std::string const& q, result_callback, query_error_callback);
 
 	virtual void
 	do_terminate(simple_callback);
@@ -190,7 +202,7 @@ private:
 	virtual void
 	do_execute_query(std::string const& q, result_callback, query_error_callback);
 	virtual void
-	do_prepare(std::string const& q, result_callback, query_error_callback);
+	do_execute_prepared(std::string const& q, result_callback, query_error_callback);
 
 	virtual void
 	do_terminate(simple_callback);

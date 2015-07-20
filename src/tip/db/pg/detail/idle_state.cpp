@@ -106,7 +106,7 @@ idle_state::do_execute_query(std::string const& q, result_callback cb, query_err
 }
 
 void
-idle_state::do_prepare(std::string const& q, result_callback cb, query_error_callback err)
+idle_state::do_execute_prepared(std::string const& q, result_callback cb, query_error_callback err)
 {
 	conn.push_state( connection_state_ptr(
 			new extended_query_state(conn, q, cb, err)) );

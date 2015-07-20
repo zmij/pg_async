@@ -196,13 +196,13 @@ basic_state::do_execute_query(std::string const& q, result_callback cb, query_er
 }
 
 void
-basic_state::prepare(std::string const& query, result_callback cb, query_error_callback err)
+basic_state::execute_prepared(std::string const& query, result_callback cb, query_error_callback err)
 {
-	do_prepare(query, cb, err);
+	do_execute_prepared(query, cb, err);
 }
 
 void
-basic_state::do_prepare(std::string const& query, result_callback, query_error_callback)
+basic_state::do_execute_prepared(std::string const& query, result_callback, query_error_callback)
 {
 	local_log() << "Query prepare is not available in " << name() << " state";
 }
@@ -436,9 +436,9 @@ state_stack::do_execute_query(std::string const& q, result_callback cb, query_er
 }
 
 void
-state_stack::do_prepare(std::string const& q, result_callback cb, query_error_callback err)
+state_stack::do_execute_prepared(std::string const& q, result_callback cb, query_error_callback err)
 {
-	current()->prepare(q, cb, err);
+	current()->execute_prepared(q, cb, err);
 }
 
 }  // namespace detail

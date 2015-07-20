@@ -337,9 +337,9 @@ connection_base::execute_query(std::string const& q, result_callback cb, query_e
 }
 
 void
-connection_base::prepare(std::string const& q, result_callback res, query_error_callback err)
+connection_base::execute_prepared(std::string const& q, result_callback res, query_error_callback err)
 {
-	state_.prepare(q, res, err);
+	state_.execute_prepared(q, res, err);
 }
 
 bool
