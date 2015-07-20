@@ -21,7 +21,6 @@ namespace db {
 namespace pg {
 namespace detail {
 
-#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -36,7 +35,6 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 
 }  // namespace
 using tip::log::logger;
-#endif
 
 namespace options {
 
@@ -207,43 +205,45 @@ connection_base::create_startup_message(message& m)
 void
 connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_bytes)
 {
-	if (!message_) {
-		message_.reset(new detail::message);
-	}
-	auto out = message_->output();
-	size_t start_sz = max_bytes;
+    while (max_bytes > 0) {
+        size_t loop_beg = max_bytes;
+        if (!message_) {
+            message_.reset(new detail::message);
+        }
+        auto out = message_->output();
 
-	std::istreambuf_iterator<char> eos;
-	if (message_->length() == 0) {
-		// Read the header
-		size_t to_read = std::min(5ul, max_bytes);
-		in = copy(in, eos, to_read, out);
-		max_bytes -= to_read;
-	}
-	if (message_->length() > message_->size()) {
-		// Read the message body
-		size_t to_read = std::min(message_->length() - message_->size(), max_bytes);
-		in = copy(in, eos, to_read, out);
-		max_bytes -= to_read;
-	}
-	if (message_->length() == message_->size()) {
-		message_ptr m = message_;
-		m->reset_read();
-		handle_message(m);
-		message_.reset();
-	}
-	if (max_bytes > 0) {
-		if (start_sz == max_bytes) {
-			local_log(logger::WARNING) << "No bytes consumed";
-		}
-		read_message(in, max_bytes);
-	}
+        std::istreambuf_iterator<char> eos;
+        if (message_->length() == 0) {
+            // Read the header
+            size_t to_read = std::min(5ul, max_bytes);
+            in = copy(in, eos, to_read, out);
+            max_bytes -= to_read;
+        }
+        if (message_->length() > message_->size()) {
+            // Read the message body
+            size_t to_read = std::min(message_->length() - message_->size(), max_bytes);
+            in = copy(in, eos, to_read, out);
+            max_bytes -= to_read;
+        }
+        if (message_->length() == message_->size()) {
+            message_ptr m = message_;
+            m->reset_read();
+            handle_message(m);
+            message_.reset();
+        }
+        {
+            local_log() << loop_beg - max_bytes << " bytes consumed, " << max_bytes << " bytes left";
+        }
+    }
 }
 
 void
 connection_base::handle_message(message_ptr m)
 {
 	message_tag tag = m->tag();
+    {
+        local_log() << "Handle message " << (char)tag;
+    }
 	if (message::backend_tags().count(tag)) {
 		if (tag == error_response_tag) {
 			notice_message msg;
@@ -298,10 +298,8 @@ connection_base::handle_message(message_ptr m)
 				}
 			}
 		}
-#ifdef WITH_TIP_LOG
 	} else {
 		local_log(logger::ERROR) << "Unknown command from the backend " << (char)tag;
-#endif
 	}
 }
 
