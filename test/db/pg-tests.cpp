@@ -13,6 +13,7 @@
 #include <tip/db/pg/resultset.inl>
 #include <tip/db/pg/database.hpp>
 #include <tip/db/pg/query.hpp>
+#include <tip/db/pg/query.inl>
 #include <tip/db/pg/error.hpp>
 
 #include <tip/db/pg/detail/protocol.hpp>

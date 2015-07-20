@@ -43,6 +43,14 @@ public:
 	 */
 	query(dbalias const&, std::string const& expression,
 			bool start_tran = false, bool autocommit = false);
+	/**
+	 * Construct a prepared query with params to bind
+	 * @param
+	 * @param expression
+	 * @param start_tran
+	 * @param autocommit
+	 * @param params
+	 */
 	template < typename ... T >
 	query(dbalias const&, std::string const& expression,
 			bool start_tran, bool autocommit, T ... params);
@@ -52,9 +60,23 @@ public:
 	 * @param expression
 	 */
 	query(connection_lock_ptr, std::string const& expression);
+	/**
+	 * Construct a prepared query with params to bind
+	 * @param
+	 * @param expression
+	 * @param params
+	 */
 	template < typename ... T >
 	query(connection_lock_ptr, std::string const& expression,
 			T ... params);
+
+	/**
+	 * Bind parameters for the query
+	 * @param params
+	 */
+	template < typename ... T >
+	void
+	bind_params(T ... params);
 	/**
 	 * Run a query in a database identified by the alias asynchronously.
 	 * @pre Database alias must be registered with the @c database.
@@ -74,7 +96,15 @@ public:
 	connection_lock_ptr
 	connection();
 private:
+	typedef std::vector<byte> params_buffer;
 
+	void
+	create_impl(dbalias const&, std::string const& expression,
+			bool start_tran, bool autocommit);
+	void
+	create_impl(connection_lock_ptr, std::string const& expression);
+	params_buffer&
+	params();
 	struct impl;
 	typedef std::shared_ptr<impl> pimpl;
 	pimpl pimpl_;

@@ -157,8 +157,12 @@ bind_state::bind_state(connection_base& conn, std::string const& query_name,
 void
 bind_state::do_enter()
 {
-	std::string portal_name = "p_" +
-			std::string(boost::md5( query_name_.c_str() ).digest().hex_str_value());
+	{
+		message m(describe_tag);
+		m.write('S');
+		m.write(query_name_);
+		conn.send(m);
+	}
 	{
 		message m(bind_tag);
 		m.write(portal_name_);

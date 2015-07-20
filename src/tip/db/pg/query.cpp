@@ -45,6 +45,8 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	bool start_tran_;
 	bool autocommit_;
 
+	params_buffer params_;
+
 	impl(dbalias const& alias, std::string const& expression,
 			bool start_tran, bool autocommit)
 		: alias_(alias), conn_(), expression_(expression),
@@ -156,6 +158,25 @@ connection_lock_ptr
 query::connection()
 {
 	return pimpl_->conn_;
+}
+
+void
+query::create_impl(dbalias const& alias, std::string const& expression,
+		bool start_tran, bool autocommit)
+{
+	pimpl_.reset(new impl(alias, expression, start_tran, autocommit));
+}
+
+void
+query::create_impl(connection_lock_ptr c, std::string const& expression)
+{
+	pimpl_.reset(new impl(c, expression));
+}
+
+query::params_buffer&
+query::params()
+{
+	return pimpl_->params_;
 }
 
 }  // namespace pg
