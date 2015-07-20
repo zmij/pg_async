@@ -703,12 +703,12 @@ BOOST_AUTO_TEST_CASE(BoolValueTextParseTest)
 			std::istringstream is(curr);
 
 			bool val;
-			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(is));
+			BOOST_CHECK(protocol_parse< TEXT_DATA_FORMAT >(val)(is));
 			BOOST_CHECK(val);
 
 			std::vector<char> data(curr.begin(), curr.end());
 			buffer_type buffer(data.begin(), data.end());
-			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(buffer));
+			BOOST_CHECK(protocol_parse< TEXT_DATA_FORMAT >(val)(buffer));
 			BOOST_CHECK(val);
 		}
 	}
@@ -723,12 +723,12 @@ BOOST_AUTO_TEST_CASE(BoolValueTextParseTest)
 			std::istringstream is(curr);
 
 			bool val;
-			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(is));
+			BOOST_CHECK(protocol_parse< TEXT_DATA_FORMAT >(val)(is));
 			BOOST_CHECK(!val);
 
 			std::vector<char> data(curr.begin(), curr.end());
 			buffer_type buffer(data.begin(), data.end());
-			BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(buffer));
+			BOOST_CHECK(protocol_parse< TEXT_DATA_FORMAT >(val)(buffer));
 			BOOST_CHECK(!val);
 		}
 	}
@@ -743,12 +743,12 @@ BOOST_AUTO_TEST_CASE(BoolValueTextParseTest)
 			std::istringstream is(curr);
 
 			bool val = true;
-			BOOST_CHECK(!query_parse< TEXT_DATA_FORMAT >(val)(is));
+			BOOST_CHECK(!protocol_parse< TEXT_DATA_FORMAT >(val)(is));
 			BOOST_CHECK(val);
 
 			std::vector<char> data(curr.begin(), curr.end());
 			buffer_type buffer(data.begin(), data.end());
-			BOOST_CHECK(!query_parse< TEXT_DATA_FORMAT >(val)(buffer));
+			BOOST_CHECK(!protocol_parse< TEXT_DATA_FORMAT >(val)(buffer));
 			BOOST_CHECK(val);
 		}
 	}
@@ -777,7 +777,7 @@ BOOST_AUTO_TEST_CASE(ByteaValueTextParse)
 		std::istringstream is(vs.first);
 		bytea val;
 
-		BOOST_CHECK(query_parse< TEXT_DATA_FORMAT >(val)(is));
+		BOOST_CHECK(protocol_parse< TEXT_DATA_FORMAT >(val)(is));
 		BOOST_CHECK_EQUAL(val.data.size(), vs.second);
 	}
 
@@ -788,7 +788,7 @@ BOOST_AUTO_TEST_CASE(ByteaValueTextParse)
 		std::istringstream is(ivs);
 		bytea val { {1, 2, 3, 4} };
 
-		BOOST_CHECK(!query_parse< TEXT_DATA_FORMAT >(val)(is));
+		BOOST_CHECK(!protocol_parse< TEXT_DATA_FORMAT >(val)(is));
 		BOOST_CHECK_EQUAL(val.data.size(), 4); // Not modified
 	}
 }

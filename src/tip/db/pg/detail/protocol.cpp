@@ -6,6 +6,10 @@
  */
 
 #include <tip/db/pg/detail/protocol.hpp>
+#include <tip/db/pg/common.hpp>
+#include <tip/db/pg/protocol_io_traits.hpp>
+
+#include <tip/db/pg/log.hpp>
 
 #include <boost/asio/buffer.hpp>
 #include <algorithm>
@@ -17,9 +21,6 @@
 
 #include <boost/endian/conversion.hpp>
 
-#include <tip/db/pg/common.hpp>
-
-#include <tip/db/pg/log.hpp>
 
 namespace tip {
 namespace db {
@@ -196,23 +197,13 @@ bool
 read_int(message::buffer_type const& payload,
 		message::const_iterator& curr_, T& val)
 {
-	if (curr_ != payload.end()) {
-		message::const_iterator c = curr_;
-		T i(0);
-		char* p = reinterpret_cast<char*>(&i);
-		char* e = p + sizeof(T);
-		for (; p != e && c != payload.end();) {
-			*p++ = *c++;
-		}
-		if (p != e) {
-			// Error here
-			return false;
-		}
-		val = boost::endian::big_to_native(i);
-		curr_ = c;
-		return true;
-	}
-	return false;
+	message::const_iterator c =
+			protocol_parse< BINARY_DATA_FORMAT >( val )(std::make_pair(curr_, payload.end()), false);
+
+	if (c == curr_)
+		return false;
+
+	return true;
 }
 
 template <typename T>
@@ -229,6 +220,8 @@ write_int(message::buffer_type& payload, T val)
 bool
 message::read(smallint& val)
 {
+	const_iterator c =
+			protocol_parse< BINARY_DATA_FORMAT >( val )(std::make_pair(curr_, payload.end()), false);
 	return read_int(payload, curr_, val);
 }
 

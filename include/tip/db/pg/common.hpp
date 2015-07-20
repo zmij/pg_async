@@ -149,6 +149,7 @@ typedef boost::uint_t<16>::exact	usmallint;
 typedef boost::int_t<32>::exact		integer;
 typedef boost::uint_t<32>::exact	uinteger;
 typedef boost::int_t<64>::exact		bigint;
+typedef boost::uint_t<64>::exact	ubigint;
 
 const int32_t PROTOCOL_VERSION = (3 << 16); // 3.0
 

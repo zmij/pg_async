@@ -15,7 +15,7 @@ namespace db {
 namespace pg {
 
 bool
-query_parser< std::string, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
+protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
 {
 	in.unsetf(std::ios::skipws);
 	std::istream_iterator<char> i(in);
@@ -30,13 +30,25 @@ query_parser< std::string, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
 }
 
 bool
-query_parser< std::string, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
+protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
 {
 	if (buffer.empty())
 		return false;
 	std::string tmp(buffer.begin(), buffer.end());
 	tmp.swap(value);
 	return true;
+}
+
+bool
+protocol_parser< std::string, BINARY_DATA_FORMAT >::operator ()(std::istream& in, bool read_size)
+{
+	return false;
+}
+
+protocol_parser< std::string, BINARY_DATA_FORMAT >::buffer_type::const_iterator
+protocol_parser< std::string, BINARY_DATA_FORMAT >::operator()( buffer_type& buffer, bool read_size )
+{
+
 }
 
 namespace {
@@ -64,10 +76,10 @@ const std::set< std::string > FALSE_LITERALS {
 }  // namespace
 
 bool
-query_parser< bool, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
+protocol_parser< bool, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
 {
 	std::string literal;
-	if (query_parse< TEXT_DATA_FORMAT >(literal)(in)) {
+	if (protocol_parse< TEXT_DATA_FORMAT >(literal)(in)) {
 		if (TRUE_LITERALS.count(literal)) {
 			value = true;
 			return true;
@@ -81,10 +93,10 @@ query_parser< bool, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
 }
 
 bool
-query_parser< bool, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
+protocol_parser< bool, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
 {
 	std::string literal;
-	if (query_parse<TEXT_DATA_FORMAT>(literal)(buffer)) {
+	if (protocol_parse<TEXT_DATA_FORMAT>(literal)(buffer)) {
 		if (TRUE_LITERALS.count(literal)) {
 			value = true;
 			return true;
@@ -97,7 +109,7 @@ query_parser< bool, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
 }
 
 bool
-query_parser< bytea, TEXT_DATA_FORMAT >::operator()(std::istream& in)
+protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(std::istream& in)
 {
 	std::vector<byte> data;
 	std::istream_iterator<char> b(in);
@@ -112,7 +124,7 @@ query_parser< bytea, TEXT_DATA_FORMAT >::operator()(std::istream& in)
 }
 
 bool
-query_parser< bytea, TEXT_DATA_FORMAT >::operator()(buffer_type& buffer)
+protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(buffer_type& buffer)
 {
 	std::vector<byte> data;
 	auto result = detail::bytea_parser().parse(buffer.begin(), buffer.end(),
