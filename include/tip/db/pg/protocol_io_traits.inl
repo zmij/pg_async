@@ -28,10 +28,10 @@ binary_data_parser<T, INTEGRAL>::operator()(InputIterator begin, InputIterator e
 	typedef typename iter_traits::value_type iter_value_type;
 	static_assert(std::is_same< iter_value_type, byte >::type::value,
 			"Input iterator must be over a char container");
-	assert( (end - begin) >= size && "Buffer size is insufficient" );
+	assert( (end - begin) >= size() && "Buffer size is insufficient" );
 	value_type tmp(0);
 	char* p = reinterpret_cast<char*>(&tmp);
-	char* e = p + size;
+	char* e = p + size();
 	while (p != e && begin != end) {
 		*p++ = *begin++;
 	}
@@ -78,7 +78,7 @@ protocol_parser< bool, BINARY_DATA_FORMAT >::operator()
 	static_assert(std::is_same< iter_value_type, byte >::type::value,
 			"Input iterator must be over a char container");
 
-	assert( (end - begin) >= size && "Buffer size is insufficient" );
+	assert( (end - begin) >= size() && "Buffer size is insufficient" );
 	base_type::value = *begin++;
 	return begin;
 }
