@@ -319,6 +319,9 @@ public:
 		std::string const&
 		name() const; /**< @brief Name of field */
 
+		field_description const&
+		description() const; /**< @brief Field description */
+
 		bool
 		is_null() const; /**< @brief Is field value null */
 

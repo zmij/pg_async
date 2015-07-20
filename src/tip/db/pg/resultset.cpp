@@ -150,6 +150,13 @@ resultset::field::name() const
 	return result_->field_name(field_index_);
 }
 
+field_description const&
+resultset::field::description() const
+{
+	assert(result_ && "Cannot get field description not bound to result set");
+	return result_->field(field_index_);
+}
+
 bool
 resultset::field::is_null() const
 {

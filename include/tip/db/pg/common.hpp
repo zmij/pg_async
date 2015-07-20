@@ -156,7 +156,8 @@ const int32_t PROTOCOL_VERSION = (3 << 16); // 3.0
 typedef char byte;
 
 struct bytea {
-	std::vector<byte> data;
+	typedef std::vector<byte> container_type;
+	container_type data;
 };
 
 typedef tip::util::input_iterator_buffer field_buffer;

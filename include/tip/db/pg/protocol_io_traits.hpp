@@ -135,31 +135,31 @@ struct text_data_formatter< T, false > {
 	operator() (BufferOutputIterator i) const;
 };
 
+template < typename T >
+struct parser_base {
+	typedef typename std::decay< T >::type value_type;
+	value_type& value;
+
+	parser_base(value_type& val) : value(val) {}
+};
+
 template < typename T, protocol_binary_type >
 struct binary_data_parser;
 
 template < typename T >
-struct binary_data_parser < T, INTEGRAL > {
-	typedef T value_type;
-	typedef tip::util::input_iterator_buffer buffer_type;
+struct binary_data_parser < T, INTEGRAL > : parser_base< T > {
+	typedef parser_base<T> base_type;
+	typedef typename base_type::value_type value_type;
 
 	enum {
 		size	= sizeof(T)
 	};
-	value_type& value;
 
-	binary_data_parser(value_type& val) : value(val) {}
+	binary_data_parser(value_type& val) : base_type(val) {}
 
-	bool
-	operator()( std::istream&, bool read_size );
-	buffer_type::const_iterator
-	operator()( buffer_type& buffer, bool read_size )
-	{
-		return (*this)( std::make_pair( buffer.begin(), buffer.end() ), read_size );
-	}
 	template < typename InputIterator >
 	InputIterator
-	operator()( std::pair< InputIterator, InputIterator > buffer, bool read_size );
+	operator()( InputIterator begin, InputIterator end );
 };
 
 }  // namespace detail
@@ -177,18 +177,18 @@ struct protocol_formatter< T, TEXT_DATA_FORMAT > :
 };
 
 template < typename T >
-struct protocol_parser< T, TEXT_DATA_FORMAT > {
-	typedef typename std::decay< T >::type value_type;
+struct protocol_parser< T, TEXT_DATA_FORMAT > : detail::parser_base< T > {
+	typedef detail::parser_base< T > base_type;
+	typedef typename base_type::value_type value_type;
+
 	typedef tip::util::input_iterator_buffer buffer_type;
 
-	value_type& value;
-
-	protocol_parser(value_type& v) : value(v) {}
+	protocol_parser(value_type& v) : base_type(v) {}
 
 	bool
 	operator() (std::istream& in)
 	{
-		in >> value;
+		in >> base_type::value;
 		bool result = !in.fail();
 		if (!result)
 			in.setstate(std::ios_base::failbit);
@@ -249,16 +249,17 @@ operator >> (typename protocol_io_traits< T, F >::input_buffer_type& buff, proto
 }
 
 /**
- * Protocol parser specialization for std::string
+ * @brief Protocol parser specialization for std::string, text data format
  */
 template < >
-struct protocol_parser< std::string, TEXT_DATA_FORMAT > {
-	typedef std::string value_type;
+struct protocol_parser< std::string, TEXT_DATA_FORMAT > :
+		detail::parser_base< std::string > {
+	typedef detail::parser_base< std::string > base_type;
+	typedef base_type::value_type value_type;
+
 	typedef tip::util::input_iterator_buffer buffer_type;
 
-	value_type& value;
-
-	protocol_parser(value_type& v) : value(v) {}
+	protocol_parser(value_type& v) : base_type(v) {}
 
 	bool
 	operator() (std::istream& in);
@@ -267,37 +268,34 @@ struct protocol_parser< std::string, TEXT_DATA_FORMAT > {
 	operator() (buffer_type& buffer);
 };
 
+/**
+ * @brief Protocol parser specialization for std::string, binary data format
+ */
 template < >
-struct protocol_parser< std::string, BINARY_DATA_FORMAT > {
-	typedef std::string value_type;
-	typedef tip::util::input_iterator_buffer buffer_type;
+struct protocol_parser< std::string, BINARY_DATA_FORMAT > :
+		detail::parser_base< std::string > {
+	typedef detail::parser_base< std::string > base_type;
+	typedef base_type::value_type value_type;
 
-	value_type& value;
-
-	protocol_parser(value_type& v) : value(v) {}
-
-	bool
-	operator()(std::istream& in, bool read_size);
-
-	buffer_type::const_iterator
-	operator()(buffer_type& buffer, bool read_size);
+	protocol_parser(value_type& v) : base_type(v) {}
 
 	template < typename InputIterator >
 	InputIterator
-	operator()( std::pair< InputIterator, InputIterator > buffer, bool read_size );
+	operator()( InputIterator begin, InputIterator end );
 };
 
 /**
- * Query parser specialization for bool
+ * @brief Protocol parser specialization for bool, text data format
  */
 template < >
-struct protocol_parser< bool, TEXT_DATA_FORMAT > {
-	typedef bool value_type;
+struct protocol_parser< bool, TEXT_DATA_FORMAT > :
+		detail::parser_base< bool > {
+	typedef detail::parser_base< bool > base_type;
+	typedef base_type::value_type value_type;
+
 	typedef tip::util::input_iterator_buffer buffer_type;
 
-	value_type& value;
-
-	protocol_parser(value_type& v) : value(v) {}
+	protocol_parser(value_type& v) : base_type(v) {}
 
 	bool
 	operator() (std::istream& in);
@@ -307,27 +305,47 @@ struct protocol_parser< bool, TEXT_DATA_FORMAT > {
 };
 
 /**
- * Query parser specialization for boost::optional (used for nullable types)
+ * @brief Protocol parser specialization for bool, binary data format
  */
+template < >
+struct protocol_parser< bool, BINARY_DATA_FORMAT > :
+			detail::parser_base< bool > {
+	typedef detail::parser_base< bool > base_type;
+	typedef base_type::value_type value_type;
+	enum {
+		size = sizeof(bool)
+	};
+	typedef tip::util::input_iterator_buffer buffer_type;
 
+	protocol_parser(value_type& v) : base_type(v) {}
+
+	template < typename InputIterator >
+	InputIterator
+	operator()( InputIterator begin, InputIterator end );
+};
+
+/**
+ * @brief Protocol parser specialization for boost::optional (used for nullable types), text data format
+ */
 template < typename T >
-struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > {
-	typedef boost::optional< T > value_type;
+struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > :
+		detail::parser_base< boost::optional< T > > {
+	typedef detail::parser_base< boost::optional< T > > base_type;
+	typedef typename base_type::value_type value_type;
+
 	typedef T element_type;
 	typedef tip::util::input_iterator_buffer buffer_type;
 
-	value_type& value;
-
-	protocol_parser(value_type& v) : value(v) {}
+	protocol_parser(value_type& v) : base_type(v) {}
 
 	bool
 	operator() (std::istream& in)
 	{
 		element_type tmp;
 		if (query_parse(tmp)(in)) {
-			value = value_type(tmp);
+			base_type::value = value_type(tmp);
 		} else {
-			value = value_type();
+			base_type::value = value_type();
 		}
 		return true;
 	}
@@ -337,29 +355,76 @@ struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > {
 	{
 		element_type tmp;
 		if (query_parse(tmp)(buffer)) {
-			value = value_type(tmp);
+			base_type::value = value_type(tmp);
 		} else {
-			value = value_type();
+			base_type::value = value_type();
 		}
 		return true;
 	}
 };
 
-template <>
-struct protocol_parser< bytea, TEXT_DATA_FORMAT > {
-	typedef bytea value_type;
+/**
+ * @brief Protocol parser specialization for boost::optional (used for nullable types), binary data format
+ */
+template < typename T >
+struct protocol_parser< boost::optional< T >, BINARY_DATA_FORMAT > :
+		detail::parser_base< boost::optional< T > > {
+	typedef detail::parser_base< boost::optional< T > > base_type;
+	typedef typename base_type::value_type value_type;
+
+	typedef T element_type;
 	typedef tip::util::input_iterator_buffer buffer_type;
 
-	value_type& value;
+	protocol_parser(value_type& v) : base_type(v) {}
 
-	protocol_parser(value_type& v) : value(v) {}
+	template < typename InputIterator >
+	InputIterator
+	operator()( InputIterator begin, InputIterator end )
+	{
+		T tmp;
+		InputIterator c = protocol_parse< BINARY_DATA_FORMAT >(tmp)(begin, end);
+		if (c != begin) {
+			base_type::value = value_type(tmp);
+		} else {
+			base_type::value = value_type();
+		}
+		return c;
+	}
+};
+
+/**
+ * @brief Protocol parser specialization for bytea (binary string), text data format
+ */
+template <>
+struct protocol_parser< bytea, TEXT_DATA_FORMAT > :
+		detail::parser_base< bytea > {
+	typedef detail::parser_base< bytea > base_type;
+	typedef base_type::value_type value_type;
+	typedef tip::util::input_iterator_buffer buffer_type;
+
+	protocol_parser(value_type& v) : base_type(v) {}
 
 	bool
 	operator() (std::istream& in);
 
 	bool
 	operator() (buffer_type& buffer);
+};
 
+/**
+ * @brief Protocol parser specialization for bytea (binary string), binary data format
+ */
+template <>
+struct protocol_parser< bytea, BINARY_DATA_FORMAT > :
+		detail::parser_base< bytea > {
+	typedef detail::parser_base< bytea > base_type;
+	typedef base_type::value_type value_type;
+
+	protocol_parser(value_type& val) : base_type(val) {}
+
+	template < typename InputIterator >
+	InputIterator
+	operator()( InputIterator begin, InputIterator end );
 };
 
 }  // namespace pg

@@ -39,18 +39,6 @@ protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffe
 	return true;
 }
 
-bool
-protocol_parser< std::string, BINARY_DATA_FORMAT >::operator ()(std::istream& in, bool read_size)
-{
-	return false;
-}
-
-protocol_parser< std::string, BINARY_DATA_FORMAT >::buffer_type::const_iterator
-protocol_parser< std::string, BINARY_DATA_FORMAT >::operator()( buffer_type& buffer, bool read_size )
-{
-
-}
-
 namespace {
 
 const std::set< std::string > TRUE_LITERALS {
