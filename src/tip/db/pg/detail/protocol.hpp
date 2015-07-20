@@ -110,6 +110,12 @@ public:
 	 */
 	size_t
 	size() const;
+	/**
+	 * Full size of buffer including the tag
+	 * @return
+	 */
+	size_t
+	buffer_size() const;
 
 	/**
 	 * A pair of iterators for constructing buffer for writing into the stream

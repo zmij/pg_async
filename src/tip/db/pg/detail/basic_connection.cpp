@@ -205,6 +205,7 @@ connection_base::create_startup_message(message& m)
 void
 connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_bytes)
 {
+	const size_t header_size = sizeof(integer) + sizeof(byte);
     while (max_bytes > 0) {
         size_t loop_beg = max_bytes;
         if (!message_) {
@@ -213,9 +214,9 @@ connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_byte
         auto out = message_->output();
 
         std::istreambuf_iterator<char> eos;
-        if (message_->length() == 0) {
+        if (message_->buffer_size() < header_size) {
             // Read the header
-            size_t to_read = std::min(5ul, max_bytes);
+            size_t to_read = std::min((header_size - message_->buffer_size()), max_bytes);
             in = copy(in, eos, to_read, out);
             max_bytes -= to_read;
         }
@@ -224,6 +225,8 @@ connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_byte
             size_t to_read = std::min(message_->length() - message_->size(), max_bytes);
             in = copy(in, eos, to_read, out);
             max_bytes -= to_read;
+        	assert(message_->size() <= message_->length()
+        			&& "Read too much from the buffer" );
         }
         if (message_->size() >= 4 && message_->length() == message_->size()) {
             message_ptr m = message_;
@@ -242,7 +245,7 @@ connection_base::handle_message(message_ptr m)
 {
 	message_tag tag = m->tag();
     {
-        local_log(logger::TRACE) << "Handle message " << (char)tag;
+        local_log(logger::OFF) << "Handle message " << (char)tag;
     }
 	if (message::backend_tags().count(tag)) {
 		if (tag == error_response_tag) {

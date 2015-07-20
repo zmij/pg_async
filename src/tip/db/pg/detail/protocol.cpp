@@ -128,8 +128,9 @@ message::tag() const
 message::size_type
 message::length() const
 {
+	const size_t header_size = sizeof(integer) + sizeof(byte);
 	size_type len(0);
-	if (!payload.empty()) {
+	if (payload.size() >= header_size) {
 		// Decode length of message
 		unsigned char* p = reinterpret_cast<unsigned char*>(&len);
 		auto q = payload.begin() + 1;
@@ -157,7 +158,13 @@ message::buffer() const
 size_t
 message::size() const
 {
-	return payload.size() - 1;
+	return payload.empty() ? 0 : payload.size() - 1;
+}
+
+size_t
+message::buffer_size() const
+{
+	return payload.size();
 }
 
 message::const_iterator
