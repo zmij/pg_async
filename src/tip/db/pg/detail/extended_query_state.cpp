@@ -56,6 +56,11 @@ extended_query_state::do_handle_message(message_ptr m)
 			}
 			return true;
 		}
+		case command_complete_tag: {
+			conn.pop_state(this);
+			conn.state()->handle_message(m);
+			return true;
+		}
 		default:
 			break;
 	}
@@ -190,7 +195,7 @@ execute_state::execute_state(connection_base& conn,
 		std::string const& portal_name,
 		result_callback cb,
 		query_error_callback err)
-	: fetch_state(conn, cb, err), portal_name_(portal_name)
+	: fetch_state(conn, cb, err), portal_name_(portal_name), sync_sent_(false)
 {
 }
 
@@ -212,19 +217,33 @@ execute_state::do_enter()
 bool
 execute_state::do_handle_message(message_ptr m)
 {
-	if (fetch_state::do_handle_message(m)) {
+	message_tag tag = m->tag();
+	if (fetch_state::do_handle_message(m) && tag != command_complete_tag) {
 		return true;
 	} else {
-		message_tag tag = m->tag();
 		switch (tag) {
 			case ready_for_query_tag: {
-				{
-					local_log() << "Ready for query in execute state";
+				if (!complete_) {
+					{
+						local_log() << "Ready for query in execute state";
+					}
+					{
+						sync_sent_ = false;
+						message m(execute_tag);
+						m.write(portal_name_);
+						m.write((integer)0); // row limit
+						conn.send(m);
+					}
+
 				}
-				message m(execute_tag);
-				m.write(portal_name_);
-				m.write((integer)0); // row limit
-				conn.send(m);
+				return true;
+			}
+			case command_complete_tag: {
+				{
+					local_log() << "Command complete in execute state";
+				}
+				conn.pop_state(this);
+				conn.state()->handle_message(m);
 				return true;
 			}
 			default:
@@ -232,6 +251,17 @@ execute_state::do_handle_message(message_ptr m)
 		}
 	}
 	return false;
+}
+
+void
+execute_state::on_package_complete(size_t bytes)
+{
+	fetch_state::on_package_complete(bytes);
+	if (!complete_ && !sync_sent_) {
+		message m(sync_tag);
+		conn.send(m);
+		sync_sent_ = true;
+	}
 }
 
 } /* namespace detail */

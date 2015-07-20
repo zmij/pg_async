@@ -30,9 +30,15 @@ private:
 	get_name() const
 	{ return "fetch query"; }
 
+	virtual void
+	do_exit();
+
 	virtual connection::state_type
 	get_state() const
 	{ return connection::BUSY; }
+protected:
+	virtual void
+	on_package_complete(size_t bytes);
 
 	result_ptr
 	result();
@@ -43,6 +49,7 @@ protected:
 
 	bool complete_;
 	int result_no_;
+	ubigint bytes_read_;
 };
 
 } /* namespace detail */

@@ -101,8 +101,11 @@ private:
 	get_state() const { return connection::BUSY; }
 	virtual bool
 	do_handle_message(message_ptr);
+	virtual void
+	on_package_complete(size_t bytes);
 private:
 	std::string portal_name_;
+	bool sync_sent_;
 };
 
 } /* namespace detail */

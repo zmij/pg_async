@@ -46,9 +46,6 @@ private:
 	do_handle_error(notice_message const&);
 
 	virtual void
-	on_package_complete(size_t bytes);
-
-	virtual void
 	do_handle_unlocked();
 private:
 	std::string exp_;

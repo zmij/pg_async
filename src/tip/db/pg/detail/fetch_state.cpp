@@ -37,8 +37,14 @@ using tip::log::logger;
 fetch_state::fetch_state(connection_base& conn, result_callback cb,
 		query_error_callback err)
 	: basic_state(conn), callback_(cb), error_(err),
-	  complete_(false), result_no_(0)
+	  complete_(false), result_no_(0), bytes_read_(0)
 {
+}
+
+void
+fetch_state::do_exit()
+{
+	local_log() << "Fetched " << bytes_read_ << " bytes";
 }
 
 bool
@@ -87,6 +93,8 @@ fetch_state::do_handle_message(message_ptr m)
 			// TODO Add the stat to result
 			if (callback_) {
 				callback_(resultset(result()), true);
+			} else {
+				local_log(logger::WARNING) << "No results callback";
 			}
 			result_.reset();
 			return true;
@@ -95,6 +103,17 @@ fetch_state::do_handle_message(message_ptr m)
 			break;
 	}
 	return false;
+}
+
+void
+fetch_state::on_package_complete(size_t bytes)
+{
+	if (result_ && !result_->rows().empty()) {
+		if (callback_) {
+			callback_(resultset(result_), false);
+		}
+	}
+	bytes_read_ += bytes;
 }
 
 result_ptr

@@ -484,11 +484,9 @@ BOOST_AUTO_TEST_CASE(TransactionQueryTest)
 				BOOST_CHECK((*c_lock)->in_transaction());
 				(*c_lock)->execute_query( "select * from pg_catalog.pg_class",
 				[&] (connection_lock_ptr c_lock, resultset r, bool complete) {
-					#ifdef WITH_TIP_LOG
 					local_log() << "Received a resultset columns: " << r.columns_size()
 							<< " rows: " << r.size()
 							<< " completed: " << std::boolalpha << complete;
-					#endif
 					if (complete)
 						(*c_lock)->terminate();
 				}, [] (db_error const&) {}, c_lock);
@@ -624,17 +622,26 @@ BOOST_AUTO_TEST_CASE(ExtendedQueryTest)
 		local_log(logger::INFO) << "Transaction query test";
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
+		int tran_count = 0;
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
-			BOOST_CHECK_NO_THROW(c->begin_transaction(
-			[&](connection_lock_ptr c_lock){
-				(*c_lock)->execute_prepared("select * from pg_catalog.pg_class",
-				[&](connection_lock_ptr c, resultset r, bool) {
-				}, [](db_error const&) {}, c_lock);
-			},
-			[&](db_error const&){
-				transaction_error = false;
-			}, true));
+			if (!tran_count) {
+				BOOST_CHECK_NO_THROW(c->begin_transaction(
+				[&](connection_lock_ptr c_lock){
+					tran_count++;
+					(*c_lock)->execute_prepared("select * from pg_catalog.pg_class",
+					[&](connection_lock_ptr c, resultset r, bool complete) {
+						local_log() << "Received a resultset columns: " << r.columns_size()
+								<< " rows: " << r.size()
+								<< " completed: " << std::boolalpha << complete;
+						if (complete)
+							(*c)->terminate();
+					}, [](db_error const&) {}, c_lock);
+				},
+				[&](db_error const&){
+					transaction_error = true;
+				}, true));
+			}
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			BOOST_FAIL(ec.what());

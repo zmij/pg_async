@@ -232,7 +232,7 @@ connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_byte
             message_.reset();
         }
         {
-            local_log() << loop_beg - max_bytes << " bytes consumed, " << max_bytes << " bytes left";
+            local_log(logger::OFF) << loop_beg - max_bytes << " bytes consumed, " << max_bytes << " bytes left";
         }
     }
 }
@@ -242,7 +242,7 @@ connection_base::handle_message(message_ptr m)
 {
 	message_tag tag = m->tag();
     {
-        local_log() << "Handle message " << (char)tag;
+        local_log(logger::TRACE) << "Handle message " << (char)tag;
     }
 	if (message::backend_tags().count(tag)) {
 		if (tag == error_response_tag) {

@@ -79,17 +79,6 @@ simple_query_state::do_handle_error(notice_message const& msg)
 }
 
 void
-simple_query_state::on_package_complete(size_t bytes)
-{
-	//local_log() << "Package " << bytes << "b complete in " << name() << " state";
-	if (result_ && !result_->rows().empty()) {
-		if (callback_) {
-			callback_(resultset(result_), false);
-		}
-	}
-}
-
-void
 simple_query_state::do_enter()
 {
 	#ifdef WITH_TIP_LOG
