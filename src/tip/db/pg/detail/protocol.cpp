@@ -27,7 +27,6 @@ namespace db {
 namespace pg {
 namespace detail {
 
-#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -43,7 +42,6 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-#endif
 
 namespace {
 	tag_set_type FRONTEND_COMMANDS {
