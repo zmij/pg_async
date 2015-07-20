@@ -211,6 +211,7 @@ connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_byte
 		message_.reset(new detail::message);
 	}
 	auto out = message_->output();
+	size_t start_sz = max_bytes;
 
 	std::istreambuf_iterator<char> eos;
 	if (message_->length() == 0) {
@@ -232,6 +233,9 @@ connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_byte
 		message_.reset();
 	}
 	if (max_bytes > 0) {
+		if (start_sz == max_bytes) {
+			local_log(logger::WARNING) << "No bytes consumed";
+		}
 		read_message(in, max_bytes);
 	}
 }
@@ -330,6 +334,25 @@ connection_base::execute_query(std::string const& q, result_callback cb, query_e
 {
 	state_.execute_query(q, cb, err);
 }
+
+void
+connection_base::prepare(std::string const& q, result_callback res, query_error_callback err)
+{
+	state_.prepare(q, res, err);
+}
+
+bool
+connection_base::is_prepared(std::string const& query_hash) const
+{
+	return prepared_statements_.count(query_hash);
+}
+
+void
+connection_base::set_prepared(std::string const& query_hash)
+{
+	prepared_statements_.insert(query_hash);
+}
+
 void
 connection_base::handle_connect(error_code const& ec)
 {

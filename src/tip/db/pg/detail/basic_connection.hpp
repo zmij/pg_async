@@ -13,6 +13,7 @@
 #include <boost/bind.hpp>
 #include <map>
 #include <stack>
+#include <set>
 
 #include <tip/db/pg/connection.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
@@ -102,6 +103,8 @@ public:
 	virtual void
 	send(message const& m, api_handler = api_handler()) = 0;
 
+	//@{
+	/** @name Transactions interface */
 	void
 	begin_transaction(simple_callback, error_callback, bool autocommit);
 
@@ -113,10 +116,27 @@ public:
 
 	bool
 	in_transaction() const;
+	//@}
+
+	//@{
+	/** @name Querying */
+	void
+	execute_query(std::string const& query, result_callback cb,
+			query_error_callback err);
 
 	void
-	execute_query(std::string const& query, result_callback cb, query_error_callback err);
+	execute_prepared();
 
+	void
+	prepare(std::string const& query, result_callback, query_error_callback);
+	//@}
+
+	//@{
+	bool
+	is_prepared(std::string const& query_hash) const;
+	void
+	set_prepared(std::string const& query_hash);
+	//@}
 	void
 	notify_terminated();
 
@@ -157,6 +177,8 @@ private:
 	start_read() = 0;
 	virtual void
 	close() = 0;
+private:
+	typedef std::set< std::string > string_set_type;
 
 	options_type settings_;
 
@@ -172,6 +194,8 @@ private:
 	connection_error_callback err_;
 
 	bool locked_;
+
+	string_set_type prepared_statements_;
 protected:
 	bool
 	is_terminated() const;

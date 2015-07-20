@@ -74,12 +74,6 @@ public:
 	state() const;
 
 	void
-	execute_query(std::string const& query,
-			result_callback cb,
-			error_callback err,
-			connection_lock_ptr l = connection_lock_ptr());
-
-	void
 	terminate();
 
 	connection_lock_ptr
@@ -94,6 +88,17 @@ public:
 
 	bool
 	in_transaction() const;
+
+	void
+	execute_query(std::string const& query,
+			result_callback cb,
+			error_callback err,
+			connection_lock_ptr l = connection_lock_ptr());
+	void
+	execute_prepared(std::string const& query,
+			result_callback cb,
+			error_callback err,
+			connection_lock_ptr l = connection_lock_ptr());
 private:
 	typedef std::shared_ptr<detail::connection_base> pimpl;
 

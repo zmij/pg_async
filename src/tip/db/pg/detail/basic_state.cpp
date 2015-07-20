@@ -21,7 +21,6 @@ namespace db {
 namespace pg {
 namespace detail {
 
-#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -37,7 +36,6 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-#endif
 
 basic_state::basic_state(connection_base& conn)
 		: conn(conn), exited(false)
@@ -195,6 +193,18 @@ basic_state::do_execute_query(std::string const& q, result_callback cb, query_er
 	#ifdef WITH_TIP_LOG
 	local_log() << "Query executing is not available in " << name() << " state";
 	#endif
+}
+
+void
+basic_state::prepare(std::string const& query, result_callback cb, query_error_callback err)
+{
+	do_prepare(query, cb, err);
+}
+
+void
+basic_state::do_prepare(std::string const& query, result_callback, query_error_callback)
+{
+	local_log() << "Query prepare is not available in " << name() << " state";
 }
 
 void
@@ -423,6 +433,12 @@ void
 state_stack::do_execute_query(std::string const& q, result_callback cb, query_error_callback err)
 {
 	current()->execute_query(q, cb, err);
+}
+
+void
+state_stack::do_prepare(std::string const& q, result_callback cb, query_error_callback err)
+{
+	current()->prepare(q, cb, err);
 }
 
 }  // namespace detail

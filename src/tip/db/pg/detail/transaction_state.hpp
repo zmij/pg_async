@@ -8,14 +8,14 @@
 #ifndef TIP_DB_PG_DETAIL_TRANSACTION_STATE_HPP_
 #define TIP_DB_PG_DETAIL_TRANSACTION_STATE_HPP_
 
-#include <tip/db/pg/detail/basic_state.hpp>
+#include <tip/db/pg/detail/idle_state.hpp>
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
-class transaction_state: public tip::db::pg::detail::basic_state {
+class transaction_state: public idle_state {
 public:
 	transaction_state(connection_base&, simple_callback, error_callback, bool autocommit);
 	virtual ~transaction_state()
@@ -48,9 +48,6 @@ private:
 	do_commit_transaction(simple_callback, error_callback);
 	virtual void
 	do_rollback_transaction(simple_callback, error_callback);
-
-	virtual void
-	do_execute_query(std::string const& q, result_callback cb, query_error_callback err);
 
 	virtual void
 	do_terminate(simple_callback);

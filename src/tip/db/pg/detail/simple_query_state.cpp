@@ -39,83 +39,28 @@ using tip::log::logger;
 
 simple_query_state::simple_query_state(connection_base& conn,
 		std::string const& q, result_callback cb, query_error_callback err)
-	: basic_state(conn), exp_(q), callback_(cb), error_(err), complete_(false)
+	: fetch_state(conn, cb, err), exp_(q)
 {
-}
-
-result_ptr
-simple_query_state::result()
-{
-	if (!result_) {
-		#ifdef WITH_TIP_LOG
-		local_log() << "Create a new resultset";
-		#endif
-		result_.reset(new result_impl);
-	}
-	return result_;
 }
 
 bool
 simple_query_state::do_handle_message(message_ptr m)
 {
-	message_tag tag = m->tag();
-	switch (tag) {
-		case row_description_tag: {
-			complete_ = false;
-			int16_t col_cnt;
-			m->read(col_cnt);
-
-			result_ptr res = result();
-			result_impl::row_description_type& desc = res->row_description();
-			for (int i = 0; i < col_cnt; ++i) {
-				field_description fd;
-				if (m->read(fd)) {
-					desc.push_back(fd);
-				#ifdef WITH_TIP_LOG
-				} else {
-					local_log(logger::ERROR)
-							<< "Failed to read field description " << i;
-				#endif
-				}
+	if (fetch_state::do_handle_message(m)) {
+		return true;
+	} else {
+		message_tag tag = m->tag();
+		switch (tag) {
+			case ready_for_query_tag: {
+				if (complete_) {
+					conn.pop_state(this);
+					conn.state()->handle_message(m);
+				} // else - unexpected
+				return true;
 			}
-			return true;
+			default:
+				break;
 		}
-		case data_row_tag : {
-			complete_ = false;
-			row_data row;
-			if (m->read(row)) {
-				// push it to the result set
-				result_ptr res = result();
-				res->rows().push_back(row);
-			}
-			return true;
-		}
-		case command_complete_tag: {
-			complete_ = true;
-			std::string stat;
-			m->read(stat);
-			resultset res(result());
-			#ifdef WITH_TIP_LOG
-			local_log(logger::DEBUG) << "Command is complete " << stat
-					<< " resultset columns " << res.columns_size()
-					<< " rows " << res.size();
-			#endif
-			// TODO Add the stat to result
-			if (callback_) {
-				callback_(resultset(result()), true);
-			}
-			result_.reset();
-			return true;
-		}
-		case ready_for_query_tag: {
-			if (complete_) {
-				conn.pop_state(this);
-				conn.state()->handle_message(m);
-			} // else - unexpected
-			return true;
-		}
-		default:
-			break;
 	}
 	return false;
 }

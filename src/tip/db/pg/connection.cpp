@@ -126,6 +126,19 @@ connection::execute_query(std::string const& query,
 }
 
 void
+connection::execute_prepared(std::string const& query,
+				result_callback cb,
+				error_callback err,
+				connection_lock_ptr l)
+{
+	pimpl_->prepare(query,
+			std::bind(&connection::query_executed,
+					shared_from_this(), cb,
+					std::placeholders::_1, std::placeholders::_2, l),
+			err);
+}
+
+void
 connection::terminate()
 {
 	pimpl_->terminate();

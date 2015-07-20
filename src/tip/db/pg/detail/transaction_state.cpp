@@ -39,7 +39,7 @@ using tip::log::logger;
 
 transaction_state::transaction_state(connection_base& conn,
 		simple_callback cb, error_callback err, bool autocommit)
-	: basic_state(conn), autocommit_(autocommit),
+	: idle_state(conn), autocommit_(autocommit),
 	message_pending_(false), complete_(false),
 	  	  command_complete_(cb), error_(err)
 {
@@ -231,14 +231,6 @@ transaction_state::dirty_exit(simple_callback cb)
 		rollback_transaction(rollback, error_);
 	}
 }
-
-void
-transaction_state::do_execute_query(std::string const& q, result_callback cb, query_error_callback err)
-{
-	conn.push_state( connection_state_ptr(
-			new simple_query_state(conn, q, cb, err)) );
-}
-
 
 } /* namespace detail */
 } /* namespace pg */

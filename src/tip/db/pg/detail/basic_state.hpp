@@ -63,14 +63,22 @@ public:
 	void
 	handle_unlocked();
 
+	//@{
+	/** @name Transactions interface */
 	void
 	begin_transaction(simple_callback, error_callback, bool autocommit);
 	void
 	commit_transaction(simple_callback, error_callback);
 	void
 	rollback_transaction(simple_callback, error_callback);
+	//@}
+	//@{
+	/** @name Querying interface */
 	void
 	execute_query(std::string const& q, result_callback, query_error_callback);
+	void
+	prepare(std::string const& query, result_callback, query_error_callback );
+	//@}
 
 	void
 	terminate(simple_callback);
@@ -118,6 +126,8 @@ private:
 
 	virtual void
 	do_execute_query(std::string const& q, result_callback, query_error_callback);
+	virtual void
+	do_prepare(std::string const& q, result_callback, query_error_callback);
 
 	virtual void
 	do_terminate(simple_callback);
@@ -176,8 +186,11 @@ private:
 	do_commit_transaction(simple_callback, error_callback);
 	virtual void
 	do_rollback_transaction(simple_callback, error_callback);
+
 	virtual void
 	do_execute_query(std::string const& q, result_callback, query_error_callback);
+	virtual void
+	do_prepare(std::string const& q, result_callback, query_error_callback);
 
 	virtual void
 	do_terminate(simple_callback);

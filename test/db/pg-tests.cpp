@@ -473,9 +473,7 @@ BOOST_AUTO_TEST_CASE(TransactionQueryTest)
 	if (!test_database.empty()) {
 		using namespace tip::db::pg;
 		connection_options opts = connection_options::parse(test_database);
-		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transaction query test";
-		#endif
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
 		connection_ptr conn(connection::create(io_service,
@@ -496,7 +494,7 @@ BOOST_AUTO_TEST_CASE(TransactionQueryTest)
 				}, [] (db_error const&) {}, c_lock);
 			},
 			[&](db_error const&){
-				transaction_error = false;
+				transaction_error = true;
 			}, true));
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
@@ -618,6 +616,37 @@ BOOST_AUTO_TEST_CASE(QueryTest)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(ExtendedQueryTest)
+{
+	if (!test_database.empty()) {
+		using namespace tip::db::pg;
+		connection_options opts = connection_options::parse(test_database);
+		local_log(logger::INFO) << "Transaction query test";
+		boost::asio::io_service io_service;
+		bool transaction_error = false;
+		connection_ptr conn(connection::create(io_service,
+		[&](connection_ptr c) {
+			BOOST_CHECK_NO_THROW(c->begin_transaction(
+			[&](connection_lock_ptr c_lock){
+				(*c_lock)->execute_prepared("select * from pg_catalog.pg_class",
+				[&](connection_lock_ptr c, resultset r, bool) {
+				}, [](db_error const&) {}, c_lock);
+			},
+			[&](db_error const&){
+				transaction_error = false;
+			}, true));
+		}, [] (connection_ptr c) {
+		}, [](connection_ptr c, connection_error const& ec) {
+			BOOST_FAIL(ec.what());
+		},  opts, {
+			{"client_encoding", "UTF8"},
+			{"application_name", "pg_async"}
+		}));
+		io_service.run();
+		BOOST_CHECK(!transaction_error);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(ResultParsingTest)
 {
 	using namespace tip::db::pg;
@@ -658,6 +687,12 @@ BOOST_AUTO_TEST_CASE(ResultParsingTest)
 				}
 				#endif
 				if (!res.empty()) {
+					for (int i = 0; i < res.columns_size(); ++i) {
+						field_description const& fd = res.field(i);
+						local_log() << "Field " << fd.name << " type "
+								<< fd.type_oid << " type mod " << fd.type_mod;
+					}
+
 					for (resultset::const_iterator row = res.begin(); row != res.end(); ++row) {
 						#ifdef WITH_TIP_LOG
 						tip::log::local local = local_log();

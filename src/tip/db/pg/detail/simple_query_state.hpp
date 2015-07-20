@@ -8,7 +8,7 @@
 #ifndef TIP_DB_PG_DETAIL_SIMPLE_QUERY_STATE_HPP_
 #define TIP_DB_PG_DETAIL_SIMPLE_QUERY_STATE_HPP_
 
-#include <tip/db/pg/detail/basic_state.hpp>
+#include <tip/db/pg/detail/fetch_state.hpp>
 
 namespace tip {
 namespace db {
@@ -18,7 +18,7 @@ namespace detail {
 class result_impl;
 typedef std::shared_ptr<result_impl> result_ptr;
 
-class simple_query_state: public basic_state {
+class simple_query_state: public fetch_state {
 public:
 	simple_query_state(connection_base& conn,
 			std::string const& q,
@@ -50,16 +50,8 @@ private:
 
 	virtual void
 	do_handle_unlocked();
-
-	result_ptr
-	result();
 private:
 	std::string exp_;
-	result_callback callback_;
-	query_error_callback error_;
-	result_ptr result_;
-
-	bool complete_;
 };
 
 } /* namespace detail */

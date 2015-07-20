@@ -22,8 +22,10 @@ set(
     detail/basic_state.cpp
     detail/startup.cpp
     detail/idle_state.cpp
+    detail/fetch_state.cpp
     detail/simple_query_state.cpp
     detail/transaction_state.cpp
+    detail/extended_query_state.cpp
     detail/terminated_state.cpp
     detail/result_impl.cpp
     detail/database_impl.cpp

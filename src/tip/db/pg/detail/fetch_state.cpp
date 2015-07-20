@@ -1,0 +1,114 @@
+/*
+ * fetch_state.cpp
+ *
+ *  Created on: Jul 20, 2015
+ *      Author: zmij
+ */
+
+#include <tip/db/pg/detail/fetch_state.hpp>
+#include <tip/db/pg/detail/result_impl.hpp>
+#include <tip/db/pg/resultset.hpp>
+#include <tip/db/pg/error.hpp>
+
+#include <tip/db/pg/log.hpp>
+
+namespace tip {
+namespace db {
+namespace pg {
+namespace detail {
+
+namespace {
+/** Local logging facility */
+using namespace tip::log;
+
+const std::string LOG_CATEGORY = "PGFETCH";
+logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
+local
+local_log(logger::event_severity s = DEFAULT_SEVERITY)
+{
+	return local(LOG_CATEGORY, s);
+}
+
+}  // namespace
+// For more convenient changing severity, eg local_log(logger::WARNING)
+using tip::log::logger;
+
+
+fetch_state::fetch_state(connection_base& conn, result_callback cb,
+		query_error_callback err)
+	: basic_state(conn), callback_(cb), error_(err),
+	  complete_(false), result_no_(0)
+{
+}
+
+bool
+fetch_state::do_handle_message(message_ptr m)
+{
+	message_tag tag = m->tag();
+	switch (tag) {
+		case row_description_tag: {
+			complete_ = false;
+			int16_t col_cnt;
+			m->read(col_cnt);
+
+			result_ptr res = result();
+			result_impl::row_description_type& desc = res->row_description();
+			for (int i = 0; i < col_cnt; ++i) {
+				field_description fd;
+				if (m->read(fd)) {
+					desc.push_back(fd);
+				} else {
+					local_log(logger::ERROR)
+							<< "Failed to read field description " << i;
+				}
+			}
+			return true;
+		}
+		case data_row_tag : {
+			complete_ = false;
+			row_data row;
+			if (m->read(row)) { // @todo pass row_description to the result
+				// push it to the result set
+				result_ptr res = result();
+				res->rows().push_back(row);
+			}
+			return true;
+		}
+		case command_complete_tag: {
+			complete_ = true;
+			std::string stat;
+			m->read(stat);
+			resultset res(result());
+			#ifdef WITH_TIP_LOG
+			local_log(logger::DEBUG) << "Command is complete " << stat
+					<< " resultset columns " << res.columns_size()
+					<< " rows " << res.size();
+			#endif
+			// TODO Add the stat to result
+			if (callback_) {
+				callback_(resultset(result()), true);
+			}
+			result_.reset();
+			return true;
+		}
+		default:
+			break;
+	}
+	return false;
+}
+
+result_ptr
+fetch_state::result()
+{
+	if (!result_) {
+		local_log() << "Create a new resultset " << result_no_;
+		result_.reset(new result_impl);
+		++result_no_;
+	}
+	return result_;
+}
+
+} /* namespace detail */
+} /* namespace pg */
+} /* namespace db */
+} /* namespace tip */

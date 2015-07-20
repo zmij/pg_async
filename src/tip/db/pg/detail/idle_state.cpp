@@ -7,6 +7,7 @@
 
 #include <tip/db/pg/detail/idle_state.hpp>
 #include <tip/db/pg/detail/simple_query_state.hpp>
+#include <tip/db/pg/detail/extended_query_state.hpp>
 #include <tip/db/pg/detail/transaction_state.hpp>
 
 #include <tip/db/pg/detail/basic_connection.hpp>
@@ -102,6 +103,13 @@ idle_state::do_execute_query(std::string const& q, result_callback cb, query_err
 {
 	conn.push_state( connection_state_ptr(
 			new simple_query_state(conn, q, cb, err)) );
+}
+
+void
+idle_state::do_prepare(std::string const& q, result_callback cb, query_error_callback err)
+{
+	conn.push_state( connection_state_ptr(
+			new extended_query_state(conn, q, cb, err)) );
 }
 
 void
