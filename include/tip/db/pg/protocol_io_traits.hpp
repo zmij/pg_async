@@ -351,7 +351,8 @@ struct protocol_formatter< T, TEXT_DATA_FORMAT > : detail::formatter_base< T > {
     {
     	std::ostringstream os;
     	os << base_type::value;
-    	std::copy(os.str().begin(), os.str().end(), std::back_inserter(buffer));
+        auto str = os.str();
+    	std::copy(str.begin(), str.end(), std::back_inserter(buffer));
     	return true;
     }
 };
@@ -466,7 +467,50 @@ static_assert(has_parser<std::string, BINARY_DATA_FORMAT>::value,
                "Binary data parser for std::string");
 static_assert(best_parser<std::string>::value == BINARY_DATA_FORMAT,
 		"Best parser for std::string is binary");
-}  // namespace detail
+}  // namespace traits
+
+template < protocol_data_format fmt >
+struct protocol_formatter< std::string, fmt > :
+		detail::formatter_base< std::string > {
+	typedef detail::formatter_base< std::string > base_type;
+	typedef base_type::value_type value_type;
+
+	protocol_formatter(value_type const& v) : base_type(v) {}
+
+   size_t
+	size() const
+    {
+    	return base_type::value.size();
+    }
+    bool
+    operator()(std::istream& out)
+    {
+        out << base_type::value << '\0';
+        return out.good();
+    }
+    bool
+    operator()(std::vector<char>& buffer)
+    {
+    	std::ostringstream os;
+    	os << base_type::value;
+        auto str = os.str();
+    	auto iter = std::copy(str.begin(), str.end(), std::back_inserter(buffer));
+    	*iter++ = '\0';
+    	return true;
+    }
+
+};
+
+namespace traits {
+template < > struct has_formatter< std::string, BINARY_DATA_FORMAT >
+		: std::true_type {};
+static_assert(has_formatter<std::string, TEXT_DATA_FORMAT>::value,
+              "Text data parser for std::string");
+static_assert(has_formatter<std::string, BINARY_DATA_FORMAT>::value,
+               "Binary data parser for std::string");
+static_assert(best_formatter<std::string>::value == BINARY_DATA_FORMAT,
+		"Best parser for std::string is binary");
+}  // namespace traits
 
 /**
  * @brief Protocol parser specialization for bool, text data format

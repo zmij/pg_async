@@ -843,6 +843,23 @@ BOOST_AUTO_TEST_CASE(WriteParamsTest)
 		std::vector<char> buffer;
 		tip::db::pg::detail::write_params(buffer, (smallint)2);
 		BOOST_CHECK(!buffer.empty());
+        BOOST_CHECK_EQUAL(buffer.size(), sizeof(smallint) + sizeof(integer) + sizeof(smallint));
+        
+        buffer.clear();
+        tip::db::pg::detail::write_params(buffer, (integer)42);
+        BOOST_CHECK(!buffer.empty());
+        BOOST_CHECK_EQUAL(buffer.size(), sizeof(smallint) + sizeof(integer) + sizeof(integer));
+        
+        buffer.clear();
+        tip::db::pg::detail::write_params(buffer, (integer)42, (smallint)324);
+        BOOST_CHECK(!buffer.empty());
+        BOOST_CHECK_EQUAL(buffer.size(), sizeof(smallint) + sizeof(integer) + sizeof(integer) + sizeof(integer) + sizeof(smallint));
+        
+        buffer.clear();
+        tip::db::pg::detail::write_params(buffer, (integer)42, (smallint)324, 3.1415926);
+        BOOST_CHECK(!buffer.empty());
+//        BOOST_CHECK_EQUAL(buffer.size(), sizeof(smallint) + sizeof(integer) + sizeof(integer) + sizeof(integer) + sizeof(smallint));
+        
 	}
 
 }
