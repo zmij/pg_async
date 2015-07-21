@@ -469,8 +469,8 @@ static_assert(best_parser<std::string>::value == BINARY_DATA_FORMAT,
 		"Best parser for std::string is binary");
 }  // namespace traits
 
-template < protocol_data_format fmt >
-struct protocol_formatter< std::string, fmt > :
+template < >
+struct protocol_formatter< std::string, BINARY_DATA_FORMAT > :
 		detail::formatter_base< std::string > {
 	typedef detail::formatter_base< std::string > base_type;
 	typedef base_type::value_type value_type;
@@ -480,10 +480,10 @@ struct protocol_formatter< std::string, fmt > :
    size_t
 	size() const
     {
-    	return base_type::value.size();
+    	return base_type::value.size() + 1;
     }
     bool
-    operator()(std::istream& out)
+    operator()(std::ostream& out)
     {
         out << base_type::value << '\0';
         return out.good();
@@ -491,10 +491,8 @@ struct protocol_formatter< std::string, fmt > :
     bool
     operator()(std::vector<char>& buffer)
     {
-    	std::ostringstream os;
-    	os << base_type::value;
-        auto str = os.str();
-    	auto iter = std::copy(str.begin(), str.end(), std::back_inserter(buffer));
+    	auto iter = std::copy(base_type::value.begin(), base_type::value.end(),
+    			std::back_inserter(buffer));
     	*iter++ = '\0';
     	return true;
     }

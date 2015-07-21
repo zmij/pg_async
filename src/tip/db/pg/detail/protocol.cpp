@@ -346,8 +346,7 @@ message::write(integer v)
 void
 message::write(std::string const& s)
 {
-	std::copy(s.begin(), s.end(), std::back_inserter(payload));
-	payload.push_back(0);
+	protocol_write< BINARY_DATA_FORMAT >(payload, s);
 }
 
 //----------------------------------------------------------------------------
