@@ -201,10 +201,7 @@ template <typename T>
 void
 write_int(message::buffer_type& payload, T val)
 {
-	val = boost::endian::native_to_big(val);
-	const char* p = reinterpret_cast<const char*>(&val);
-	for (int i = 0; i < sizeof(T); ++i, ++p)
-		payload.push_back(*p);
+	protocol_write< BINARY_DATA_FORMAT >(payload, val);
 }
 
 

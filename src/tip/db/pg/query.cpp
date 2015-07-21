@@ -61,6 +61,14 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	void
+	clear_params()
+	{
+		params_buffer params;
+		protocol_write<BINARY_DATA_FORMAT>(params, (smallint)0); // format codes
+		protocol_write<BINARY_DATA_FORMAT>(params, (smallint)0); // number of parameters
+	}
+
+	void
 	run_async(query_result_callback res, error_callback err)
 	{
 		if (!conn_) {
@@ -143,6 +151,11 @@ query::query(connection_lock_ptr c, std::string const& expression)
 }
 
 void
+query::bind()
+{
+}
+
+void
 query::run_async(query_result_callback res, error_callback err)
 {
 	pimpl_->run_async(res, err);
@@ -174,7 +187,7 @@ query::create_impl(connection_lock_ptr c, std::string const& expression)
 }
 
 query::params_buffer&
-query::params()
+query::buffer()
 {
 	return pimpl_->params_;
 }

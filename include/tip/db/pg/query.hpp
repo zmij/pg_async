@@ -53,7 +53,7 @@ public:
 	 */
 	template < typename ... T >
 	query(dbalias const&, std::string const& expression,
-			bool start_tran, bool autocommit, T ... params);
+			bool start_tran, bool autocommit, T const& ... params);
 	/**
 	 * Construct a query.
 	 * @param connection
@@ -68,7 +68,7 @@ public:
 	 */
 	template < typename ... T >
 	query(connection_lock_ptr, std::string const& expression,
-			T ... params);
+			T const& ... params);
 
 	/**
 	 * Bind parameters for the query
@@ -76,7 +76,10 @@ public:
 	 */
 	template < typename ... T >
 	void
-	bind_params(T ... params);
+	bind(T const& ... params);
+
+	void
+	bind();
 	/**
 	 * Run a query in a database identified by the alias asynchronously.
 	 * @pre Database alias must be registered with the @c database.
@@ -104,7 +107,7 @@ private:
 	void
 	create_impl(connection_lock_ptr, std::string const& expression);
 	params_buffer&
-	params();
+	buffer();
 	struct impl;
 	typedef std::shared_ptr<impl> pimpl;
 	pimpl pimpl_;

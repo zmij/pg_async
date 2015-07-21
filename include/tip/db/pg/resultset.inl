@@ -9,6 +9,7 @@
 #define TIP_DB_PG_RESULTSET_INL_
 
 #include <tip/db/pg/resultset.hpp>
+#include <tip/util/meta_helpers.hpp>
 
 namespace tip {
 namespace db {
@@ -16,43 +17,6 @@ namespace pg {
 
 namespace detail {
 
-/**
- * Metafunction for calculating Nth type in variadic template parameters
- */
-template < size_t num, typename ... T >
-struct nth_type;
-
-template < size_t num, typename T, typename ... Y >
-struct nth_type< num, T, Y ... > : nth_type< num - 1, Y ...> {
-};
-
-template < typename T, typename ... Y >
-struct nth_type < 0, T, Y ... > {
-	typedef T type;
-};
-
-template < size_t ... Indexes >
-struct indexes_tuple {
-	enum {
-		size = sizeof ... (Indexes)
-	};
-};
-
-template < size_t num, typename tp = indexes_tuple <> >
-struct index_builder;
-
-template < size_t num, size_t ... Indexes >
-struct index_builder< num, indexes_tuple< Indexes ... > >
-	: index_builder< num - 1, indexes_tuple< Indexes ..., sizeof ... (Indexes) > > {
-};
-
-template <size_t ... Indexes >
-struct index_builder< 0, indexes_tuple< Indexes ... > > {
-	typedef indexes_tuple < Indexes ... > type;
-	enum {
-		size = sizeof ... (Indexes)
-	};
-};
 
 template < size_t Index, typename T >
 struct nth_field {
@@ -70,14 +34,20 @@ struct nth_field {
 		return row[index].template as<T>();
 	}
 
+	void
+	to(T& val)
+	{
+		row[index].to(val);
+	}
+
 	resultset::row row;
 };
 
 template < typename IndexTuple, typename ... T >
-struct tuple_builder_base;
+struct row_data_extractor_base;
 
 template < size_t ... Indexes, typename ... T >
-struct tuple_builder_base< indexes_tuple< Indexes ... >, T ... > {
+struct row_data_extractor_base< util::indexes_tuple< Indexes ... >, T ... > {
 	enum {
 		size = sizeof ... (T)
 	};
@@ -88,11 +58,17 @@ struct tuple_builder_base< indexes_tuple< Indexes ... >, T ... > {
 		std::tuple< T ... > tmp( nth_field< Indexes, T >(row).value() ... );
 		tmp.swap(val);
 	}
+
+	static void
+	get_values( resultset::row const& row, T& ... val )
+	{
+		util::expand(nth_field< Indexes, T >(row).to(val) ...);
+	}
 };
 
 template < typename ... T >
-struct tuple_builder :
-		tuple_builder_base < typename index_builder< sizeof ... (T) >::type, T ... > {
+struct row_data_extractor :
+		row_data_extractor_base < typename util::index_builder< sizeof ... (T) >::type, T ... > {
 };
 
 }  // namespace detail
@@ -101,7 +77,7 @@ template < typename ... T >
 void
 resultset::row::to(std::tuple< T ... >& val) const
 {
-	detail::tuple_builder< T ... >::get_tuple(*this, val);
+	detail::row_data_extractor< T ... >::get_tuple(*this, val);
 }
 
 template < typename ... T >
@@ -109,8 +85,15 @@ void
 resultset::row::to(std::tuple< T& ... > val) const
 {
 	std::tuple<T ... > non_ref;
-	detail::tuple_builder< T ... >::get_tuple(*this, non_ref);
+	detail::row_data_extractor< T ... >::get_tuple(*this, non_ref);
 	val = non_ref;
+}
+
+template < typename ... T >
+void
+resultset::row::to(T& ... val) const
+{
+	detail::row_data_extractor< T ... >::get_values(val ...);
 }
 
 }  // namespace pg

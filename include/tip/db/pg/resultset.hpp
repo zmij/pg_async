@@ -289,6 +289,10 @@ public:
 		template < typename ... T >
 		void
 		to( std::tuple< T& ... > ) const;
+
+		template < typename ... T >
+		void
+		to(T& ... ) const;
 	protected:
 		friend class resultset;
 		/**

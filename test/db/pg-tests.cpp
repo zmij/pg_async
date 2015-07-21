@@ -835,3 +835,81 @@ BOOST_AUTO_TEST_CASE(ByteaValueTextParse)
 		BOOST_CHECK_EQUAL(val.data.size(), 4); // Not modified
 	}
 }
+
+BOOST_AUTO_TEST_CASE(WriteParamsTest)
+{
+	using namespace tip::db::pg;
+	{
+		std::vector<char> buffer;
+		tip::db::pg::detail::write_params(buffer, (smallint)2);
+		BOOST_CHECK(!buffer.empty());
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(BindParamsTest)
+{
+//	using namespace tip::db::pg;
+//	if (!test_database.empty()) {
+//
+//		boost::asio::deadline_timer timer(db_service::io_service(),
+//				boost::posix_time::seconds(deadline));
+//		timer.async_wait([&](boost::system::error_code const& ec){
+//			if (!ec) {
+//				#ifdef WITH_TIP_LOG
+//				local_log(logger::WARNING) << "Run query test timer expired";
+//				#endif
+//				db_service::stop();
+//			}
+//		});
+//
+//		{
+//			std::vector<char> buffer;
+//			tip::db::pg::detail::write_params(buffer, 0, true, 12345L);
+//		}
+//
+//		resultset res;
+//
+//		BOOST_CHECK_NO_THROW(db_service::add_connection(test_database));
+//		connection_options opts = connection_options::parse(test_database);
+//		{
+//			query (opts.alias, "create temporary table pg_async_test(b bigint)", true).run_async(
+//			[&](connection_lock_ptr c, resultset, bool){
+//				#ifdef WITH_TIP_LOG
+//				local_log() << "Query one finished";
+//				#endif
+//				BOOST_CHECK(c);
+//				query(c, "insert into pg_async_test values(1),(2),(3)").run_async(
+//				[&](connection_lock_ptr c, resultset, bool){
+//					#ifdef WITH_TIP_LOG
+//					local_log() << "Query two finished";
+//					#endif
+//					BOOST_CHECK(c);
+//					query(c, "select * from pg_async_test").run_async(
+//					[&](connection_lock_ptr c, resultset r, bool) {
+//						#ifdef WITH_TIP_LOG
+//						local_log() << "Query three finished";
+//						#endif
+//						BOOST_CHECK(c);
+//						res = r;
+//						query(c, "drop table pg_async_test").run_async(
+//						[&](connection_lock_ptr c, resultset r, bool) {
+//							#ifdef WITH_TIP_LOG
+//							local_log() << "Query four finished";
+//							#endif
+//							BOOST_CHECK(c);
+//                            timer.cancel();
+//							db_service::stop();
+//						}, [](db_error const&){});
+//					}, [](db_error const&){});
+//				}, [](db_error const&){});
+//			}, [](db_error const&){});
+//		}
+//		db_service::run();
+//
+//		BOOST_CHECK_EQUAL(res.columns_size(), 1);
+//		BOOST_CHECK_EQUAL(res.size(), 3);
+//	} else {
+//		BOOST_MESSAGE("Not running database connected tests");
+//	}
+}

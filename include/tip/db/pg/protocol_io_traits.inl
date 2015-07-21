@@ -40,6 +40,31 @@ binary_data_parser<T, INTEGRAL>::operator()(InputIterator begin, InputIterator e
 	return begin;
 }
 
+template < typename T >
+bool
+binary_data_formatter<T, INTEGRAL>::operator()(std::vector<byte>& buffer)
+{
+	return (*this)( std::back_inserter(buffer) );
+}
+
+template < typename T >
+template < typename OutputIterator >
+bool
+binary_data_formatter< T, INTEGRAL >::operator ()(OutputIterator out)
+{
+//	typedef OutputIterator iterator_type;
+//	typedef std::iterator_traits< iterator_type > iter_traits;
+//	typedef typename iter_traits::value_type iter_value_type;
+//	static_assert(std::is_same< iter_value_type, byte >::value,
+//			"Output iterator must be over a char container");
+
+	T tmp = boost::endian::native_to_big(base_type::value);
+	char const* p = reinterpret_cast<char const*>(&tmp);
+	char const* e = p + size();
+	std::copy(p, e, out);
+	return true;
+}
+
 
 }  // namespace detail
 
