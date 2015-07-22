@@ -9,7 +9,7 @@
 #define LIB_PG_ASYNC_INCLUDE_TIP_DB_PG_PROTOCOL_IO_TRAITS_INL_
 
 #include <tip/db/pg/protocol_io_traits.hpp>
-#include <boost/endian/conversion.hpp>
+#include <tip/util/endian.hpp>
 #include <algorithm>
 #include <cassert>
 #include <iterator>
@@ -35,7 +35,7 @@ binary_data_parser<T, INTEGRAL>::operator()(InputIterator begin, InputIterator e
 	while (p != e && begin != end) {
 		*p++ = *begin++;
 	}
-	tmp = boost::endian::big_to_native(tmp);
+	tmp = util::endian::big_to_native(tmp);
 	std::swap( base_type::value, tmp );
 	return begin;
 }
@@ -58,7 +58,7 @@ binary_data_formatter< T, INTEGRAL >::operator ()(OutputIterator out)
 //	static_assert(std::is_same< iter_value_type, byte >::value,
 //			"Output iterator must be over a char container");
 
-	T tmp = boost::endian::native_to_big(base_type::value);
+	T tmp = util::endian::native_to_big(base_type::value);
 	char const* p = reinterpret_cast<char const*>(&tmp);
 	char const* e = p + size();
 	std::copy(p, e, out);
