@@ -843,7 +843,7 @@ BOOST_AUTO_TEST_CASE(ExtendedQueryTest)
 				[&](connection_lock_ptr c_lock){
 					tran_count++;
 					(*c_lock)->execute_prepared("select * from pg_catalog.pg_type where typelem > $1",
-					std::vector<char>(),
+					params,
 					[&](connection_lock_ptr c, resultset r, bool complete) {
 						local_log() << "Received a resultset columns: " << r.columns_size()
 								<< " rows: " << r.size()
