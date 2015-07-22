@@ -75,10 +75,10 @@ public:
 	 * @param params
 	 */
 	template < typename ... T >
-	void
+	query&
 	bind(T const& ... params);
 
-	void
+	query&
 	bind();
 	/**
 	 * Run a query in a database identified by the alias asynchronously.
@@ -87,14 +87,14 @@ public:
 	 * @param error error callback
 	 */
 	void
-	run_async(query_result_callback, error_callback);
+	run_async(query_result_callback const&, error_callback const&);
 	/**
 	 * @see run_async(result_callback, error_callback)
 	 * @param
 	 * @param
 	 */
 	void
-	operator()(query_result_callback, error_callback);
+	operator()(query_result_callback const&, error_callback const&);
 
 	connection_lock_ptr
 	connection();

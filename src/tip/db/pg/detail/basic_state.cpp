@@ -122,25 +122,29 @@ basic_state::next_state(state_ptr s)
 }
 
 void
-basic_state::begin_transaction(simple_callback cb, error_callback err, bool autocommit)
+basic_state::begin_transaction(simple_callback const& cb,
+		error_callback const& err, bool autocommit)
 {
 	do_begin_transaction(cb, err, autocommit);
 }
 
 void
-basic_state::commit_transaction(simple_callback cb, error_callback err)
+basic_state::commit_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	do_commit_transaction(cb, err);
 }
 
 void
-basic_state::rollback_transaction(simple_callback cb, error_callback err)
+basic_state::rollback_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	do_rollback_transaction(cb, err);
 }
 
 void
-basic_state::do_begin_transaction(simple_callback cb, error_callback err, bool autocommit)
+basic_state::do_begin_transaction(simple_callback const& cb,
+		error_callback const& err, bool autocommit)
 {
 	std::ostringstream msg;
 	msg << "Cannot start transaction in " << name() << " state";
@@ -154,7 +158,8 @@ basic_state::do_begin_transaction(simple_callback cb, error_callback err, bool a
 }
 
 void
-basic_state::do_commit_transaction(simple_callback cb, error_callback err)
+basic_state::do_commit_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	std::ostringstream msg;
 	msg << "Cannot commit transaction in " << name() << " state";
@@ -168,7 +173,8 @@ basic_state::do_commit_transaction(simple_callback cb, error_callback err)
 }
 
 void
-basic_state::do_rollback_transaction(simple_callback cb, error_callback err)
+basic_state::do_rollback_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	std::ostringstream msg;
 	msg << "Cannot rollback transaction in " << name() << " state";
@@ -182,13 +188,15 @@ basic_state::do_rollback_transaction(simple_callback cb, error_callback err)
 }
 
 void
-basic_state::execute_query(std::string const& q, result_callback cb, query_error_callback err)
+basic_state::execute_query(std::string const& q,
+		result_callback const& cb, query_error_callback const& err)
 {
 	do_execute_query(q, cb, err);
 }
 
 void
-basic_state::do_execute_query(std::string const& q, result_callback cb, query_error_callback)
+basic_state::do_execute_query(std::string const&,
+		result_callback const&, query_error_callback const& )
 {
 	#ifdef WITH_TIP_LOG
 	local_log() << "Query executing is not available in " << name() << " state";
@@ -196,25 +204,27 @@ basic_state::do_execute_query(std::string const& q, result_callback cb, query_er
 }
 
 void
-basic_state::execute_prepared(std::string const& query, result_callback cb, query_error_callback err)
+basic_state::execute_prepared(std::string const& query, buffer_type const& params,
+		result_callback const& cb, query_error_callback const& err)
 {
-	do_execute_prepared(query, cb, err);
+	do_execute_prepared(query, params, cb, err);
 }
 
 void
-basic_state::do_execute_prepared(std::string const& query, result_callback, query_error_callback)
+basic_state::do_execute_prepared(std::string const&, buffer_type const&,
+		result_callback const&, query_error_callback const&)
 {
 	local_log() << "Query prepare is not available in " << name() << " state";
 }
 
 void
-basic_state::terminate(simple_callback cb)
+basic_state::terminate(simple_callback const& cb)
 {
 	do_terminate(cb);
 }
 
 void
-basic_state::do_terminate(simple_callback cb)
+basic_state::do_terminate(simple_callback const& cb)
 {
 	#ifdef WITH_TIP_LOG
 	local_log() << "Terminate state "
@@ -378,25 +388,28 @@ state_stack::do_handle_unlocked()
 }
 
 void
-state_stack::do_begin_transaction(simple_callback cb, error_callback err, bool autocommit)
+state_stack::do_begin_transaction(simple_callback const& cb,
+		error_callback const& err, bool autocommit)
 {
 	current()->begin_transaction(cb, err, autocommit);
 }
 
 void
-state_stack::do_commit_transaction(simple_callback cb, error_callback err)
+state_stack::do_commit_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	current()->commit_transaction(cb, err);
 }
 
 void
-state_stack::do_rollback_transaction(simple_callback cb, error_callback err)
+state_stack::do_rollback_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	current()->rollback_transaction(cb, err);
 }
 
 void
-state_stack::do_terminate(simple_callback cb)
+state_stack::do_terminate(simple_callback const& cb)
 {
 	if (!stack_.empty()) {
 		state_ptr top = current();
@@ -430,15 +443,17 @@ state_stack::in_transaction() const
 }
 
 void
-state_stack::do_execute_query(std::string const& q, result_callback cb, query_error_callback err)
+state_stack::do_execute_query(std::string const& q,
+		result_callback const& cb, query_error_callback const& err)
 {
 	current()->execute_query(q, cb, err);
 }
 
 void
-state_stack::do_execute_prepared(std::string const& q, result_callback cb, query_error_callback err)
+state_stack::do_execute_prepared(std::string const& q, buffer_type const& params,
+		result_callback const& cb, query_error_callback const& err)
 {
-	current()->execute_prepared(q, cb, err);
+	current()->execute_prepared(q, params, cb, err);
 }
 
 }  // namespace detail

@@ -78,9 +78,9 @@ private:
 	transport_type transport;
 public:
 	connection_impl(io_service& service, connection_options const& co,
-					event_callback ready,
-					event_callback terminated,
-					connection_error_callback err,
+					event_callback const& ready,
+					event_callback const& terminated,
+					connection_error_callback const& err,
 					options_type const& aux)
 		: connection_base(service, co, ready, terminated, err, aux),
 		  transport(service)

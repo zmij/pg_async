@@ -17,8 +17,11 @@ namespace detail {
 
 class extended_query_state: public basic_state {
 public:
+	typedef std::vector<byte> params_buffer;
 	extended_query_state(connection_base&, std::string const& query,
-			result_callback cb, query_error_callback err);
+			params_buffer const& params,
+			result_callback const& cb,
+			query_error_callback const& err);
 	virtual ~extended_query_state() {}
 private:
 	virtual void
@@ -38,6 +41,7 @@ private:
 	};
 private:
 	std::string query_;
+	params_buffer params_;
 	result_callback result_;
 	query_error_callback error_;
 	stage_type stage_;
@@ -45,9 +49,10 @@ private:
 
 class parse_state: public basic_state {
 public:
-	parse_state(connection_base&, std::string const& query_name,
+	parse_state(connection_base&,
+			std::string const& query_name,
 			std::string const& query,
-			query_error_callback err);
+			query_error_callback const& err);
 	virtual ~parse_state() {}
 private:
 	virtual void
@@ -67,9 +72,12 @@ private:
 
 class bind_state : public basic_state {
 public:
+	typedef std::vector<byte> params_buffer;
 	bind_state(connection_base&,
 			std::string const& query_name,
-			std::string const& portal_name);
+			params_buffer const& params,
+			query_error_callback const& err);
+	// @todo remove portal name (use unnamed) and add error handler
 	virtual ~bind_state() {}
 private:
 	virtual void
@@ -84,12 +92,15 @@ private:
 private:
 	std::string query_name_;
 	std::string portal_name_;
+	params_buffer params_;
 };
 
 class execute_state : public fetch_state {
 public:
-	execute_state(connection_base&, std::string const& portal_name,
-			result_callback cb, query_error_callback err);
+	execute_state(connection_base&,
+			std::string const& portal_name,
+			result_callback const& cb,
+			query_error_callback const& err);
 	virtual ~execute_state() {}
 private:
 	virtual void

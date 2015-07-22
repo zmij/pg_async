@@ -39,6 +39,7 @@ public:
 	typedef std::shared_ptr<basic_state>	state_ptr;
 	typedef std::shared_ptr<basic_state const>	state_const_ptr;
 	typedef internal_result_callback result_callback;
+	typedef std::vector< byte > buffer_type;
 public:
 	basic_state(connection_base&);
 	virtual ~basic_state() {}
@@ -66,11 +67,11 @@ public:
 	//@{
 	/** @name Transactions interface */
 	void
-	begin_transaction(simple_callback, error_callback, bool autocommit);
+	begin_transaction(simple_callback const&, error_callback const&, bool autocommit);
 	void
-	commit_transaction(simple_callback, error_callback);
+	commit_transaction(simple_callback const&, error_callback const&);
 	void
-	rollback_transaction(simple_callback, error_callback);
+	rollback_transaction(simple_callback const&, error_callback const&);
 	//@}
 	//@{
 	/** @name Querying interface */
@@ -81,19 +82,23 @@ public:
 	 * @param error callback
 	 */
 	void
-	execute_query(std::string const& q, result_callback, query_error_callback);
+	execute_query(std::string const& q, result_callback const&,
+			query_error_callback const&);
 	/**
 	 * Execute a query with prepare and bind
 	 * @param q SQL script
+	 * @param p
 	 * @param result callback
 	 * @param error callback
 	 */
 	void
-	execute_prepared(std::string const& query, result_callback, query_error_callback );
+	execute_prepared(std::string const& query,
+			buffer_type const& params,
+			result_callback const&, query_error_callback const&);
 	//@}
 
 	void
-	terminate(simple_callback);
+	terminate(simple_callback const&);
 
 	template <typename T>
 	std::shared_ptr<T>
@@ -130,19 +135,22 @@ private:
 	do_handle_unlocked() {}
 
 	virtual void
-	do_begin_transaction(simple_callback, error_callback, bool autocommit);
+	do_begin_transaction(simple_callback const&, error_callback const&,
+			bool autocommit);
 	virtual void
-	do_commit_transaction(simple_callback, error_callback);
+	do_commit_transaction(simple_callback const&, error_callback const&);
 	virtual void
-	do_rollback_transaction(simple_callback, error_callback);
+	do_rollback_transaction(simple_callback const&, error_callback const&);
 
 	virtual void
-	do_execute_query(std::string const& q, result_callback, query_error_callback);
+	do_execute_query(std::string const& q, result_callback const&,
+			query_error_callback const&);
 	virtual void
-	do_execute_prepared(std::string const& q, result_callback, query_error_callback);
+	do_execute_prepared(std::string const& q, buffer_type const& params,
+			result_callback const&, query_error_callback const&);
 
 	virtual void
-	do_terminate(simple_callback);
+	do_terminate(simple_callback const&);
 protected:
 	connection_base& conn;
 	bool exited;
@@ -193,19 +201,22 @@ private:
 	do_handle_unlocked();
 
 	virtual void
-	do_begin_transaction(simple_callback, error_callback, bool autocommit);
+	do_begin_transaction(simple_callback const&, error_callback const&,
+			bool autocommit);
 	virtual void
-	do_commit_transaction(simple_callback, error_callback);
+	do_commit_transaction(simple_callback const&, error_callback const&);
 	virtual void
-	do_rollback_transaction(simple_callback, error_callback);
+	do_rollback_transaction(simple_callback const&, error_callback const&);
 
 	virtual void
-	do_execute_query(std::string const& q, result_callback, query_error_callback);
+	do_execute_query(std::string const& q, result_callback const&,
+			query_error_callback const&);
 	virtual void
-	do_execute_prepared(std::string const& q, result_callback, query_error_callback);
+	do_execute_prepared(std::string const& q, buffer_type const& params,
+			result_callback const&, query_error_callback const&);
 
 	virtual void
-	do_terminate(simple_callback);
+	do_terminate(simple_callback const&);
 
 	state_ptr
 	current();

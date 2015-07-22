@@ -17,7 +17,8 @@ namespace detail {
 
 class transaction_state: public idle_state {
 public:
-	transaction_state(connection_base&, simple_callback, error_callback, bool autocommit);
+	transaction_state(connection_base&, simple_callback const&,
+			error_callback const&, bool autocommit);
 	virtual ~transaction_state()
 	{}
 
@@ -45,15 +46,15 @@ private:
 	do_handle_unlocked();
 
 	virtual void
-	do_commit_transaction(simple_callback, error_callback);
+	do_commit_transaction(simple_callback const&, error_callback const&);
 	virtual void
-	do_rollback_transaction(simple_callback, error_callback);
+	do_rollback_transaction(simple_callback const&, error_callback const&);
 
 	virtual void
-	do_terminate(simple_callback);
+	do_terminate(simple_callback const&);
 
 	void
-	dirty_exit(simple_callback);
+	dirty_exit(simple_callback const&);
 
 	bool autocommit_;
 	bool message_pending_;

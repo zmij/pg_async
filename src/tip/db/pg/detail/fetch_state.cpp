@@ -34,8 +34,9 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 using tip::log::logger;
 
 
-fetch_state::fetch_state(connection_base& conn, result_callback cb,
-		query_error_callback err)
+fetch_state::fetch_state(connection_base& conn,
+		result_callback const& cb,
+		query_error_callback const& err)
 	: basic_state(conn), callback_(cb), error_(err),
 	  complete_(false), result_no_(0), bytes_read_(0)
 {

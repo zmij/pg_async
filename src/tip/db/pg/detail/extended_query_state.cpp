@@ -37,8 +37,11 @@ using tip::log::logger;
 
 extended_query_state::extended_query_state(connection_base& conn,
 		std::string const& query,
-		result_callback cb, query_error_callback err)
-	: basic_state(conn), query_(query), result_(cb), error_(err), stage_(PARSE)
+		params_buffer const& params,
+		result_callback const& cb,
+		query_error_callback const& err)
+	: basic_state(conn), query_(query), params_(params),
+	  result_(cb), error_(err), stage_(PARSE)
 {
 }
 
@@ -82,12 +85,13 @@ extended_query_state::do_enter()
 		if (stage_ == BIND) {
 			local_log() << "Bind params";
 			// bind params
-			conn.push_state(connection_state_ptr( new bind_state(conn, query_hash, portal_name) ));
+			conn.push_state(connection_state_ptr(
+					new bind_state(conn, query_hash, params_, error_) ));
 		} else {
 			local_log() << "Execute statement";
 			// execute and fetch
 			conn.push_state(connection_state_ptr(
-					new execute_state(conn, portal_name, result_, error_) ));
+					new execute_state(conn, "", result_, error_) ));
 		}
 	} else {
 		// parse
@@ -96,9 +100,10 @@ extended_query_state::do_enter()
 	}
 }
 
-parse_state::parse_state(connection_base& conn, std::string const& query_name,
+parse_state::parse_state(connection_base& conn,
+		std::string const& query_name,
 		std::string const& query,
-		query_error_callback err)
+		query_error_callback const& err)
 	: basic_state(conn), query_name_(query_name), query_(query), error_(err)
 {
 }
@@ -117,6 +122,10 @@ parse_state::do_enter()
 		m.write(query_name_);
 		m.write(query_);
 		m.write( (smallint)0 ); // Number of params
+		conn.send(m);
+	}
+	{
+		message m(sync_tag);
 		conn.send(m);
 	}
 }
@@ -148,9 +157,12 @@ parse_state::do_handle_message(message_ptr m)
 	return false;
 }
 
-bind_state::bind_state(connection_base& conn, std::string const& query_name,
-		std::string const& portal_name)
-	: basic_state(conn), query_name_(query_name), portal_name_(portal_name)
+bind_state::bind_state(connection_base& conn,
+		std::string const& query_name,
+		params_buffer const& params,
+		query_error_callback const& err)
+	: basic_state(conn), query_name_(query_name),
+	  params_(params)
 {
 }
 
@@ -165,10 +177,16 @@ bind_state::do_enter()
 	}
 	{
 		message m(bind_tag);
-		m.write(portal_name_);
+		m.write(std::string(""));
 		m.write(query_name_);
-		m.write((smallint)0); // parameter format codes
-		m.write((smallint)0); // number of parameters
+		if (!params_.empty()) {
+			local_log() << "Params buffer size " << params_.size();
+			auto out = m.output();
+			std::copy( params_.begin(), params_.end(), out );
+		} else {
+			m.write((smallint)0); // parameter format codes
+			m.write((smallint)0); // number of parameters
+		}
 		m.write((smallint)0); // result format codes
 		conn.send(m);
 	}
@@ -198,8 +216,8 @@ bind_state::do_handle_message(message_ptr m)
 
 execute_state::execute_state(connection_base& conn,
 		std::string const& portal_name,
-		result_callback cb,
-		query_error_callback err)
+		result_callback const& cb,
+		query_error_callback const& err)
 	: fetch_state(conn, cb, err), portal_name_(portal_name),
 	  sync_sent_(false), prev_rows_(0)
 {

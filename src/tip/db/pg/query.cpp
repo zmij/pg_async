@@ -19,7 +19,6 @@ namespace tip {
 namespace db {
 namespace pg {
 
-#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -35,7 +34,6 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-#endif
 
 struct query::impl : std::enable_shared_from_this<query::impl> {
 	dbalias alias_;
@@ -69,7 +67,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	void
-	run_async(query_result_callback res, error_callback err)
+	run_async(query_result_callback const& res, error_callback const& err)
 	{
 		if (!conn_) {
 			db_service::get_connection_async(
@@ -85,8 +83,8 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 	void
 	handle_get_connection(connection_lock_ptr c,
-			query_result_callback res,
-			error_callback err)
+			query_result_callback const& res,
+			error_callback const& err)
 	{
 		if (start_tran_) {
 			(*c)->begin_transaction(
@@ -103,37 +101,54 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 
 	void
 	handle_get_transaction(connection_lock_ptr c,
-			query_result_callback res,
-			error_callback err)
+			query_result_callback const& res,
+			error_callback const& err)
 	{
 		using namespace std::placeholders;
-		#ifdef WITH_TIP_LOG
-		{
-			local_log() << "Execute query "
-					<< (util::MAGENTA | util::BRIGHT)
-					<< expression_
-					<< logger::severity_color();
+		if (params_.empty()) {
+			{
+				local_log() << "Execute query "
+						<< (util::MAGENTA | util::BRIGHT)
+						<< expression_
+						<< logger::severity_color();
+			}
+			conn_ = c;
+			(*conn_)->execute_query(expression_,
+				std::bind(&impl::handle_get_results,
+						shared_from_this(),
+						std::placeholders::_1,
+						std::placeholders::_2,
+						std::placeholders::_3,
+						res),
+				err, c);
+		} else {
+			{
+				local_log() << "Execute prepared query "
+						<< (util::MAGENTA | util::BRIGHT)
+						<< expression_
+						<< logger::severity_color();
+			}
+			conn_ = c;
+			(*conn_)->execute_prepared(expression_, params_,
+				std::bind(&impl::handle_get_results,
+						shared_from_this(),
+						std::placeholders::_1,
+						std::placeholders::_2,
+						std::placeholders::_3,
+						res),
+				err, c);
 		}
-		#endif
-		conn_ = c;
-		(*conn_)->execute_query(expression_,
-			std::bind(&impl::handle_get_results,
-					shared_from_this(),
-					std::placeholders::_1,
-					std::placeholders::_2,
-					std::placeholders::_3,
-					res),
-			err, c);
 	}
 
 	void
-	handle_get_connection_error(db_error const& ec, error_callback err)
+	handle_get_connection_error(db_error const& ec, error_callback const& err)
 	{
 		err(ec);
 	}
 
 	void
-	handle_get_results(connection_lock_ptr c, resultset r, bool complete, query_result_callback res)
+	handle_get_results(connection_lock_ptr c, resultset r, bool complete,
+			query_result_callback const& res)
 	{
 		conn_ = c;
 		res(c, r, complete);
@@ -150,19 +165,21 @@ query::query(connection_lock_ptr c, std::string const& expression)
 {
 }
 
-void
+query&
 query::bind()
 {
+	pimpl_->clear_params();
+	return *this;
 }
 
 void
-query::run_async(query_result_callback res, error_callback err)
+query::run_async(query_result_callback const& res, error_callback const& err)
 {
 	pimpl_->run_async(res, err);
 }
 
 void
-query::operator ()(query_result_callback res, error_callback err)
+query::operator ()(query_result_callback const& res, error_callback const& err)
 {
 	run_async(res, err);
 }

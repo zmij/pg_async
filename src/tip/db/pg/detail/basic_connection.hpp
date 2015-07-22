@@ -49,12 +49,13 @@ public:
 		typedef internal_result_callback result_callback;
 		typedef std::function< void (boost::system::error_code const&,
 				size_t bytes)> api_handler;
+		typedef std::vector<byte> buffer_type;
 		//@}
 public:
 	connection_base(io_service& service, connection_options const& co,
-					event_callback ready,
-					event_callback terminated,
-					connection_error_callback err,
+					event_callback const& ready,
+					event_callback const& terminated,
+					connection_error_callback const& err,
 					options_type const& aux);
 	virtual ~connection_base() {}
 public:
@@ -106,13 +107,13 @@ public:
 	//@{
 	/** @name Transactions interface */
 	void
-	begin_transaction(simple_callback, error_callback, bool autocommit);
+	begin_transaction(simple_callback const&, error_callback const&, bool autocommit);
 
 	void
-	commit_transaction(simple_callback, error_callback);
+	commit_transaction(simple_callback const&, error_callback const&);
 
 	void
-	rollback_transaction(simple_callback, error_callback);
+	rollback_transaction(simple_callback const&, error_callback const&);
 
 	bool
 	in_transaction() const;
@@ -121,11 +122,12 @@ public:
 	//@{
 	/** @name Querying */
 	void
-	execute_query(std::string const& query, result_callback cb,
-			query_error_callback err);
+	execute_query(std::string const& query, result_callback const& cb,
+			query_error_callback const& err);
 
 	void
-	execute_prepared(std::string const& query, result_callback, query_error_callback);
+	execute_prepared(std::string const& query, buffer_type const& params,
+			result_callback const&, query_error_callback const&);
 	//@}
 
 	//@{

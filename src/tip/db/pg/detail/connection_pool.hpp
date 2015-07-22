@@ -64,7 +64,7 @@ public:
 	{ return co_.alias; }
 
 	void
-	get_connection(connection_lock_callback, error_callback);
+	get_connection(connection_lock_callback const&, error_callback const&);
 
 	void
 	close();

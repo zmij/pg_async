@@ -209,8 +209,8 @@ connection_pool::connection_error(connection_ptr c, class connection_error const
 }
 
 void
-connection_pool::get_connection(connection_lock_callback conn_cb,
-		error_callback err)
+connection_pool::get_connection(connection_lock_callback const& conn_cb,
+		error_callback const& err)
 {
 	// TODO Call the error callback if the pool is closed
 	lock_type lock(mutex_);

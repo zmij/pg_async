@@ -92,28 +92,31 @@ idle_state::get_name() const
 }
 
 void
-idle_state::do_begin_transaction(simple_callback cb, error_callback err, bool autocommit)
+idle_state::do_begin_transaction(simple_callback const& cb,
+		error_callback const& err, bool autocommit)
 {
 	conn.push_state( connection_state_ptr(
 			new transaction_state(conn, cb, err, autocommit)));
 }
 
 void
-idle_state::do_execute_query(std::string const& q, result_callback cb, query_error_callback err)
+idle_state::do_execute_query(std::string const& q, result_callback const& cb,
+		query_error_callback const& err)
 {
 	conn.push_state( connection_state_ptr(
 			new simple_query_state(conn, q, cb, err)) );
 }
 
 void
-idle_state::do_execute_prepared(std::string const& q, result_callback cb, query_error_callback err)
+idle_state::do_execute_prepared(std::string const& q, buffer_type const& params,
+		result_callback const& cb, query_error_callback const& err)
 {
 	conn.push_state( connection_state_ptr(
-			new extended_query_state(conn, q, cb, err)) );
+			new extended_query_state(conn, q, params, cb, err)) );
 }
 
 void
-idle_state::do_terminate(simple_callback cb)
+idle_state::do_terminate(simple_callback const& cb)
 {
 	#ifdef WITH_TIP_LOG
 	local_log() << "Terminate state "

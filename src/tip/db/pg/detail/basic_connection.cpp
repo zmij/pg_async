@@ -59,9 +59,9 @@ copy(InputIter in, InputIter end, size_t max, OutputIter out)
 
 connection_base::connection_base(io_service& service,
 		connection_options const& co,
-		event_callback ready,
-		event_callback terminated,
-		connection_error_callback err,
+		event_callback const& ready,
+		event_callback const& terminated,
+		connection_error_callback const& err,
 		options_type const& aux)
 	:
 		conn(co), strand_(service), settings_(aux),
@@ -205,6 +205,9 @@ connection_base::create_startup_message(message& m)
 void
 connection_base::read_message(std::istreambuf_iterator<char> in, size_t max_bytes)
 {
+	{
+		local_log() << "Received message " << max_bytes << " bytes";
+	}
 	const size_t header_size = sizeof(integer) + sizeof(byte);
     while (max_bytes > 0) {
         size_t loop_beg = max_bytes;
@@ -245,7 +248,8 @@ connection_base::handle_message(message_ptr m)
 {
 	message_tag tag = m->tag();
     {
-        local_log(logger::OFF) << "Handle message " << (char)tag;
+        local_log(logger::TRACE) << "Handle message "
+        		<< (char)tag << " state " << state_.name();
     }
 	if (message::backend_tags().count(tag)) {
 		if (tag == error_response_tag) {
@@ -307,19 +311,22 @@ connection_base::handle_message(message_ptr m)
 }
 
 void
-connection_base::begin_transaction(simple_callback cb, error_callback err, bool autocommit)
+connection_base::begin_transaction(simple_callback const& cb,
+		error_callback const& err, bool autocommit)
 {
 	state_.begin_transaction(cb, err, autocommit);
 }
 
 void
-connection_base::commit_transaction(simple_callback cb, error_callback err)
+connection_base::commit_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	state_.commit_transaction(cb, err);
 }
 
 void
-connection_base::rollback_transaction(simple_callback cb, error_callback err)
+connection_base::rollback_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	state_.rollback_transaction(cb, err);
 }
@@ -331,15 +338,17 @@ connection_base::in_transaction() const
 }
 
 void
-connection_base::execute_query(std::string const& q, result_callback cb, query_error_callback err)
+connection_base::execute_query(std::string const& q, result_callback const& cb,
+		query_error_callback const& err)
 {
 	state_.execute_query(q, cb, err);
 }
 
 void
-connection_base::execute_prepared(std::string const& q, result_callback res, query_error_callback err)
+connection_base::execute_prepared(std::string const& q, buffer_type const& params,
+		result_callback const& res, query_error_callback const& err)
 {
-	state_.execute_prepared(q, res, err);
+	state_.execute_prepared(q, params, res, err);
 }
 
 bool

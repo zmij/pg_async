@@ -41,9 +41,10 @@ public:
 			connection_params const& params = connection_params());
 	void
 	get_connection(std::string const& connection_string,
-			connection_lock_callback, error_callback);
+			connection_lock_callback const&, error_callback const&);
 	void
-	get_connection(dbalias const&, connection_lock_callback, error_callback);
+	get_connection(dbalias const&, connection_lock_callback const&,
+			error_callback const&);
 
 	void
 	run();

@@ -34,16 +34,19 @@ private:
 	do_handle_unlocked();
 
 	virtual void
-	do_begin_transaction(simple_callback, error_callback, bool autocommit);
+	do_begin_transaction(simple_callback const&, error_callback const&,
+			bool autocommit);
 
 	virtual void
-	do_execute_query(std::string const& q, result_callback cb, query_error_callback err);
+	do_execute_query(std::string const& q, result_callback const& cb,
+			query_error_callback const& err);
 
 	virtual void
-	do_execute_prepared(std::string const& q, result_callback, query_error_callback);
+	do_execute_prepared(std::string const& q, buffer_type const& params,
+			result_callback const&, query_error_callback const&);
 
 	virtual void
-	do_terminate(simple_callback);
+	do_terminate(simple_callback const&);
 };
 
 } /* namespace detail */

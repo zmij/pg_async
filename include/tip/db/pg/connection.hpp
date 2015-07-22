@@ -40,6 +40,7 @@ public:
 	typedef std::map<std::string, std::string> connection_params;
 
 	typedef query_result_callback result_callback;
+	typedef std::vector<byte> buffer_type;
 
 	enum state_type {
 		DISCONNECTED,
@@ -54,17 +55,17 @@ private:
 	connection();
 	void
 	init(io_service&,
-			   connection_event_callback ready,
-			   connection_event_callback terminated,
-			   connection_error_callback err,
+			   connection_event_callback const& ready,
+			   connection_event_callback const& terminated,
+			   connection_error_callback const& err,
 			   connection_options const& opts,
 	           connection_params const&);
 public:
 	static connection_ptr
 	create(io_service&,
-			connection_event_callback ready,
-			connection_event_callback terminated,
-			connection_error_callback err,
+			connection_event_callback const& ready,
+			connection_event_callback const& terminated,
+			connection_error_callback const& err,
 			connection_options const& opts,
 			connection_params const& = connection_params());
 	virtual
@@ -80,24 +81,28 @@ public:
 	lock();
 
 	void
-	begin_transaction(connection_lock_callback, error_callback, bool autocommit = false);
+	begin_transaction(connection_lock_callback const&, error_callback const&,
+			bool autocommit = false);
 	void
-	commit_transaction(connection_lock_ptr, connection_lock_callback, error_callback);
+	commit_transaction(connection_lock_ptr, connection_lock_callback const&,
+			error_callback const&);
 	void
-	rollback_transaction(connection_lock_ptr, connection_lock_callback, error_callback);
+	rollback_transaction(connection_lock_ptr, connection_lock_callback const&,
+			error_callback const&);
 
 	bool
 	in_transaction() const;
 
 	void
 	execute_query(std::string const& query,
-			result_callback cb,
-			error_callback err,
+			result_callback const& cb,
+			error_callback const& err,
 			connection_lock_ptr l = connection_lock_ptr());
 	void
 	execute_prepared(std::string const& query,
-			result_callback cb,
-			error_callback err,
+			buffer_type const& params,
+			result_callback const& cb,
+			error_callback const& err,
 			connection_lock_ptr l = connection_lock_ptr());
 private:
 	typedef std::shared_ptr<detail::connection_base> pimpl;

@@ -91,6 +91,26 @@ struct format_selector< 0, T > {
 	typedef typename best_formatter::type formatter_type;
 
 	static constexpr bool single_format = true;
+
+	static bool
+	write_format( std::vector<byte>& buffer )
+	{
+		return protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+	}
+
+	static bool
+	write_value (std::vector<byte>& buffer, type const& value)
+	{
+		// space for length
+		buffer.resize(buffer.size() + sizeof(integer));
+		std::vector<byte>::iterator sz_iter = buffer.begin() +
+				(buffer.size() - sizeof(integer));
+		size_t prev_size = buffer.size();
+		protocol_write< data_format >(buffer, value);
+		integer len = buffer.size() - prev_size;
+		// write length
+		return protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
+	}
 };
 
 template < size_t N, typename T, typename ... Y >
@@ -107,6 +127,28 @@ struct format_selector< N, T, Y ... > {
 	static constexpr bool single_format =
 			prev_param_type::single_format &&
 				prev_param_type::data_format == data_format;
+
+	static bool
+	write_format( std::vector<byte>& buffer )
+	{
+		return protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format)
+				&& prev_param_type::write_format(buffer);
+	}
+
+	static bool
+	write_value (std::vector<byte>& buffer, type const& value, Y const& ... args)
+	{
+		// space for length
+		buffer.resize(buffer.size() + sizeof(integer));
+		std::vector<byte>::iterator sz_iter = buffer.begin() +
+				(buffer.size() - sizeof(integer));
+		size_t prev_size = buffer.size();
+		protocol_write< data_format >(buffer, value);
+		integer len = buffer.size() - prev_size;
+		// write length
+		protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
+		return prev_param_type::write_value(buffer, args...);
+	}
 };
 
 template < typename ... T >
@@ -138,7 +180,8 @@ struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 	static write_params( std::vector<byte>& buffer, T const& ... args )
 	{
 		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)data_format);
-		util::expand(nth_param< Indexes, T >::write_value(buffer, args) ...);
+		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
+		last_selector::write_value(buffer, args ...);
 		return true;
 	}
 
@@ -159,6 +202,7 @@ struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > 
 	{
 		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
 		util::expand(nth_param< Indexes, T >::write_format(buffer) ...);
+		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
 		util::expand(nth_param< Indexes, T >::write_value(buffer, args) ...);
 		return true;
 	}
@@ -210,7 +254,7 @@ query::query(connection_lock_ptr c, std::string const& expression,
 }
 
 template < typename ... T >
-void
+query&
 query::bind(T const& ... params)
 {
 	// 1. Write format codes
@@ -222,6 +266,7 @@ query::bind(T const& ... params)
 	//  - write the number of params
 	//  - write each param preceded by it's length
 	detail::write_params(buffer(), params ...);
+	return *this;
 }
 
 }  // namespace pg

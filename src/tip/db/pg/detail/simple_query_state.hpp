@@ -22,7 +22,8 @@ class simple_query_state: public fetch_state {
 public:
 	simple_query_state(connection_base& conn,
 			std::string const& q,
-			result_callback cb, query_error_callback err);
+			result_callback const& cb,
+			query_error_callback const& err);
 	virtual ~simple_query_state() {}
 private:
 	virtual bool
@@ -40,7 +41,11 @@ private:
 	do_enter();
 
 	virtual void
-	do_execute_query(std::string const&q, result_callback cb, query_error_callback);
+	do_execute_query(std::string const&q, result_callback const& cb,
+			query_error_callback const&);
+	virtual void
+	do_execute_prepared(std::string const& q, buffer_type const& params,
+			result_callback const&, query_error_callback const&);
 
 	virtual bool
 	do_handle_error(notice_message const&);

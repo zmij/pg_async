@@ -7,6 +7,7 @@
 
 #include <tip/db/pg/detail/simple_query_state.hpp>
 #include <tip/db/pg/detail/idle_state.hpp>
+#include <tip/db/pg/detail/extended_query_state.hpp>
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/detail/result_impl.hpp>
 #include <tip/db/pg/resultset.hpp>
@@ -38,7 +39,9 @@ using tip::log::logger;
 #endif
 
 simple_query_state::simple_query_state(connection_base& conn,
-		std::string const& q, result_callback cb, query_error_callback err)
+		std::string const& q,
+		result_callback const& cb,
+		query_error_callback const& err)
 	: fetch_state(conn, cb, err), exp_(q)
 {
 }
@@ -96,10 +99,20 @@ simple_query_state::do_enter()
 }
 
 void
-simple_query_state::do_execute_query(std::string const& q, result_callback cb, query_error_callback err)
+simple_query_state::do_execute_query(std::string const& q,
+		result_callback const& cb, query_error_callback const& err)
 {
-	conn.push_state( connection_state_ptr(
-			new simple_query_state(conn, q, cb, err)) );
+	conn.pop_state(this);
+	conn.state()->execute_query(q, cb, err);
+}
+
+void
+simple_query_state::do_execute_prepared(std::string const& q,
+		buffer_type const& params,
+		result_callback const& cb, query_error_callback const& err)
+{
+	conn.pop_state(this);
+	conn.state()->execute_prepared(q, params, cb, err);
 }
 
 void

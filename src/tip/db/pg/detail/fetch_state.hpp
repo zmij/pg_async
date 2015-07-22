@@ -20,7 +20,9 @@ typedef std::shared_ptr<result_impl> result_ptr;
 
 class fetch_state: public basic_state {
 public:
-	fetch_state(connection_base& conn, result_callback cb, query_error_callback err);
+	fetch_state(connection_base& conn,
+			result_callback const& cb,
+			query_error_callback const& err);
 	virtual ~fetch_state() {}
 protected:
 	virtual bool

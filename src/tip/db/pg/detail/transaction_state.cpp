@@ -19,7 +19,6 @@ namespace db {
 namespace pg {
 namespace detail {
 
-#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -35,10 +34,11 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
-#endif
 
 transaction_state::transaction_state(connection_base& conn,
-		simple_callback cb, error_callback err, bool autocommit)
+		simple_callback const& cb,
+		error_callback const& err,
+		bool autocommit)
 	: idle_state(conn), autocommit_(autocommit),
 	message_pending_(false), complete_(false),
 	  	  command_complete_(cb), error_(err)
@@ -97,21 +97,20 @@ transaction_state::do_handle_message(message_ptr m)
 
 			message_pending_ = false;
 
+			if (complete_ && !exited) {
+				local_log() << "Pop state from handle message";
+				conn.pop_state(this);
+			}
+			return true;
+		}
+		case ready_for_query_tag: {
 			if (command_complete_) {
 				simple_callback cb = command_complete_;
 				command_complete_ = simple_callback();
 				cb();
 			}
-			if (complete_ && !exited) {
-				#ifdef WITH_TIP_LOG
-				local_log() << "Pop state from handle message";
-				#endif
-				conn.pop_state(this);
-			}
 			return true;
 		}
-		case ready_for_query_tag:
-			return true;
 		default:
 			break;
 	}
@@ -132,7 +131,8 @@ transaction_state::do_handle_error(notice_message const& msg)
 }
 
 void
-transaction_state::do_commit_transaction(simple_callback cb, error_callback err)
+transaction_state::do_commit_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	if (!complete_) {
 		#ifdef WITH_TIP_LOG
@@ -156,7 +156,8 @@ transaction_state::do_commit_transaction(simple_callback cb, error_callback err)
 	}
 }
 void
-transaction_state::do_rollback_transaction(simple_callback cb, error_callback err)
+transaction_state::do_rollback_transaction(simple_callback const& cb,
+		error_callback const& err)
 {
 	if (!complete_) {
 		#ifdef WITH_TIP_LOG
@@ -181,7 +182,7 @@ transaction_state::do_rollback_transaction(simple_callback cb, error_callback er
 }
 
 void
-transaction_state::do_terminate(simple_callback cb)
+transaction_state::do_terminate(simple_callback const& cb)
 {
 	#ifdef WITH_TIP_LOG
 	{
@@ -201,7 +202,7 @@ transaction_state::do_terminate(simple_callback cb)
 }
 
 void
-transaction_state::dirty_exit(simple_callback cb)
+transaction_state::dirty_exit(simple_callback const& cb)
 {
 	#ifdef WITH_TIP_LOG
 	{

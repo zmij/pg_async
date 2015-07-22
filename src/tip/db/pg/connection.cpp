@@ -46,9 +46,9 @@ using tip::log::logger;
 
 connection_ptr
 connection::create(io_service& service,
-		   connection_event_callback ready,
-		   connection_event_callback terminated,
-		   connection_error_callback err,
+		   connection_event_callback const& ready,
+		   connection_event_callback const& terminated,
+		   connection_error_callback const& err,
 		   connection_options const& opts,
            connection_params const& params)
 {
@@ -64,9 +64,9 @@ connection::connection() :
 
 void
 connection::init(io_service& service,
-		   connection_event_callback ready,
-		   connection_event_callback terminated,
-		   connection_error_callback err,
+		   connection_event_callback const& ready,
+		   connection_event_callback const& terminated,
+		   connection_error_callback const& err,
 		   connection_options const& opts,
 		   connection_params const& params)
 {
@@ -114,8 +114,8 @@ connection::state() const
 
 void
 connection::execute_query(std::string const& query,
-		result_callback cb,
-		error_callback err,
+		result_callback const& cb,
+		error_callback const& err,
 		connection_lock_ptr l)
 {
 	pimpl_->execute_query(query,
@@ -127,11 +127,13 @@ connection::execute_query(std::string const& query,
 
 void
 connection::execute_prepared(std::string const& query,
-				result_callback cb,
-				error_callback err,
+				buffer_type const& params,
+				result_callback const& cb,
+				error_callback const& err,
 				connection_lock_ptr l)
 {
 	pimpl_->execute_prepared(query,
+			params,
 			std::bind(&connection::query_executed,
 					shared_from_this(), cb,
 					std::placeholders::_1, std::placeholders::_2, l),
@@ -159,7 +161,8 @@ connection::unlock()
 }
 
 void
-connection::begin_transaction(connection_lock_callback cb, error_callback err, bool autocommit)
+connection::begin_transaction(connection_lock_callback const& cb,
+		error_callback const& err, bool autocommit)
 {
 	pimpl_->begin_transaction(
 			std::bind(&connection::transaction_started, shared_from_this(), cb),
@@ -168,7 +171,8 @@ connection::begin_transaction(connection_lock_callback cb, error_callback err, b
 }
 
 void
-connection::commit_transaction(connection_lock_ptr l, connection_lock_callback cb, error_callback err)
+connection::commit_transaction(connection_lock_ptr l,
+		connection_lock_callback const& cb, error_callback const& err)
 {
 	pimpl_->commit_transaction(
 			std::bind(&connection::transaction_finished, shared_from_this(), l, cb),
@@ -177,7 +181,8 @@ connection::commit_transaction(connection_lock_ptr l, connection_lock_callback c
 }
 
 void
-connection::rollback_transaction(connection_lock_ptr l, connection_lock_callback cb, error_callback err)
+connection::rollback_transaction(connection_lock_ptr l,
+		connection_lock_callback const& cb, error_callback const& err)
 {
 	pimpl_->rollback_transaction(
 			std::bind(&connection::transaction_finished, shared_from_this(), l, cb),
