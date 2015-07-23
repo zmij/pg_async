@@ -89,7 +89,7 @@ protocol_read(InputIterator begin, InputIterator end, T& value)
 
 template < protocol_data_format F, typename T >
 typename protocol_io_traits< T, F >::formatter_type
-protocol_write(T const& value)
+protocol_writer(T const& value)
 {
 	return typename protocol_io_traits< T, F >::formatter_type(value);
 }
@@ -98,14 +98,14 @@ template < protocol_data_format F, typename T >
 bool
 protocol_write(std::vector<byte>& buffer, T const& value)
 {
-	return protocol_write<F>(value)(buffer);
+	return protocol_writer<F>(value)(buffer);
 }
 
 template < protocol_data_format F, typename T, typename OutputIterator >
 bool
 protocol_write(OutputIterator out, T const& value)
 {
-	return protocol_write<F>(value)(out);
+	return protocol_writer<F>(value)(out);
 }
 
 namespace detail {
