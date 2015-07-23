@@ -151,14 +151,18 @@ struct format_selector< N, T, Y ... > {
 	}
 };
 
+/**
+ * Metafunction to detect parameters protocol format
+ */
 template < typename ... T >
-struct is_single_format {
+struct is_text_format {
 	enum {
 		size = sizeof ... (T),
 		last_index = size - 1
 	};
 	typedef format_selector< last_index, T... > last_selector;
-	static constexpr bool value = last_selector::single_format;
+	static constexpr bool value = last_selector::single_format &&
+			last_selector::data_format == TEXT_DATA_FORMAT;
 };
 
 
@@ -166,6 +170,9 @@ struct is_single_format {
 template < bool, typename IndexTuple, typename ... T >
 struct param_format_builder;
 
+/**
+ * Specialization for params that are only in text format
+ */
 template < size_t ... Indexes, typename ... T >
 struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 	enum {
@@ -187,6 +194,9 @@ struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 
 };
 
+/**
+ * Specialization for params that use binary format or mixed formats
+ */
 template < size_t ... Indexes, typename ... T >
 struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > {
 	enum {
@@ -212,17 +222,17 @@ struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > 
 
 template < typename ... T >
 struct param_formatter : param_format_builder <
-		is_single_format< T ... >::value,
+		is_text_format< T ... >::value,
 		typename util::index_builder< sizeof ... (T) >::type,
 		T ... > {
 
 };
 
 struct ___no_binary_format {};
-static_assert( !is_single_format< smallint, integer, bigint, ___no_binary_format >::value,
+static_assert( !is_text_format< smallint, integer, bigint, ___no_binary_format >::value,
 		"No single format");
 
-static_assert( is_single_format< smallint, integer, bigint >::value,
+static_assert( !is_text_format< smallint, integer, bigint >::value,
 		"Single format for integral types" );
 static_assert( param_formatter< smallint, integer, bigint >::data_format
 			== BINARY_DATA_FORMAT,
