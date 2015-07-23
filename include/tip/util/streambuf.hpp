@@ -69,6 +69,8 @@ protected:
 			case ios_base::end:
 				tgt = start_ + count_ - 1 + off;
 				break;
+			default:
+				break;
 		}
 		if (!tgt)
 			return -1;
