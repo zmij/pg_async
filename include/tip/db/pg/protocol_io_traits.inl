@@ -68,6 +68,48 @@ binary_data_formatter< T, INTEGRAL >::operator ()(OutputIterator out)
 
 }  // namespace detail
 
+template < typename T >
+template < typename InputIterator >
+InputIterator
+protocol_parser< T, TEXT_DATA_FORMAT >::operator()
+	(InputIterator begin, InputIterator end)
+{
+	typedef std::iterator_traits< InputIterator > iter_traits;
+	typedef typename iter_traits::value_type iter_value_type;
+	static_assert(std::is_same< iter_value_type, byte >::type::value,
+			"Input iterator must be over a char container");
+
+	std::istringstream is(std::string(begin, end));
+	is >> base_type::value;
+	begin += size();
+	return begin;
+}
+
+template < typename InputIterator >
+InputIterator
+protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()
+	(InputIterator begin, InputIterator end)
+{
+	typedef InputIterator iterator_type;
+	typedef std::iterator_traits< iterator_type > iter_traits;
+	typedef typename iter_traits::value_type iter_value_type;
+	static_assert(std::is_same< iter_value_type, byte >::type::value,
+			"Input iterator must be over a char container");
+
+	integer sz = end - begin;
+
+	std::string tmp;
+	tmp.reserve(sz);
+	for (; begin != end && *begin; ++begin) {
+		tmp.push_back(*begin);
+	}
+	if (!*begin)
+		++begin;
+	base_type::value.swap(tmp);
+	return begin;
+}
+
+
 template < typename InputIterator >
 InputIterator
 protocol_parser< std::string, BINARY_DATA_FORMAT >::operator ()

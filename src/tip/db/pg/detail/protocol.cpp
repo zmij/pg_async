@@ -208,8 +208,7 @@ write_int(message::buffer_type& payload, T val)
 bool
 message::read(smallint& val)
 {
-	const_iterator c = protocol_parse< BINARY_DATA_FORMAT >(val)
-			(curr_, payload.cend() );
+	const_iterator c = protocol_read< BINARY_DATA_FORMAT >(curr_, payload.cend(), val);
 	if (curr_ == c)
 		return false;
 	curr_ = c;
@@ -219,8 +218,7 @@ message::read(smallint& val)
 bool
 message::read(integer& val)
 {
-	const_iterator c = protocol_parse< BINARY_DATA_FORMAT >(val)
-			(curr_, payload.cend() );
+	const_iterator c = protocol_read< BINARY_DATA_FORMAT >(curr_, payload.cend(), val);
 	if (curr_ == c)
 		return false;
 	curr_ = c;
@@ -230,8 +228,7 @@ message::read(integer& val)
 bool
 message::read(std::string& val)
 {
-	const_iterator c = protocol_parse< BINARY_DATA_FORMAT >( val )
-			( curr_, payload.cend() );
+	const_iterator c = protocol_read< BINARY_DATA_FORMAT >( curr_, payload.cend(), val );
 	if (curr_ == c)
 		return false;
 	curr_ = c;

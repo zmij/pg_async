@@ -339,7 +339,8 @@ public:
 			if (is_null())
 				throw value_is_null(name());
 			field_buffer b = input_buffer();
-			return protocol_parse< TEXT_DATA_FORMAT >(val)(b);
+			protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), val);
+			return true;
 		}
 
 		template < typename T >
@@ -352,10 +353,9 @@ public:
 			} else {
 				typename std::decay<T>::type tmp;
 				field_buffer b = input_buffer();
-				if (protocol_parse< TEXT_DATA_FORMAT >(tmp)(b)) {
-					val = boost::optional< T > (tmp);
-					return true;
-				}
+				protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), tmp);
+				val = boost::optional< T > (tmp);
+				return true;
 			}
 			return false;
 		}

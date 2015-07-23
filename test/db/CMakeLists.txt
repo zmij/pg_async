@@ -9,9 +9,11 @@ configure_file(config.in.hpp config.hpp)
 set(test_pg_SRCS pg-tests.cpp)
 set(PGTEST test-pg-async)
 add_executable( ${PGTEST} ${test_pg_SRCS})
+message(STATUS "${Boost_PROGRAM_OPTIONS_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARIES}")
 target_link_libraries(
     ${PGTEST} 
-    ${Boost_LIBRARIES}
+    ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARIES}
     tip-pgsql
 )
 
@@ -45,3 +47,10 @@ add_custom_target(test-sql-scripts
 )
 
 add_dependencies(${PGTEST} test-sql-scripts)
+
+add_executable(test-extended-query-mode extended_query_mode.cpp)
+target_link_libraries(test-extended-query-mode   
+    tip-pgsql
+    tip-log
+)
+

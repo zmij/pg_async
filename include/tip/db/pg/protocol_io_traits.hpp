@@ -75,9 +75,16 @@ struct protocol_io_traits {
 
 template < protocol_data_format F, typename T >
 typename protocol_io_traits< T, F >::parser_type
-protocol_parse(T& value)
+protocol_read(T& value)
 {
 	return typename protocol_io_traits< T, F >::parser_type(value);
+}
+
+template < protocol_data_format F, typename T, typename InputIterator >
+InputIterator
+protocol_read(InputIterator begin, InputIterator end, T& value)
+{
+	return typename protocol_io_traits< T, F >::parser_type(value)(begin, end);
 }
 
 template < protocol_data_format F, typename T >
@@ -357,6 +364,9 @@ struct protocol_formatter< T, TEXT_DATA_FORMAT > : detail::formatter_base< T > {
     }
 };
 
+/**
+ * Default parser for text data format implementation
+ */
 template < typename T >
 struct protocol_parser< T, TEXT_DATA_FORMAT > : detail::parser_base< T > {
 	typedef detail::parser_base< T > base_type;
@@ -387,6 +397,10 @@ struct protocol_parser< T, TEXT_DATA_FORMAT > : detail::parser_base< T > {
 		std::istream in(&buffer);
 		return (*this)(in);
 	}
+
+    template < typename InputIterator >
+    InputIterator
+    operator()(InputIterator begin, InputIterator end);
 };
 
 template < typename T >
@@ -436,6 +450,10 @@ struct protocol_parser< std::string, TEXT_DATA_FORMAT > :
 
 	bool
 	operator() (buffer_type& buffer);
+
+    template < typename InputIterator >
+    InputIterator
+    operator()(InputIterator begin, InputIterator end);
 };
 
 /**
@@ -454,6 +472,7 @@ struct protocol_parser< std::string, BINARY_DATA_FORMAT > :
 	{
 		return base_type::value.size();
 	}
+
 	template < typename InputIterator >
 	InputIterator
 	operator()( InputIterator begin, InputIterator end );
@@ -633,7 +652,7 @@ struct protocol_parser< boost::optional< T >, BINARY_DATA_FORMAT > :
 	operator()( InputIterator begin, InputIterator end )
 	{
 		T tmp;
-		InputIterator c = protocol_parse< BINARY_DATA_FORMAT >(tmp)(begin, end);
+		InputIterator c = protocol_read< BINARY_DATA_FORMAT >(begin, end, tmp);
 		if (c != begin) {
 			base_type::value = value_type(tmp);
 		} else {

@@ -67,7 +67,7 @@ bool
 protocol_parser< bool, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
 {
 	std::string literal;
-	if (protocol_parse< TEXT_DATA_FORMAT >(literal)(in)) {
+	if (protocol_read< TEXT_DATA_FORMAT >(literal)(in)) {
 		if (TRUE_LITERALS.count(literal)) {
 			value = true;
 			return true;
@@ -84,7 +84,7 @@ bool
 protocol_parser< bool, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
 {
 	std::string literal;
-	if (protocol_parse<TEXT_DATA_FORMAT>(literal)(buffer)) {
+	if (protocol_read<TEXT_DATA_FORMAT>(literal)(buffer)) {
 		if (TRUE_LITERALS.count(literal)) {
 			value = true;
 			return true;

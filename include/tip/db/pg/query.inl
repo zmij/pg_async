@@ -12,11 +12,42 @@
 #include <tip/util/meta_helpers.hpp>
 #include <tip/db/pg/protocol_io_traits.hpp>
 
+#include <tip/db/pg/log.hpp>
+#include <iomanip>
+#include <sstream>
+#include <iostream>
+
 namespace tip {
 namespace db {
 namespace pg {
 
 namespace detail {
+
+namespace {
+/** Local logging facility */
+using namespace tip::log;
+
+const std::string LOG_CATEGORY = "PGQUERY";
+logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
+local
+local_log(logger::event_severity s = DEFAULT_SEVERITY)
+{
+	return local(LOG_CATEGORY, s);
+}
+
+}  // namespace
+// For more convenient changing severity, eg local_log(logger::WARNING)
+using tip::log::logger;
+
+std::string
+print_buf(std::vector<byte> const& buffer)
+{
+	std::ostringstream os;
+	for (char c : buffer) {
+		os << std::setw(2) << std::setbase(16) << std::setfill('0') << (int)c << " ";
+	}
+	return os.str();
+}
 
 template < size_t Index, typename T >
 struct nth_param {
@@ -42,10 +73,23 @@ struct nth_param {
 		std::vector<byte>::iterator sz_iter = buffer.begin() +
 				(buffer.size() - sizeof(integer));
 		size_t prev_size = buffer.size();
+		{
+			local_log() << "Buffer 1: " << print_buf(buffer);
+		}
 		protocol_write< data_format >(buffer, value);
+		{
+			local_log() << "Buffer 2: " << print_buf(buffer);
+		}
 		integer len = buffer.size() - prev_size;
 		// write length
-		return protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
+		protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
+		{
+			local_log() << "Buffer 3: " << print_buf(buffer);
+		}
+		integer written(0);
+		protocol_read< BINARY_DATA_FORMAT > (sz_iter, sz_iter + sizeof(integer), written);
+		assert(written == len && "Length is written ok");
+		return true;
 	}
 };
 
@@ -92,24 +136,16 @@ struct format_selector< 0, T > {
 
 	static constexpr bool single_format = true;
 
-	static bool
+	static void
 	write_format( std::vector<byte>& buffer )
 	{
-		return protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+		protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
 	}
 
-	static bool
-	write_value (std::vector<byte>& buffer, type const& value)
+	static void
+	write_param_value( std::vector<byte>& buffer, type const& value)
 	{
-		// space for length
-		buffer.resize(buffer.size() + sizeof(integer));
-		std::vector<byte>::iterator sz_iter = buffer.begin() +
-				(buffer.size() - sizeof(integer));
-		size_t prev_size = buffer.size();
-		protocol_write< data_format >(buffer, value);
-		integer len = buffer.size() - prev_size;
-		// write length
-		return protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
+		nth_param<index, T>::write_value(buffer, value);
 	}
 };
 
@@ -122,32 +158,25 @@ struct format_selector< N, T, Y ... > {
 	typedef traits::best_formatter<type> best_formatter;
 	static constexpr protocol_data_format data_format = best_formatter::value;
 	typedef typename best_formatter::type formatter_type;
-	typedef format_selector< index - 1, Y ...> prev_param_type;
+	typedef format_selector< N - 1, Y ...> next_param_type;
 
 	static constexpr bool single_format =
-			prev_param_type::single_format &&
-				prev_param_type::data_format == data_format;
+			next_param_type::single_format &&
+				next_param_type::data_format == data_format;
 
-	static bool
+	static void
 	write_format( std::vector<byte>& buffer )
 	{
-		return protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format)
-				&& prev_param_type::write_format(buffer);
+		protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+		next_param_type::write_format(buffer);
 	}
 
-	static bool
-	write_value (std::vector<byte>& buffer, type const& value, Y const& ... args)
+	static void
+	write_param_value( std::vector<byte>& buffer, type const& value,
+			Y const& ... next )
 	{
-		// space for length
-		buffer.resize(buffer.size() + sizeof(integer));
-		std::vector<byte>::iterator sz_iter = buffer.begin() +
-				(buffer.size() - sizeof(integer));
-		size_t prev_size = buffer.size();
-		protocol_write< data_format >(buffer, value);
-		integer len = buffer.size() - prev_size;
-		// write length
-		protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
-		return prev_param_type::write_value(buffer, args...);
+		nth_param<index, T>::write_value(buffer, value);
+		next_param_type::write_param_value(buffer, next ...);
 	}
 };
 
@@ -180,15 +209,15 @@ struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 		last_index = size - 1
 	};
 
-	typedef format_selector< last_index, T... > last_selector;
-	static constexpr protocol_data_format  data_format = last_selector::data_format;
+	typedef format_selector< last_index, T... > first_selector;
+	static constexpr protocol_data_format  data_format = first_selector::data_format;
 
 	bool
 	static write_params( std::vector<byte>& buffer, T const& ... args )
 	{
 		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)data_format);
 		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
-		last_selector::write_value(buffer, args ...);
+		first_selector::write_param_value(buffer, args ...);
 		return true;
 	}
 
@@ -204,16 +233,16 @@ struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > 
 		last_index = size - 1
 	};
 
-	typedef format_selector< last_index, T... > last_selector;
-	static constexpr protocol_data_format  data_format = last_selector::data_format;
+	typedef format_selector< last_index, T... > first_selector;
+	static constexpr protocol_data_format  data_format = first_selector::data_format;
 
 	bool
 	static write_params( std::vector<byte>& buffer, T const& ... args )
 	{
 		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
-		util::expand(nth_param< Indexes, T >::write_format(buffer) ...);
+		first_selector::write_format(buffer);
 		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
-		util::expand(nth_param< Indexes, T >::write_value(buffer, args) ...);
+		first_selector::write_param_value(buffer, args ...);
 		return true;
 	}
 
