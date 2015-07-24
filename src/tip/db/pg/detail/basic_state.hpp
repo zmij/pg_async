@@ -39,6 +39,7 @@ public:
 	typedef std::shared_ptr<basic_state>	state_ptr;
 	typedef std::shared_ptr<basic_state const>	state_const_ptr;
 	typedef internal_result_callback result_callback;
+	typedef std::vector< oids::type::oid_type > type_oid_sequence;
 	typedef std::vector< byte > buffer_type;
 public:
 	basic_state(connection_base&);
@@ -93,6 +94,7 @@ public:
 	 */
 	void
 	execute_prepared(std::string const& query,
+			type_oid_sequence const& param_types,
 			buffer_type const& params,
 			result_callback const&, query_error_callback const&);
 	//@}
@@ -146,8 +148,11 @@ private:
 	do_execute_query(std::string const& q, result_callback const&,
 			query_error_callback const&);
 	virtual void
-	do_execute_prepared(std::string const& q, buffer_type const& params,
-			result_callback const&, query_error_callback const&);
+	do_execute_prepared(std::string const& q,
+			type_oid_sequence const& param_types,
+			buffer_type const& params,
+			result_callback const&,
+			query_error_callback const&);
 
 	virtual void
 	do_terminate(simple_callback const&);
@@ -212,8 +217,11 @@ private:
 	do_execute_query(std::string const& q, result_callback const&,
 			query_error_callback const&);
 	virtual void
-	do_execute_prepared(std::string const& q, buffer_type const& params,
-			result_callback const&, query_error_callback const&);
+	do_execute_prepared(std::string const& q,
+			type_oid_sequence const& param_types,
+			buffer_type const& params,
+			result_callback const&,
+			query_error_callback const&);
 
 	virtual void
 	do_terminate(simple_callback const&);

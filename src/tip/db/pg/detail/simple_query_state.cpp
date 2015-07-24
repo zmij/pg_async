@@ -108,11 +108,12 @@ simple_query_state::do_execute_query(std::string const& q,
 
 void
 simple_query_state::do_execute_prepared(std::string const& q,
+		type_oid_sequence const& param_types,
 		buffer_type const& params,
 		result_callback const& cb, query_error_callback const& err)
 {
 	conn.pop_state(this);
-	conn.state()->execute_prepared(q, params, cb, err);
+	conn.state()->execute_prepared(q, param_types, params, cb, err);
 }
 
 void

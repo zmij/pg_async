@@ -228,7 +228,7 @@ message::read(integer& val)
 bool
 message::read(std::string& val)
 {
-	const_iterator c = protocol_read< BINARY_DATA_FORMAT >( curr_, payload.cend(), val );
+	const_iterator c = protocol_read< TEXT_DATA_FORMAT >( curr_, payload.cend(), val );
 	if (curr_ == c)
 		return false;
 	curr_ = c;
@@ -252,13 +252,17 @@ message::read(field_description& fd)
 {
 	field_description tmp;
 	tmp.max_size = 0;
+	integer type_oid;
+	smallint fmt;
 	if (read(tmp.name) &&
 			read(tmp.table_oid) &&
 			read(tmp.attribute_number) &&
-			read(tmp.type_oid) &&
+			read(type_oid) &&
 			read(tmp.type_size) &&
 			read(tmp.type_mod) &&
-			read(tmp.format_code)) {
+			read(fmt)) {
+		tmp.type_oid = (oids::type::oid_type)type_oid;
+		tmp.format_code = (protocol_data_format)fmt;
 		fd = tmp;
 		return true;
 	}
@@ -343,7 +347,14 @@ message::write(integer v)
 void
 message::write(std::string const& s)
 {
-	protocol_write< BINARY_DATA_FORMAT >(payload, s);
+	protocol_write< TEXT_DATA_FORMAT >(payload, s);
+}
+
+void
+message::pack(message const& m)
+{
+	payload.reserve(payload.size() + m.payload.size());
+	std::copy(m.payload.begin(), m.payload.end(), std::back_inserter(payload));
 }
 
 //----------------------------------------------------------------------------

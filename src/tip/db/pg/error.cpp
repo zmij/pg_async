@@ -32,12 +32,12 @@ connection_error::connection_error(char const* what_arg)
 }
 
 query_error::query_error(std::string const& what_arg)
-	: db_error(what_arg), sqlstate(unknown_code)
+	: db_error(what_arg), sqlstate(sqlstate::unknown_code)
 {
 }
 
 query_error::query_error(char const* what_arg)
-	: db_error(what_arg), sqlstate(unknown_code)
+	: db_error(what_arg), sqlstate(sqlstate::unknown_code)
 {
 }
 
@@ -46,7 +46,7 @@ query_error::query_error(std::string const& message,
 		std::string code,
 		std::string detail)
 	: db_error(message), severity(severity), code(code), detail(detail),
-	  sqlstate(code_to_state(code))
+	  sqlstate(sqlstate::code_to_state(code))
 {
 }
 

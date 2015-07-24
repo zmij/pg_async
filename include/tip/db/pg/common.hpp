@@ -139,6 +139,7 @@
 #include <boost/integer.hpp>
 
 #include <tip/util/streambuf.hpp>
+#include <tip/db/pg/pg_types.hpp>
 
 namespace tip {
 namespace db {
@@ -233,21 +234,29 @@ struct connection_options {
 };
 
 /**
+ * Protocol format type
+ */
+enum protocol_data_format {
+	TEXT_DATA_FORMAT = 0, //!< TEXT_DATA_FORMAT
+	BINARY_DATA_FORMAT = 1//!< BINARY_DATA_FORMAT
+};
+
+/**
  * Description of a field returned by the backend
  */
 struct field_description {
-	std::string	name;				/**< The field name. */
-	integer		table_oid;			/**< If the field can be identified as a column of a specific table, the object ID of the table; otherwise zero. */
-	smallint	attribute_number;	/**< If the field can be identified as a column of a specific table, the attribute number of the column; otherwise zero. */
-	integer		type_oid;			/**< The object ID of the field's data type. */
-	smallint 	type_size;			/**< The data type size (see pg_type.typlen). Note that negative values denote variable-width types. */
-	integer		type_mod;			/**< The type modifier (see pg_attribute.atttypmod). The meaning of the modifier is type-specific. */
+	std::string				name;				/**< The field name. */
+	integer					table_oid;			/**< If the field can be identified as a column of a specific table, the object ID of the table; otherwise zero. */
+	smallint				attribute_number;	/**< If the field can be identified as a column of a specific table, the attribute number of the column; otherwise zero. */
+	oids::type::oid_type	type_oid; 			/**< The object ID of the field's data type. */
+	smallint 				type_size;			/**< The data type size (see pg_type.typlen). Note that negative values denote variable-width types. */
+	integer					type_mod;			/**< The type modifier (see pg_attribute.atttypmod). The meaning of the modifier is type-specific. */
 	/**
 	 * The format code being used for the field. Currently will be zero (text) or one (binary). In a RowDescription returned from the statement
 	 * variant of Describe, the format code is not yet known and will always be zero.
 	 */
-	smallint	format_code;
-	integer		max_size;			/**< Maximum size of the field in the result set */
+	protocol_data_format	format_code;
+	integer					max_size;			/**< Maximum size of the field in the result set */
 };
 
 //@{

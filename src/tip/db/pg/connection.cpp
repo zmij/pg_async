@@ -127,12 +127,14 @@ connection::execute_query(std::string const& query,
 
 void
 connection::execute_prepared(std::string const& query,
+				type_oid_sequence const& param_types,
 				buffer_type const& params,
 				result_callback const& cb,
 				error_callback const& err,
 				connection_lock_ptr l)
 {
 	pimpl_->execute_prepared(query,
+			param_types,
 			params,
 			std::bind(&connection::query_executed,
 					shared_from_this(), cb,

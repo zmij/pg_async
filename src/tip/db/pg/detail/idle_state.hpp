@@ -42,8 +42,11 @@ private:
 			query_error_callback const& err);
 
 	virtual void
-	do_execute_prepared(std::string const& q, buffer_type const& params,
-			result_callback const&, query_error_callback const&);
+	do_execute_prepared(std::string const& q,
+			type_oid_sequence const& param_types,
+			buffer_type const& params,
+			result_callback const&,
+			query_error_callback const&);
 
 	virtual void
 	do_terminate(simple_callback const&);

@@ -18,19 +18,12 @@
 #include <boost/optional.hpp>
 
 #include <tip/db/pg/common.hpp>
+#include <tip/db/pg/pg_types.hpp>
 #include <tip/util/streambuf.hpp>
 
 namespace tip {
 namespace db {
 namespace pg {
-
-/**
- * Protocol format type
- */
-enum protocol_data_format {
-	TEXT_DATA_FORMAT = 0, //!< TEXT_DATA_FORMAT
-	BINARY_DATA_FORMAT = 1//!< BINARY_DATA_FORMAT
-};
 
 namespace detail {
 /**
@@ -174,9 +167,34 @@ struct binary_data_formatter < T, INTEGRAL > : formatter_base< T > {
 	operator()(OutputIterator);
 };
 
+template < oids::type::oid_type TypeOid, typename T >
+struct data_mapping_base {
+	static constexpr oids::type::oid_type type_oid	= TypeOid;
+	typedef typename std::decay<T>::type type;
+};
+
 }  // namespace detail
 
 namespace traits {
+
+void
+register_binary_parser( oids::type::oid_type );
+bool
+has_binary_parser( oids::type::oid_type );
+
+/**
+ * Struct for using for generating wanted data formats from oids
+ * Default type mapping falls back to string type and text format
+ */
+template < oids::type::oid_type TypeOid >
+struct pgcpp_data_mapping : detail::data_mapping_base< TypeOid, std::string > {};
+
+/**
+ * Template for specifying data types
+ */
+template < typename T >
+struct cpppg_data_mapping : detail::data_mapping_base < oids::type::unknown, T > {};
+
 //@{
 /** @name parser and formatter traits */
 template <typename T>
@@ -456,40 +474,17 @@ struct protocol_parser< std::string, TEXT_DATA_FORMAT > :
     operator()(InputIterator begin, InputIterator end);
 };
 
-/**
- * @brief Protocol parser specialization for std::string, binary data format
- */
-template < >
-struct protocol_parser< std::string, BINARY_DATA_FORMAT > :
-		detail::parser_base< std::string > {
-	typedef detail::parser_base< std::string > base_type;
-	typedef base_type::value_type value_type;
-
-	protocol_parser(value_type& v) : base_type(v) {}
-
-	size_t
-	size() const
-	{
-		return base_type::value.size();
-	}
-
-	template < typename InputIterator >
-	InputIterator
-	operator()( InputIterator begin, InputIterator end );
-};
-
 namespace traits {
-template < > struct has_parser< std::string, BINARY_DATA_FORMAT > : std::true_type {};
 static_assert(has_parser<std::string, TEXT_DATA_FORMAT>::value,
               "Text data parser for std::string");
-static_assert(has_parser<std::string, BINARY_DATA_FORMAT>::value,
-               "Binary data parser for std::string");
-static_assert(best_parser<std::string>::value == BINARY_DATA_FORMAT,
+static_assert(!has_parser<std::string, BINARY_DATA_FORMAT>::value,
+               "No binary data parser for std::string");
+static_assert(best_parser<std::string>::value == TEXT_DATA_FORMAT,
 		"Best parser for std::string is binary");
 }  // namespace traits
 
 template < >
-struct protocol_formatter< std::string, BINARY_DATA_FORMAT > :
+struct protocol_formatter< std::string, TEXT_DATA_FORMAT > :
 		detail::formatter_base< std::string > {
 	typedef detail::formatter_base< std::string > base_type;
 	typedef base_type::value_type value_type;
@@ -519,13 +514,11 @@ struct protocol_formatter< std::string, BINARY_DATA_FORMAT > :
 };
 
 namespace traits {
-template < > struct has_formatter< std::string, BINARY_DATA_FORMAT >
-		: std::true_type {};
 static_assert(has_formatter<std::string, TEXT_DATA_FORMAT>::value,
               "Text data parser for std::string");
-static_assert(has_formatter<std::string, BINARY_DATA_FORMAT>::value,
-               "Binary data parser for std::string");
-static_assert(best_formatter<std::string>::value == BINARY_DATA_FORMAT,
+static_assert(!has_formatter<std::string, BINARY_DATA_FORMAT>::value,
+              "No binary data parser for std::string");
+static_assert(best_formatter<std::string>::value == TEXT_DATA_FORMAT,
 		"Best parser for std::string is binary");
 }  // namespace traits
 
@@ -711,5 +704,6 @@ struct protocol_parser< bytea, BINARY_DATA_FORMAT > :
 }  // namespace tip
 
 #include <tip/db/pg/protocol_io_traits.inl>
+#include <tip/db/pg/datatype_mapping.hpp>
 
 #endif /* TIP_DB_PG_PROTOCOL_IO_TRAITS_HPP_ */

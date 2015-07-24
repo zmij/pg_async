@@ -43,6 +43,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	bool start_tran_;
 	bool autocommit_;
 
+	type_oid_sequence param_types_;
 	params_buffer params_;
 
 	impl(dbalias const& alias, std::string const& expression,
@@ -129,7 +130,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 						<< logger::severity_color();
 			}
 			conn_ = c;
-			(*conn_)->execute_prepared(expression_, params_,
+			(*conn_)->execute_prepared(expression_, param_types_, params_,
 				std::bind(&impl::handle_get_results,
 						shared_from_this(),
 						std::placeholders::_1,
@@ -207,6 +208,12 @@ query::params_buffer&
 query::buffer()
 {
 	return pimpl_->params_;
+}
+
+query::type_oid_sequence&
+query::param_types()
+{
+	return pimpl_->param_types_;
 }
 
 }  // namespace pg

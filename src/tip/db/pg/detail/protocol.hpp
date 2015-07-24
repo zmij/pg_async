@@ -236,6 +236,13 @@ public:
 	write(std::string const&);
 	//@}
 
+	/**
+	 * Append a message to send in a single network package
+	 * @param
+	 */
+	void
+	pack(message const&);
+
 	//@{
 	/** @name Protocol-related static interface */
 	/**

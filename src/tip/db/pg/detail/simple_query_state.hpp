@@ -44,7 +44,9 @@ private:
 	do_execute_query(std::string const&q, result_callback const& cb,
 			query_error_callback const&);
 	virtual void
-	do_execute_prepared(std::string const& q, buffer_type const& params,
+	do_execute_prepared(std::string const& q,
+			type_oid_sequence const& param_types,
+			buffer_type const& params,
 			result_callback const&, query_error_callback const&);
 
 	virtual bool

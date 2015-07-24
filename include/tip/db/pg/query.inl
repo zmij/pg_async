@@ -99,11 +99,24 @@ struct format_selector< 0, T > {
 	};
 	typedef T type;
 	typedef traits::best_formatter<type> best_formatter;
-	static constexpr protocol_data_format data_format = best_formatter::value;
 	typedef typename best_formatter::type formatter_type;
 
-	static constexpr bool single_format = true;
+	typedef std::vector< oids::type::oid_type > oid_sequence;
+	typedef traits::cpppg_data_mapping< T > data_mapping;
 
+	static constexpr protocol_data_format data_format = best_formatter::value;
+	static constexpr bool single_format = true;
+	enum {
+		type_oid = data_mapping::type_oid
+	};
+
+	static void
+	write_type(oid_sequence& param_types)
+	{
+		static_assert( traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
+				"Parameter type doesn't have a PostgreSQL typeoid mapping" );
+		param_types.push_back((oids::type::oid_type)type_oid);
+	}
 	static void
 	write_format( std::vector<byte>& buffer )
 	{
@@ -130,14 +143,29 @@ struct format_selector< N, T, Y ... > {
 	};
 	typedef T type;
 	typedef traits::best_formatter<type> best_formatter;
-	static constexpr protocol_data_format data_format = best_formatter::value;
 	typedef typename best_formatter::type formatter_type;
+
 	typedef format_selector< N - 1, Y ...> next_param_type;
 
+	typedef std::vector< oids::type::oid_type > oid_sequence;
+	typedef traits::cpppg_data_mapping< T > data_mapping;
+
+	static constexpr protocol_data_format data_format = best_formatter::value;
 	static constexpr bool single_format =
 			next_param_type::single_format &&
 				next_param_type::data_format == data_format;
+	enum {
+		type_oid = data_mapping::type_oid
+	};
 
+	static void
+	write_type(oid_sequence& param_types)
+	{
+		static_assert( traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
+				"Parameter type doesn't have a PostgreSQL typeoid mapping" );
+		param_types.push_back((oids::type::oid_type)type_oid);
+		next_param_type::write_type(param_types);
+	}
 	static void
 	write_format( std::vector<byte>& buffer )
 	{
@@ -191,9 +219,15 @@ struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 	typedef format_selector< last_index, T... > first_selector;
 	static constexpr protocol_data_format  data_format = first_selector::data_format;
 
+	typedef std::vector< oids::type::oid_type > oid_sequence;
+
 	bool
-	static write_params( std::vector<byte>& buffer, T const& ... args )
+	static write_params( oid_sequence& param_types, std::vector<byte>& buffer,
+			T const& ... args )
 	{
+		param_types.reserve(size);
+		first_selector::write_type(param_types);
+
 		size_t sz = sizeof(smallint) * 2 //text data format + count of params
 				+ first_selector::size(args ...); // size of params
 		buffer.reserve(sz);
@@ -219,9 +253,15 @@ struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > 
 	typedef format_selector< last_index, T... > first_selector;
 	static constexpr protocol_data_format  data_format = first_selector::data_format;
 
+	typedef std::vector< oids::type::oid_type > oid_sequence;
+
 	bool
-	static write_params( std::vector<byte>& buffer, T const& ... args )
+	static write_params( oid_sequence& param_types, std::vector<byte>& buffer,
+			T const& ... args )
 	{
+		param_types.reserve(size);
+		first_selector::write_type(param_types);
+
 		size_t sz = sizeof(smallint) * 2 // data format count + count of params
 				+ sizeof(smallint) * size // data formats
 				+ first_selector::size(args ...); // params
@@ -257,9 +297,10 @@ static_assert( param_formatter< smallint, integer, bigint >::data_format
 
 template < typename ... T >
 void
-write_params(std::vector<byte>& buffer, T const& ... params)
+write_params(std::vector< oids::type::oid_type >& param_types,
+		std::vector<byte>& buffer, T const& ... params)
 {
-	param_formatter< T ... >::write_params(buffer, params ...);
+	param_formatter< T ... >::write_params(param_types, buffer, params ...);
 }
 
 }  // namespace detail
@@ -292,7 +333,7 @@ query::bind(T const& ... params)
 	// 2. Params
 	//  - write the number of params
 	//  - write each param preceded by it's length
-	detail::write_params(buffer(), params ...);
+	detail::write_params(param_types(), buffer(), params ...);
 	return *this;
 }
 

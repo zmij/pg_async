@@ -99,6 +99,7 @@ public:
 	connection_lock_ptr
 	connection();
 private:
+	typedef std::vector< oids::type::oid_type > type_oid_sequence;
 	typedef std::vector<byte> params_buffer;
 
 	void
@@ -106,6 +107,8 @@ private:
 			bool start_tran, bool autocommit);
 	void
 	create_impl(connection_lock_ptr, std::string const& expression);
+	type_oid_sequence&
+	param_types();
 	params_buffer&
 	buffer();
 	struct impl;
@@ -116,5 +119,7 @@ private:
 }  // namespace pg
 }  // namespace db
 }  // namespace tip
+
+#include <tip/db/pg/query.inl>
 
 #endif /* TIP_DB_PG_QUERY_HPP_ */

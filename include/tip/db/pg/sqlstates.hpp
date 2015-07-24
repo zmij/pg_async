@@ -6,8 +6,9 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace sqlstate {
 
-enum sqlstates {
+enum code {
 	unknown_code,
 	//@{
 	/** @name Class 00 — Successful Completion */
@@ -365,9 +366,10 @@ enum sqlstates {
 	index_corrupted, /**< XX002 */
 };
 
-sqlstates
+code
 code_to_state(std::string const& val);
 
+} // namespace sqlstate
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

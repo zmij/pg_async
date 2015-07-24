@@ -37,10 +37,10 @@ public:
 		std::string code,
 		std::string detail
 	);
-	std::string severity;
-	std::string code;
-	std::string detail;
-	sqlstates	sqlstate;
+	std::string		severity;
+	std::string		code;
+	std::string		detail;
+	sqlstate::code	sqlstate;
 };
 
 class value_is_null : public db_error {

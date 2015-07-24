@@ -338,9 +338,8 @@ public:
 		{
 			if (is_null())
 				throw value_is_null(name());
-			field_buffer b = input_buffer();
-			protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), val);
-			return true;
+			return to_impl(val,
+					traits::has_parser<T, BINARY_DATA_FORMAT>() );
 		}
 
 		template < typename T >
@@ -352,13 +351,14 @@ public:
 				return true;
 			} else {
 				typename std::decay<T>::type tmp;
-				field_buffer b = input_buffer();
-				protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), tmp);
+				to_impl(tmp, traits::has_parser<T, BINARY_DATA_FORMAT>() );
 				val = boost::optional< T > (tmp);
 				return true;
 			}
 			return false;
 		}
+
+		//template < typename T >
 
 		template < typename T >
 		typename std::decay<T>::type
@@ -369,6 +369,28 @@ public:
 			return val;
 		}
 	private:
+		template < typename T >
+		bool
+		to_impl( T& val, std::true_type const& ) const
+		{
+			field_description const& fd = description();
+			field_buffer b = input_buffer();
+			if (fd.format_code == TEXT_DATA_FORMAT) {
+				protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), val);
+			} else {
+				protocol_read< BINARY_DATA_FORMAT >(b.begin(), b.end(), val);
+			}
+		}
+
+		template < typename T >
+		bool
+		to_impl( T& val, std::false_type const& ) const
+		{
+			field_buffer b = input_buffer();
+			protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), val);
+			return true;
+		}
+
 		field_buffer
 		input_buffer() const;
 	protected:

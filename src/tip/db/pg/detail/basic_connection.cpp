@@ -345,10 +345,13 @@ connection_base::execute_query(std::string const& q, result_callback const& cb,
 }
 
 void
-connection_base::execute_prepared(std::string const& q, buffer_type const& params,
-		result_callback const& res, query_error_callback const& err)
+connection_base::execute_prepared(std::string const& q,
+		type_oid_sequence const& param_types,
+		buffer_type const& params,
+		result_callback const& res,
+		query_error_callback const& err)
 {
-	state_.execute_prepared(q, params, res, err);
+	state_.execute_prepared(q, param_types, params, res, err);
 }
 
 bool

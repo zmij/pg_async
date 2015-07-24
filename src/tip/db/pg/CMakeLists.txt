@@ -13,6 +13,7 @@ set(
     resultset.cpp
     query.cpp
     sqlstates.cpp
+    pg_types.cpp
     protocol_io_traits.cpp
     detail/md5.cpp
     detail/protocol.cpp

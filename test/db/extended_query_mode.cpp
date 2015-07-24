@@ -112,11 +112,13 @@ test_write_params()
 	local_log() << "test_write_params: start";
 	typedef std::vector<char> buffer_type;
 	typedef buffer_type::iterator buffer_iterator;
+	typedef std::vector< oids::type::oid_type > oid_sequence;
+	oid_sequence param_types;
 	buffer_type buffer;
 
 	{
 		buffer.clear();
-		tip::db::pg::detail::write_params(buffer, (integer)42);
+		tip::db::pg::detail::write_params(param_types, buffer, (integer)42);
 		print_buf(buffer);
 		if (buffer.empty()) {
 			std::cerr << "Buffer is empty\n";
@@ -130,49 +132,11 @@ test_write_params()
 			return 1;
 		}
 
-		smallint expected_params = 1;
-
-		buffer_iterator p = buffer.begin();
-		buffer_iterator e = buffer.end();
-		smallint data_format_count(0);
-		p = protocol_read< BINARY_DATA_FORMAT >(p, e, data_format_count);
-		if (data_format_count != expected_params) {
-			local_log(logger::ERROR) << "Data format count is invalid. "
-					<< "Expected " << expected_params
-					<< ", actual " << data_format_count;
-		}
-		smallint df(0);
-		for (smallint dfc = 0; dfc < data_format_count && p != e; ++dfc) {
-			p = protocol_read< BINARY_DATA_FORMAT >(p, e, df);
-		}
-		smallint param_count(0);
-		p = protocol_read< BINARY_DATA_FORMAT >(p, e, param_count);
-		if (param_count != expected_params) {
-			local_log(logger::ERROR) << "Param count is invalid. "
-					<< "Expected " << expected_params
-					<< ", actual " << param_count;
-		}
-		for (smallint pno = 0; pno < param_count && p != e; ++pno) {
-			integer param_size(0);
-			p = protocol_read< BINARY_DATA_FORMAT >(p, e, param_size);
-			if (param_size == 0)
-				local_log(logger::WARNING) << "Param value size is 0";
-			integer value(0);
-			p = protocol_read< BINARY_DATA_FORMAT >(p, e, value);
-			if (value != 42)
-				local_log(logger::WARNING) << "Invalid value in buffer";
-			//p += param_size;
-		}
-
-		if (p != e) {
-			local_log(logger::ERROR) << "Buffer is not exhausted";
-		} else {
-			local_log() << "Buffer test is OK";
-		}
+		check_params_buffer(buffer, 1);
 	}
 	{
 		buffer.clear();
-		tip::db::pg::detail::write_params(buffer, (smallint)2);
+		tip::db::pg::detail::write_params(param_types, buffer, (smallint)2);
 		print_buf(buffer);
 		if (buffer.empty()) {
 			local_log(logger::ERROR) << "Buffer is empty\n";
@@ -190,7 +154,7 @@ test_write_params()
 	}
 	{
 		buffer.clear();
-		tip::db::pg::detail::write_params(buffer, (bigint)42);
+		tip::db::pg::detail::write_params(param_types, buffer, (bigint)42);
 		print_buf(buffer);
 		if (buffer.empty()) {
 			std::cerr << "Buffer is empty\n";
@@ -208,7 +172,7 @@ test_write_params()
 
 	{
 		buffer.clear();
-		tip::db::pg::detail::write_params(buffer, (integer)42, (smallint)324);
+		tip::db::pg::detail::write_params(param_types, buffer, (integer)42, (smallint)324);
 		if (buffer.empty()) {
 			std::cerr << "Buffer is empty\n";
 			return 1;
@@ -226,7 +190,7 @@ test_write_params()
 
 	{
 		buffer.clear();
-		tip::db::pg::detail::write_params(buffer, (integer)42, (integer)324);
+		tip::db::pg::detail::write_params(param_types, buffer, (integer)42, (integer)324);
 		print_buf(buffer);
 		if (buffer.empty()) {
 			std::cerr << "Buffer is empty\n";
@@ -245,7 +209,7 @@ test_write_params()
 
 	{
 		buffer.clear();
-		tip::db::pg::detail::write_params(buffer, (integer)42, (smallint)324, 3.1415926);
+		tip::db::pg::detail::write_params(param_types, buffer, (integer)42, (smallint)324, 3.1415926);
 		if (buffer.empty()) {
 			std::cerr << "Buffer is empty\n";
 			return 1;
@@ -266,8 +230,11 @@ test_execute_prepared()
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
 		int tran_count = 0;
+
+		std::vector< oids::type::oid_type > param_types;
+
 		std::vector<char> params;
-		tip::db::pg::detail::write_params(params, (integer)10);
+		tip::db::pg::detail::write_params(param_types, params, 10, 20);
 
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
@@ -275,8 +242,8 @@ test_execute_prepared()
 				c->begin_transaction(
 				[&](connection_lock_ptr c_lock){
 					tran_count++;
-					(*c_lock)->execute_prepared("select * from pg_catalog.pg_type where typelem > $1",
-					params,
+					(*c_lock)->execute_prepared("select * from pg_catalog.pg_type where typelem > $1 limit $2",
+					param_types, params,
 					[&](connection_lock_ptr c, resultset r, bool complete) {
 						local_log() << "Received a resultset columns: " << r.columns_size()
 								<< " rows: " << r.size()
@@ -294,7 +261,8 @@ test_execute_prepared()
 			ec.what();
 		},  opts, {
 			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
+			{"application_name", "pg_async"},
+			{"client_min_messages", "debug5"}
 		}));
 		io_service.run();
 	}

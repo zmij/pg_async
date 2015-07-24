@@ -4,9 +4,10 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace sqlstate {
 
 namespace {
-const std::map<std::string, sqlstates> CODE_TO_STATE {
+const std::map<std::string, code> CODESTR_TO_STATE {
 		//@{
 		/** @name Class 00 — Successful Completion */
 		{ "00000", successful_completion },
@@ -363,7 +364,7 @@ const std::map<std::string, sqlstates> CODE_TO_STATE {
 		{ "XX002", index_corrupted },
 };
 
-const std::map<sqlstates, std::string> STATE_TO_CODE {
+const std::map<code, std::string> STATE_TO_CODESTR {
 		//@{
 		/** @name Class 00 — Successful Completion */
 		{ successful_completion, "00000" },
@@ -721,15 +722,17 @@ const std::map<sqlstates, std::string> STATE_TO_CODE {
 
 } // namespace
 
-sqlstates code_to_state(std::string const& val)
+code
+code_to_state(std::string const& val)
 {
-	auto f = CODE_TO_STATE.find(val);
-	if (f != CODE_TO_STATE.end()) {
+	auto f = CODESTR_TO_STATE.find(val);
+	if (f != CODESTR_TO_STATE.end()) {
 		return f->second;
 	}
 	return unknown_code;
 }
 
+}  // namespace sqlstate
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

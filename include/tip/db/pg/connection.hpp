@@ -40,6 +40,8 @@ public:
 	typedef std::map<std::string, std::string> connection_params;
 
 	typedef query_result_callback result_callback;
+
+	typedef std::vector< oids::type::oid_type > type_oid_sequence;
 	typedef std::vector<byte> buffer_type;
 
 	enum state_type {
@@ -100,6 +102,7 @@ public:
 			connection_lock_ptr l = connection_lock_ptr());
 	void
 	execute_prepared(std::string const& query,
+			type_oid_sequence const& param_types,
 			buffer_type const& params,
 			result_callback const& cb,
 			error_callback const& err,

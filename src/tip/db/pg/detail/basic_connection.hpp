@@ -49,6 +49,7 @@ public:
 		typedef internal_result_callback result_callback;
 		typedef std::function< void (boost::system::error_code const&,
 				size_t bytes)> api_handler;
+		typedef std::vector< oids::type::oid_type > type_oid_sequence;
 		typedef std::vector<byte> buffer_type;
 		//@}
 public:
@@ -126,8 +127,11 @@ public:
 			query_error_callback const& err);
 
 	void
-	execute_prepared(std::string const& query, buffer_type const& params,
-			result_callback const&, query_error_callback const&);
+	execute_prepared(std::string const& query,
+			type_oid_sequence const& param_types,
+			buffer_type const& params,
+			result_callback const&,
+			query_error_callback const&);
 	//@}
 
 	//@{

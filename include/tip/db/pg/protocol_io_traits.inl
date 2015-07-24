@@ -112,30 +112,6 @@ protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()
 
 template < typename InputIterator >
 InputIterator
-protocol_parser< std::string, BINARY_DATA_FORMAT >::operator ()
-	(InputIterator begin, InputIterator end)
-{
-	typedef InputIterator iterator_type;
-	typedef std::iterator_traits< iterator_type > iter_traits;
-	typedef typename iter_traits::value_type iter_value_type;
-	static_assert(std::is_same< iter_value_type, byte >::type::value,
-			"Input iterator must be over a char container");
-
-	integer sz = end - begin;
-
-	std::string tmp;
-	tmp.reserve(sz);
-	for (; begin != end && *begin; ++begin) {
-		tmp.push_back(*begin);
-	}
-	if (!*begin)
-		++begin;
-	base_type::value.swap(tmp);
-	return begin;
-}
-
-template < typename InputIterator >
-InputIterator
 protocol_parser< bool, BINARY_DATA_FORMAT >::operator()
 	(InputIterator begin, InputIterator end)
 {

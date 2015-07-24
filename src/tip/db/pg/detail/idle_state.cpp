@@ -108,11 +108,14 @@ idle_state::do_execute_query(std::string const& q, result_callback const& cb,
 }
 
 void
-idle_state::do_execute_prepared(std::string const& q, buffer_type const& params,
-		result_callback const& cb, query_error_callback const& err)
+idle_state::do_execute_prepared(std::string const& q,
+		type_oid_sequence const& param_types,
+		buffer_type const& params,
+		result_callback const& cb,
+		query_error_callback const& err)
 {
 	conn.push_state( connection_state_ptr(
-			new extended_query_state(conn, q, params, cb, err)) );
+			new extended_query_state(conn, q, param_types, params, cb, err)) );
 }
 
 void

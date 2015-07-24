@@ -14,6 +14,31 @@ namespace tip {
 namespace db {
 namespace pg {
 
+namespace traits {
+
+namespace {
+
+using namespace oids::type;
+
+std::set< oid_type > BINARY_PARSERS {
+	boolean, oids::type::bytea, int2, int4, int8, oid, tid, xid, cid
+};
+}  // namespace
+
+void
+register_parser_type(oids::type::oid_type oid)
+{
+	BINARY_PARSERS.insert(oid);
+}
+
+bool
+has_binary_parser(oids::type::oid_type oid)
+{
+	return BINARY_PARSERS.count(oid);
+}
+
+}  // namespace traits
+
 bool
 protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
 {

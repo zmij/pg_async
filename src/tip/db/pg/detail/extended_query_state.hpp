@@ -17,8 +17,10 @@ namespace detail {
 
 class extended_query_state: public basic_state {
 public:
+	typedef std::vector< oids::type::oid_type > param_types;
 	typedef std::vector<byte> params_buffer;
 	extended_query_state(connection_base&, std::string const& query,
+			param_types const& types,
 			params_buffer const& params,
 			result_callback const& cb,
 			query_error_callback const& err);
@@ -41,6 +43,7 @@ private:
 	};
 private:
 	std::string query_;
+	param_types param_types_;
 	params_buffer params_;
 	result_callback result_;
 	query_error_callback error_;
@@ -52,6 +55,7 @@ public:
 	parse_state(connection_base&,
 			std::string const& query_name,
 			std::string const& query,
+			extended_query_state::param_types const& types,
 			query_error_callback const& err);
 	virtual ~parse_state() {}
 private:
@@ -67,6 +71,7 @@ private:
 private:
 	std::string query_name_;
 	std::string query_;
+	extended_query_state::param_types param_types_;
 	query_error_callback error_;
 };
 

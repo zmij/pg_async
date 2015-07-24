@@ -37,10 +37,11 @@ using tip::log::logger;
 
 extended_query_state::extended_query_state(connection_base& conn,
 		std::string const& query,
+		param_types const& types,
 		params_buffer const& params,
 		result_callback const& cb,
 		query_error_callback const& err)
-	: basic_state(conn), query_(query), params_(params),
+	: basic_state(conn), query_(query), param_types_(types), params_(params),
 	  result_(cb), error_(err), stage_(PARSE)
 {
 }
@@ -96,15 +97,16 @@ extended_query_state::do_enter()
 	} else {
 		// parse
 		conn.push_state( connection_state_ptr(
-				new parse_state( conn, query_hash, query_, error_ ) ) );
+				new parse_state( conn, query_hash, query_, param_types_, error_ ) ) );
 	}
 }
 
 parse_state::parse_state(connection_base& conn,
 		std::string const& query_name,
 		std::string const& query,
+		extended_query_state::param_types const& types,
 		query_error_callback const& err)
-	: basic_state(conn), query_name_(query_name), query_(query), error_(err)
+	: basic_state(conn), query_name_(query_name), query_(query), param_types_(types), error_(err)
 {
 }
 
@@ -117,16 +119,26 @@ parse_state::do_enter()
 				<< query_
 				<< logger::severity_color();
 	}
+
 	{
-		message m(parse_tag);
-		m.write(query_name_);
-		m.write(query_);
-		m.write( (smallint)0 ); // Number of params
-		conn.send(m);
+		message parse(parse_tag);
+		parse.write(query_name_);
+		parse.write(query_);
+		parse.write( (smallint)param_types_.size() );
+		for (oids::type::oid_type oid : param_types_) {
+			parse.write( (integer)oid );
+		}
+		conn.send(parse);
 	}
 	{
-		message m(sync_tag);
-		conn.send(m);
+		message describe(describe_tag);
+		describe.write('S');
+		describe.write(query_name_);
+		conn.send(describe);
+	}
+	{
+		message sync(sync_tag);
+		conn.send(sync);
 	}
 }
 
@@ -169,12 +181,6 @@ bind_state::bind_state(connection_base& conn,
 void
 bind_state::do_enter()
 {
-	{
-		message m(describe_tag);
-		m.write('S');
-		m.write(query_name_);
-		conn.send(m);
-	}
 	{
 		message m(bind_tag);
 		m.write(std::string(""));
