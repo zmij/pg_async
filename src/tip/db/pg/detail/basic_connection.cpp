@@ -361,10 +361,21 @@ connection_base::is_prepared(std::string const& query_hash) const
 }
 
 void
-connection_base::set_prepared(std::string const& query_hash)
+connection_base::set_prepared(std::string const& query_hash,
+		row_description const& result_desc)
 {
-	prepared_statements_.insert(query_hash);
+	prepared_statements_.insert(std::make_pair(query_hash, result_desc));
 }
+
+connection_base::row_description const&
+connection_base::get_prepared_description(std::string const& query_hash) const
+{
+	auto f = prepared_statements_.find(query_hash);
+	if (f == prepared_statements_.end())
+		throw std::runtime_error("Statement is not prepared");
+	return f->second;
+}
+
 
 void
 connection_base::handle_connect(error_code const& ec)

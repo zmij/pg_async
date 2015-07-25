@@ -51,6 +51,7 @@ public:
 				size_t bytes)> api_handler;
 		typedef std::vector< oids::type::oid_type > type_oid_sequence;
 		typedef std::vector<byte> buffer_type;
+		typedef std::vector<field_description> row_description;
 		//@}
 public:
 	connection_base(io_service& service, connection_options const& co,
@@ -138,7 +139,10 @@ public:
 	bool
 	is_prepared(std::string const& query_hash) const;
 	void
-	set_prepared(std::string const& query_hash);
+	set_prepared(std::string const& query_hash,
+			row_description const& result_desc);
+	row_description const&
+	get_prepared_description(std::string const& query_hash) const;
 	//@}
 	void
 	notify_terminated();
@@ -182,6 +186,7 @@ private:
 	close() = 0;
 private:
 	typedef std::set< std::string > string_set_type;
+	typedef std::map< std::string, row_description > prepared_statements;
 
 	options_type settings_;
 
@@ -198,7 +203,7 @@ private:
 
 	bool locked_;
 
-	string_set_type prepared_statements_;
+	prepared_statements prepared_statements_;
 protected:
 	bool
 	is_terminated() const;

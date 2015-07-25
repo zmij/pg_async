@@ -45,6 +45,9 @@ private:
 	std::string query_;
 	param_types param_types_;
 	params_buffer params_;
+
+	std::string query_hash_;
+
 	result_callback result_;
 	query_error_callback error_;
 	stage_type stage_;

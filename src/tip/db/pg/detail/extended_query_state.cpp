@@ -9,6 +9,7 @@
 #include <tip/db/pg/detail/md5.hpp>
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
+#include <tip/db/pg/protocol_io_traits.hpp>
 #include <tip/db/pg/detail/result_impl.hpp>
 
 #include <tip/db/pg/log.hpp>
@@ -46,6 +47,14 @@ extended_query_state::extended_query_state(connection_base& conn,
 	: basic_state(conn), query_(query), param_types_(types), params_(params),
 	  result_(cb), error_(err), stage_(PARSE)
 {
+	std::ostringstream os;
+	os << query_ << " {";
+	for (auto oid : param_types_) {
+		os << oid;
+	}
+	os << "}";
+	query_hash_ = "q_" +
+			std::string(boost::md5( os.str().c_str() ).digest().hex_str_value());
 }
 
 bool
@@ -77,17 +86,9 @@ extended_query_state::do_handle_message(message_ptr m)
 void
 extended_query_state::do_enter()
 {
-	std::ostringstream os;
-	os << query_ << " {";
-	for (auto oid : param_types_) {
-		os << oid;
-	}
-	os << "}";
-	std::string query_hash = "q_" +
-			std::string(boost::md5( os.str().c_str() ).digest().hex_str_value());
-	if (conn.is_prepared(query_hash)) {
+	if (conn.is_prepared(query_hash_)) {
 		std::string portal_name = "p_" +
-				std::string(boost::md5( query_hash.c_str() ).digest().hex_str_value());
+				std::string(boost::md5( query_hash_.c_str() ).digest().hex_str_value());
 		if (stage_ == PARSE) {
 			stage_ = BIND;
 		}
@@ -95,7 +96,7 @@ extended_query_state::do_enter()
 			local_log() << "Bind params";
 			// bind params
 			conn.push_state(connection_state_ptr(
-					new bind_state(conn, query_hash, params_, error_) ));
+					new bind_state(conn, query_hash_, params_, error_) ));
 		} else {
 			local_log() << "Execute statement";
 			// execute and fetch
@@ -105,7 +106,7 @@ extended_query_state::do_enter()
 	} else {
 		// parse
 		conn.push_state( connection_state_ptr(
-				new parse_state( conn, query_hash, query_, param_types_, error_ ) ) );
+				new parse_state( conn, query_hash_, query_, param_types_, error_ ) ) );
 	}
 }
 
@@ -159,7 +160,29 @@ parse_state::do_handle_message(message_ptr m)
 			{
 				local_log() << "Parse complete";
 			}
-			conn.set_prepared(query_name_);
+			return true;
+		}
+		case parameter_desription_tag : {
+			local_log() << "Parameter description message";
+			return true;
+		}
+		case row_description_tag : {
+			int16_t col_cnt;
+			m->read(col_cnt);
+
+			connection_base::row_description desc;
+			for (int i = 0; i < col_cnt; ++i) {
+				field_description fd;
+				if (m->read(fd)) {
+					fd.format_code = traits::has_binary_parser(fd.type_oid) ?
+						BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
+					desc.push_back(fd);
+				} else {
+					local_log(logger::ERROR)
+							<< "Failed to read field description " << i;
+				}
+			}
+			conn.set_prepared(query_name_, desc);
 			conn.pop_state(this);
 			return true;
 		}
@@ -201,7 +224,11 @@ bind_state::do_enter()
 			m.write((smallint)0); // parameter format codes
 			m.write((smallint)0); // number of parameters
 		}
-		m.write((smallint)0); // result format codes
+		connection_base::row_description const& row = conn.get_prepared_description(query_name_);
+		m.write((smallint)row.size()); // result format codes
+		for (auto fd : row) {
+			m.write((smallint)fd.format_code);
+		}
 		conn.send(m);
 	}
 	{
