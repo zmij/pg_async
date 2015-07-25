@@ -13,6 +13,8 @@
 
 #include <tip/db/pg/log.hpp>
 
+#include <sstream>
+
 namespace tip {
 namespace db {
 namespace pg {
@@ -75,8 +77,14 @@ extended_query_state::do_handle_message(message_ptr m)
 void
 extended_query_state::do_enter()
 {
+	std::ostringstream os;
+	os << query_ << " {";
+	for (auto oid : param_types_) {
+		os << oid;
+	}
+	os << "}";
 	std::string query_hash = "q_" +
-			std::string(boost::md5( query_.c_str() ).digest().hex_str_value());
+			std::string(boost::md5( os.str().c_str() ).digest().hex_str_value());
 	if (conn.is_prepared(query_hash)) {
 		std::string portal_name = "p_" +
 				std::string(boost::md5( query_hash.c_str() ).digest().hex_str_value());
