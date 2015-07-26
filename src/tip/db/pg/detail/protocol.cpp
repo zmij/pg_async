@@ -354,7 +354,8 @@ void
 message::pack(message const& m)
 {
 	payload.reserve(payload.size() + m.payload.size());
-	std::copy(m.payload.begin(), m.payload.end(), std::back_inserter(payload));
+	const_range r = m.buffer();
+	std::copy(r.first, r.second, std::back_inserter(payload));
 }
 
 //----------------------------------------------------------------------------
