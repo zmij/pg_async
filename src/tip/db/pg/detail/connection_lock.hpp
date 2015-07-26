@@ -21,6 +21,8 @@ class connection_lock {
 public:
 	typedef std::shared_ptr<connection> connection_ptr;
 	typedef std::function< void () > release_func;
+	typedef connection* pointer;
+	typedef connection const* const_pointer;
 public:
 	connection_lock(connection_ptr, release_func);
 	~connection_lock();
@@ -32,26 +34,26 @@ public:
 	connection_lock&
 	operator = (connection_lock&&) = delete;
 
-	connection_ptr
+	pointer
 	operator-> ()
 	{
-		return connection_;
+		return connection_.get();
 	}
-	connection_ptr
+	const_pointer
 	operator-> () const
 	{
-		return connection_;
+		return connection_.get();
 	}
 
-	connection_ptr
+	pointer
 	operator* ()
 	{
-		return connection_;
+		return connection_.get();
 	}
-	connection_ptr
+	const_pointer
 	operator* () const
 	{
-		return connection_;
+		return connection_.get();
 	}
 private:
 	connection_ptr connection_;
