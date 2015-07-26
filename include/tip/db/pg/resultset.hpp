@@ -1,8 +1,58 @@
 /**
- * result.hpp
+ *  @file tip/db/pg/resultset.hpp
  *
- *  Created on: 11 июля 2015 г.
- *     @author: zmij
+ *  @date Jul 11, 2015
+ *  @author: zmij
+ */
+
+/**
+ *  @page results Processing query results
+ *
+ *  Result set (@ref tip::db::pg::resultset) is passed to client via supplied
+ *  callback when a query receives results from the server.
+ *  A @ref tip::db::pg::resultset is an object that provides an interface
+ *  to reading and converting underlying data buffers. It is lightweight
+ *  and is designed to be copied around by value. It can be stored in memory
+ *  for later use.
+ *
+ *  A resultset object mimics standard container interface for the data rows.
+ *  It provides random access to data rows via indexing operator and random
+ *  access iterators.
+ *
+ *  Result set provides interface for reading field definitions.
+ *
+ *	### Checking the resultset
+ *
+ *	@code
+ *	if (res.size() > 0) {
+ *		// Process the result set
+ *	}
+ *	if (!result.empty()) {
+ *		// Process the result set
+ *	}
+ *	if (res) {
+ *		// Process the result set
+ *	}
+ *	@endcode
+ *
+ *	@todo document iterating row and fields
+ *	@todo document random access to rows in a resultset
+ *	@todo document field descriptions
+ *	@todo document row tie variadic interface
+ *	@todo document access by index and by name to fields in a row
+ *	@todo document field buffer conversion to other datatypes
+ *
+ *	@todo references to data parsers. documentation on data parsing and adding
+ *		datatype support.
+ *
+ *	@todo concept of an interface for a datatype that can be stored/retrieved
+ *		from the database. Template functions enabled for such an interface.
+ *	@todo non-select command results
+ *
+ *	@see @ref querying
+ *	@see tip::db::pg::resultset
+ *	@see tip::db::pg::query
+ *  @see tip::db::pg::field_definition
  */
 
 #ifndef TIP_DB_PG_RESULT_HPP_
@@ -28,7 +78,7 @@ struct result_impl;
 /**
  * Result set.
  * Provide access to rows via indexing operators (random access)
- * and bidirectional access via iterators.
+ * and bidirectional iteration access via iterators.
  * Access to field definitions.
  * @code
  * void
@@ -54,13 +104,17 @@ struct result_impl;
  */
 class resultset {
 public:
+	//@{
+	/** @name Size types definitions */
 	typedef uinteger	size_type;
 	typedef integer		difference_type;
+	//@}
 
 	class row;
 	class field;
 	class const_row_iterator;
 
+	/** Shared pointer to internal implementation */
 	typedef std::shared_ptr<detail::result_impl> result_impl_ptr;
 
 	//@{
@@ -78,11 +132,19 @@ public:
 	class const_field_iterator;
 	typedef std::reverse_iterator<const_field_iterator> const_reverse_field_iterator;
 	//@}
+private:
 	typedef resultset const* result_pointer;
-
+public:
 	static const size_type npos;
 public:
+	/**
+	 * Construct an empty resultset
+	 */
 	resultset();
+	/**
+	 * Constructs a resultset with the pointer to internal implementation
+	 * @param
+	 */
 	resultset(result_impl_ptr);
 	//@{
 	/** @name Row-wise container interface */
@@ -332,6 +394,14 @@ public:
 		bool
 		empty() const; /**< @brief Is field value empty (not null) */
 
+		/**
+		 * Parse the value buffer to the type specified by value passed as
+		 * target. Will throw a value_is_null exception if the field is null.
+		 * @tparam T type of target variable
+		 * @param val Target variable for the field value.
+		 * @return true if parsing the buffer was a success.
+		 * @exception tip::db::pg::value_is_null
+		 */
 		template < typename T >
 		bool
 		to( T& val ) const
@@ -342,6 +412,15 @@ public:
 					traits::has_parser<T, BINARY_DATA_FORMAT>() );
 		}
 
+		/**
+		 * Parse the value buffer to the type specified by value passed as
+		 * target. boost::optional is used as to specify a 'nullable' type
+		 * concept.
+		 * @tparam T type of target variable.
+		 * @param val Target variable for the field value.
+		 * @return true if parsing the buffer was a success.
+		 * @exception tip::db::pg::value_is_null
+		 */
 		template < typename T >
 		bool
 		to( boost::optional< T >& val ) const
@@ -358,8 +437,13 @@ public:
 			return false;
 		}
 
-		//template < typename T >
-
+		/**
+		 * Cast the field value to the type requested.
+		 * @tparam T requested data type
+		 * @return field buffer as requested data type
+		 * @exception tip::db::pg::value_is_null if the value is null and the
+		 * 	type requested is not 'nullable'.
+		 */
 		template < typename T >
 		typename std::decay<T>::type
 		as() const
@@ -367,6 +451,21 @@ public:
 			typename std::decay<T>::type val;
 			to(val);
 			return val;
+		}
+		/**
+		 * Cast the field value to the type requested. If the field is null
+		 * value passed as the parameter to the function will be returned.
+		 * @tparam T requested data type
+		 * @param default_val Value to return if the field is null
+		 * @return
+		 */
+		template < typename T >
+		typename std::decay<T>::type
+		coalesce(T const& default_val)
+		{
+			if (is_null())
+				return default_val;
+			return as< T >();
 		}
 	private:
 		template < typename T >
@@ -399,6 +498,7 @@ public:
 		friend class row;
 		field(result_pointer res, size_type row, row::size_type col) :
 			result_(res), row_index_(row), field_index_(col) {}
+
 		result_pointer 	result_;
 		size_type		row_index_;
 		row::size_type	field_index_;
@@ -524,11 +624,14 @@ public:
 	 */
 	class const_field_iterator : public field {
 	public:
+		//@{
+		/** @name Iterator concept */
 		typedef field value_type;
 		typedef resultset::difference_type difference_type;
 		typedef value_type reference;
 		typedef value_type const* pointer;
 		typedef std::random_access_iterator_tag iterator_category;
+		//@}
 	public:
 		/**
 		 * Create a terminating iterator

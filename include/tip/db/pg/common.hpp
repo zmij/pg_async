@@ -1,12 +1,13 @@
 /**
- * common.hpp
+ * @file tip/db/pg/common.hpp
  *
- *  Created on: 11 июля 2015 г.
- *     @author: zmij
+ *    @date Jul 11, 2015
+ *  @author zmij
  */
 
 /**
- * @page Datatype conversions
+ * @page conversions Datatype conversions
+ *
  *	## PostrgreSQL to C++ datatype conversions
  *
  *	### Numeric types

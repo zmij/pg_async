@@ -677,6 +677,11 @@ BOOST_AUTO_TEST_CASE(ResultParsingTest)
 						}
 						#endif
 					}
+					for (auto row: res) {
+						for (auto f : row) {
+							;
+						}
+					}
 				}
 			}, [&](db_error const&) {});
 

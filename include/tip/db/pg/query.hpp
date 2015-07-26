@@ -1,8 +1,20 @@
 /**
- * query.hpp
+ * @file tip/db/pg/query.hpp
  *
- *  Created on: 11 июля 2015 г.
- *     @author: zmij
+ *    @date Jul 11, 2015
+ *  @author zmij
+ */
+
+/**
+ *  @page querying Running queries
+ *  ## Simple queries
+ *
+ *  @todo document running simple queries asynchronously
+ *
+ *  ## Prepared queries
+ *
+ *  @todo document binding params and running prepared queries
+ *
  */
 
 #ifndef TIP_DB_PG_QUERY_HPP_
