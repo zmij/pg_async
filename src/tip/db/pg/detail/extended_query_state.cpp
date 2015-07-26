@@ -129,26 +129,23 @@ parse_state::do_enter()
 				<< logger::severity_color();
 	}
 
-	{
-		message parse(parse_tag);
-		parse.write(query_name_);
-		parse.write(query_);
-		parse.write( (smallint)param_types_.size() );
-		for (oids::type::oid_type oid : param_types_) {
-			parse.write( (integer)oid );
-		}
-		conn.send(parse);
+	message parse(parse_tag);
+	parse.write(query_name_);
+	parse.write(query_);
+	parse.write( (smallint)param_types_.size() );
+	for (oids::type::oid_type oid : param_types_) {
+		parse.write( (integer)oid );
 	}
-	{
-		message describe(describe_tag);
-		describe.write('S');
-		describe.write(query_name_);
-		conn.send(describe);
-	}
-	{
-		message sync(sync_tag);
-		conn.send(sync);
-	}
+
+	message describe(describe_tag);
+	describe.write('S');
+	describe.write(query_name_);
+	parse.pack(describe);
+
+	message sync(sync_tag);
+	parse.pack(sync);
+
+	conn.send(parse);
 }
 
 bool

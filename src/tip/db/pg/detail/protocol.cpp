@@ -101,13 +101,13 @@ message::backend_tags()
 }
 
 message::message() :
-		payload()
+		payload(), packed_(false)
 {
 	payload.reserve(256);
 }
 
 message::message(message_tag tag) :
-		payload(5, 0)
+		payload(5, 0), packed_(false)
 {
 	// TODO Check the tag
 	payload[0] = (char)tag;
@@ -142,11 +142,11 @@ message::length() const
 message::const_range
 message::buffer() const
 {
-	// Encode length of message
-	size_type len = size();
-	len = boost::endian::native_to_big(len);
-	unsigned char* p = reinterpret_cast<unsigned char*>(&len);
-	std::copy(p, p + sizeof(size_type), payload.begin() + 1);
+	if (!packed_) {
+		// Encode length of message
+		integer len = size();
+		protocol_write< BINARY_DATA_FORMAT >(payload.begin() + 1, len);
+	}
 
 	if (payload.front() == 0)
 		return std::make_pair(payload.begin() + 1, payload.end());
@@ -353,6 +353,8 @@ message::write(std::string const& s)
 void
 message::pack(message const& m)
 {
+	buffer(); // to write the length, if hasn't been packed already
+	packed_ = true;
 	payload.reserve(payload.size() + m.payload.size());
 	const_range r = m.buffer();
 	std::copy(r.first, r.second, std::back_inserter(payload));

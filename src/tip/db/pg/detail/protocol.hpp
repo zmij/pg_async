@@ -261,6 +261,7 @@ public:
 private:
 	mutable buffer_type	payload;
 	const_iterator curr_;
+	bool packed_;
 };
 
 struct row_data {
