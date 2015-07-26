@@ -380,6 +380,7 @@ public:
 			} else {
 				protocol_read< BINARY_DATA_FORMAT >(b.begin(), b.end(), val);
 			}
+			return true;
 		}
 
 		template < typename T >
