@@ -756,6 +756,6 @@ operator - (resultset::row const& a, resultset::row const& b)
 }  // namespace db
 }  // namespace tip
 
-
+#include <tip/db/pg/resultset.inl>
 
 #endif /* TIP_DB_PG_RESULT_HPP_ */

@@ -8,7 +8,7 @@
 #ifndef LIB_PG_ASYNC_INCLUDE_TIP_DB_PG_QUERY_INL_
 #define LIB_PG_ASYNC_INCLUDE_TIP_DB_PG_QUERY_INL_
 
-#include <tip/db/pg/query.inl>
+#include <tip/db/pg/query.hpp>
 #include <tip/util/meta_helpers.hpp>
 #include <tip/db/pg/protocol_io_traits.hpp>
 

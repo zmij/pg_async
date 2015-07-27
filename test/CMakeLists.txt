@@ -6,8 +6,10 @@
 cmake_minimum_required(VERSION 2.6)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-set (Boost_USE_STATIC_LIBS ON)
 find_package( Boost COMPONENTS 
-    unit_test_framework program_options
+    program_options
     REQUIRED )
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
 add_subdirectory(db)
