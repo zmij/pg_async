@@ -262,7 +262,7 @@ test_execute_prepared()
 		},  opts, {
 			{"client_encoding", "UTF8"},
 			{"application_name", "pg_async"},
-			{"client_min_messages", "debug5"}
+			//{"client_min_messages", "debug5"}
 		}));
 		io_service.run();
 	}

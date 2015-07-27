@@ -249,7 +249,10 @@ connection_base::handle_message(message_ptr m)
 	message_tag tag = m->tag();
     {
         local_log(logger::TRACE) << "Handle message "
-        		<< (char)tag << " state " << state_.name();
+        		<< (util::MAGENTA | util::BRIGHT)
+        		<< (char)tag
+        		<< logger::severity_color()
+        		<< " state " << state_.name();
     }
 	if (message::backend_tags().count(tag)) {
 		if (tag == error_response_tag) {

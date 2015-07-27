@@ -209,29 +209,26 @@ bind_state::bind_state(connection_base& conn,
 void
 bind_state::do_enter()
 {
-	{
-		message m(bind_tag);
-		m.write(std::string(""));
-		m.write(query_name_);
-		if (!params_.empty()) {
-			local_log() << "Params buffer size " << params_.size();
-			auto out = m.output();
-			std::copy( params_.begin(), params_.end(), out );
-		} else {
-			m.write((smallint)0); // parameter format codes
-			m.write((smallint)0); // number of parameters
-		}
-		connection_base::row_description const& row = conn.get_prepared_description(query_name_);
-		m.write((smallint)row.size()); // result format codes
-		for (auto fd : row) {
-			m.write((smallint)fd.format_code);
-		}
-		conn.send(m);
+	message bind(bind_tag);
+	bind.write(std::string(""));
+	bind.write(query_name_);
+	if (!params_.empty()) {
+		local_log() << "Params buffer size " << params_.size();
+		auto out = bind.output();
+		std::copy( params_.begin(), params_.end(), out );
+	} else {
+		bind.write((smallint)0); // parameter format codes
+		bind.write((smallint)0); // number of parameters
 	}
-	{
-		message m(sync_tag);
-		conn.send(m);
+	connection_base::row_description const& row = conn.get_prepared_description(query_name_);
+	bind.write((smallint)row.size()); // result format codes
+	for (auto fd : row) {
+		bind.write((smallint)fd.format_code);
 	}
+
+	message sync(sync_tag);
+	bind.pack(sync);
+	conn.send(bind);
 }
 
 bool
