@@ -95,7 +95,7 @@ TEST(QueryTest, SimpleMode)
 	}
 }
 
-TEST(QueryTest, ResultParsing)
+TEST(QueryTest, BasicResultParsing)
 {
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty() && !test::SCRIPT_SOURCE_DIR.empty()) {
@@ -128,7 +128,13 @@ TEST(QueryTest, ResultParsing)
 					local_log() << "Received a resultset. Columns: " << res.columns_size()
 							<< " rows: " << res.size() << " empty: " << res.empty();
 				}
+				EXPECT_TRUE(c.get());
 				if (!res.empty()) {
+					EXPECT_TRUE(res);
+					EXPECT_FALSE(res.empty());
+					EXPECT_TRUE(res.size());
+					EXPECT_TRUE(res.columns_size());
+
 					for (int i = 0; i < res.columns_size(); ++i) {
 						field_description const& fd = res.field(i);
 						local_log() << "Field " << fd.name << " type "

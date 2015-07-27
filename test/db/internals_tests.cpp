@@ -97,7 +97,7 @@ TEST( LiteralsTest, ConnectionString )
 	EXPECT_EQ("", opts.password);
 }
 
-TEST( DatabaseTest, Connection)
+TEST( ConnectionTest, Connect)
 {
 	using namespace tip::db::pg;
 	if (! test::environment::test_database.empty() ) {
@@ -122,7 +122,7 @@ TEST( DatabaseTest, Connection)
 	}
 }
 
-TEST( DatabaseTest, ConnectionPool )
+TEST( ConnectionTest, ConnectionPool )
 {
 	typedef std::shared_ptr< std::thread > thread_ptr;
 	typedef std::chrono::high_resolution_clock clock_type;
@@ -218,15 +218,65 @@ TEST( DatabaseTest, ConnectionPool )
 	}
 }
 
+TEST( ConnectionTest, ExecutePrepared )
+{
+	using namespace tip::db::pg;
+	if (!test::environment::test_database.empty()) {
+		connection_options opts = connection_options::parse(test::environment::test_database);
+
+		boost::asio::io_service io_service;
+		int queries = 0;
+
+		std::vector< oids::type::oid_type > param_types;
+		std::vector<char> params;
+		tip::db::pg::detail::write_params(param_types, params, 10, 20);
+
+		connection_ptr conn(connection::create(io_service,
+		[&](connection_ptr c) {
+			if (queries == 0) {
+				++queries;
+				c->begin_transaction(
+				[&](connection_lock_ptr c_lock){
+					(*c_lock)->execute_prepared(
+					"select * from pg_catalog.pg_type where typelem > $1 limit $2",
+					param_types, params,
+					[&](connection_lock_ptr c_lock, resultset r, bool complete) {
+						EXPECT_TRUE(r);
+						EXPECT_TRUE(r.size());
+						EXPECT_TRUE(r.columns_size());
+						EXPECT_FALSE(r.empty());
+						(*c_lock)->commit_transaction(c_lock,
+						[](connection_lock_ptr c_lock){
+							local_log() << "Transaction commited";
+						}, [](db_error const& ) {
+							local_log() << "Failed to commit transaction";
+						});
+					}, [&](db_error const& ) {
+					}, c_lock);
+				}, [](db_error const&) {
+				});
+			} else {
+				c->terminate();
+			}
+		}, [](connection_ptr c) {
+		}, [](connection_ptr c, connection_error const& ec) {
+
+		}, opts, {
+			{"client_encoding", "UTF8"},
+			{"application_name", "pg_async"},
+			{"client_min_messages", "debug5"}
+		}));
+		io_service.run();
+	}
+}
+
 TEST( TransactionTest, CleanExit )
 {
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions clean exit test";
-		#endif
 		boost::asio::io_service io_service;
 		int transactions = 0;
 		connection_ptr conn(connection::create(io_service,
@@ -330,9 +380,7 @@ TEST(TransactionTest, Autocommit)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
-		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions dirty terminate autocommit exit test";
-		#endif
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
 		connection_ptr conn(connection::create(io_service,
@@ -378,16 +426,12 @@ TEST(TransactionTest, DirtyUnlock)
 			if (!transactions) {
 				ASSERT_NO_THROW(c->begin_transaction(
 				[&](connection_lock_ptr c_lock){
-					#ifdef WITH_TIP_LOG
 					local_log() << "Transaction begin callback";
-					#endif
 					EXPECT_TRUE(c_lock.get());
 					EXPECT_TRUE((*c_lock)->in_transaction());
 					timer.async_wait([&](boost::system::error_code const& ec){
 						if (!ec) {
-							#ifdef WITH_TIP_LOG
 							local_log(logger::WARNING) << "Transaction dirty unlock test timer expired";
-							#endif
 							conn->terminate();
 						}
 					});

@@ -91,9 +91,7 @@ transaction_state::do_handle_message(message_ptr m)
 		case command_complete_tag: {
 			std::string stat;
 			m->read(stat);
-			#ifdef WITH_TIP_LOG
 			local_log(logger::DEBUG) << "Command is complete " << stat;
-			#endif
 
 			message_pending_ = false;
 

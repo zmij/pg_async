@@ -148,9 +148,7 @@ basic_state::do_begin_transaction(simple_callback const& cb,
 {
 	std::ostringstream msg;
 	msg << "Cannot start transaction in " << name() << " state";
-	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << msg.str();
-	#endif
 	if (!err)
 		throw query_error(msg.str());
 	else
@@ -163,9 +161,7 @@ basic_state::do_commit_transaction(simple_callback const& cb,
 {
 	std::ostringstream msg;
 	msg << "Cannot commit transaction in " << name() << " state";
-	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << msg.str();
-	#endif
 	if (!err)
 		throw query_error(msg.str());
 	else
@@ -178,9 +174,7 @@ basic_state::do_rollback_transaction(simple_callback const& cb,
 {
 	std::ostringstream msg;
 	msg << "Cannot rollback transaction in " << name() << " state";
-	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << msg.str();
-	#endif
 	if (!err)
 		throw query_error(msg.str());
 	else
@@ -288,10 +282,8 @@ state_stack::pop_state(basic_state* sender)
 		if (state.get() == sender) {
 			stack_.pop();
 		} else {
-			#ifdef WITH_TIP_LOG
 			local_log(logger::WARNING) << sender->name() << " trying to pop "
 					<< state->name();
-			#endif
 			state.reset();
 		}
 		//last_ = state->name();
@@ -345,6 +337,7 @@ state_stack::current()
 {
 	lock_type lock(mutex_);
 	assert(!stack_.empty() && "State stack is empty");
+	local_log() << "State stack size " << stack_.size();
 	return stack_.top();
 }
 
@@ -403,6 +396,15 @@ void
 state_stack::do_commit_transaction(simple_callback const& cb,
 		error_callback const& err)
 {
+	while (!stack_.empty()) {
+		state_ptr state = stack_.top();
+		if (std::dynamic_pointer_cast<transaction_state>(state)) {
+			break;
+		} else {
+			pop_state(state.get());
+		}
+	}
+
 	current()->commit_transaction(cb, err);
 }
 
@@ -410,6 +412,15 @@ void
 state_stack::do_rollback_transaction(simple_callback const& cb,
 		error_callback const& err)
 {
+	while (!stack_.empty()) {
+		state_ptr state = stack_.top();
+		if (std::dynamic_pointer_cast<transaction_state>(state)) {
+			break;
+		} else {
+			pop_state(state.get());
+		}
+	}
+
 	current()->rollback_transaction(cb, err);
 }
 

@@ -317,21 +317,53 @@ void
 connection_base::begin_transaction(simple_callback const& cb,
 		error_callback const& err, bool autocommit)
 {
-	state_.begin_transaction(cb, err, autocommit);
+	if (!in_transaction()) {
+		state_.begin_transaction(cb, err, autocommit);
+	} else {
+		std::ostringstream msg;
+		msg << "Cannot start transaction in " << state_.name() << " state";
+		local_log(logger::ERROR) << msg.str();
+		if (!err)
+			throw query_error(msg.str());
+		else
+			err(query_error(msg.str()));
+	}
 }
 
 void
 connection_base::commit_transaction(simple_callback const& cb,
 		error_callback const& err)
 {
-	state_.commit_transaction(cb, err);
+	if (in_transaction()) {
+		local_log() << "Commit transaction";
+		state_.commit_transaction(cb, err);
+	} else {
+		std::ostringstream msg;
+		msg << "Cannot commit transaction in " << state_.name() << " state";
+		local_log(logger::ERROR) << msg.str();
+		if (!err)
+			throw query_error(msg.str());
+		else
+			err(query_error(msg.str()));
+	}
 }
 
 void
 connection_base::rollback_transaction(simple_callback const& cb,
 		error_callback const& err)
 {
-	state_.rollback_transaction(cb, err);
+	if (in_transaction()) {
+		local_log() << "Rollback transaction";
+		state_.rollback_transaction(cb, err);
+	} else {
+		std::ostringstream msg;
+		msg << "Cannot rollback transaction in " << state_.name() << " state";
+		local_log(logger::ERROR) << msg.str();
+		if (!err)
+			throw query_error(msg.str());
+		else
+			err(query_error(msg.str()));
+	}
 }
 
 bool

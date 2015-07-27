@@ -226,8 +226,7 @@ bind_state::do_enter()
 		bind.write((smallint)fd.format_code);
 	}
 
-	message sync(sync_tag);
-	bind.pack(sync);
+	bind.pack(message(sync_tag));
 	conn.send(bind);
 }
 
@@ -261,16 +260,18 @@ execute_state::execute_state(connection_base& conn,
 void
 execute_state::do_enter()
 {
-	{
-		message m(describe_tag);
-		m.write('P');
-		m.write(portal_name_);
-		conn.send(m);
-	}
-	{
-		message m(sync_tag);
-		conn.send(m);
-	}
+	//result()->row_description() = conn.
+	message m(describe_tag);
+	m.write('P');
+	m.write(portal_name_);
+
+	message execute(execute_tag);
+	execute.write(portal_name_);
+	execute.write((integer)0); // row limit
+
+	m.pack(execute);
+	m.pack( message(sync_tag) );
+	conn.send(m);
 }
 
 bool
@@ -288,21 +289,19 @@ execute_state::do_handle_message(message_ptr m)
 					}
 					{
 						sync_sent_ = false;
-						message m(execute_tag);
-						m.write(portal_name_);
-						m.write((integer)0); // row limit
-						conn.send(m);
 					}
 
 				}
 				return true;
 			}
 			case command_complete_tag: {
-				{
-					local_log() << "Command complete in execute state";
+				if (!exited) {
+					{
+						local_log() << "Command complete in execute state";
+					}
+					conn.pop_state(this);
+					conn.state()->handle_message(m);
 				}
-				conn.pop_state(this);
-				conn.state()->handle_message(m);
 				return true;
 			}
 			default:
@@ -316,22 +315,22 @@ void
 execute_state::on_package_complete(size_t bytes)
 {
 	fetch_state::on_package_complete(bytes);
-	{
-		local_log() << "Package complete in execute state";
-	}
-	if (!result_) {
-		message m(sync_tag);
-		conn.send(m);
-		prev_rows_ = 0;
-		local_log() << "Send sync";
-	} else if (result_) {
-		if (result_->size() == prev_rows_) {
-			message m(sync_tag);
-			conn.send(m);
-			local_log() << "Send sync";
-		}
-		prev_rows_ = result_->size();
-	}
+//	{
+//		local_log() << "Package complete in execute state";
+//	}
+//	if (!result_) {
+//		message m(sync_tag);
+//		conn.send(m);
+//		prev_rows_ = 0;
+//		local_log() << "Send sync";
+//	} else if (result_) {
+//		if (result_->size() == prev_rows_) {
+//			message m(sync_tag);
+//			conn.send(m);
+//			local_log() << "Send sync";
+//		}
+//		prev_rows_ = result_->size();
+//	}
 //	if (!complete_ && !sync_sent_) {
 //		message m(sync_tag);
 //		conn.send(m);
