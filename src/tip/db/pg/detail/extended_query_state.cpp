@@ -72,15 +72,18 @@ extended_query_state::do_handle_message(message_ptr m)
 			}
 			return true;
 		}
-		case command_complete_tag: {
-			conn.pop_state(this);
-			conn.state()->handle_message(m);
-			return true;
-		}
 		default:
 			break;
 	}
 	return false;
+}
+
+bool
+extended_query_state::do_handle_complete(command_complete_message const& m)
+{
+	conn.pop_state(this);
+	conn.state()->handle_complete(m);
+	return true;
 }
 
 void
@@ -278,7 +281,7 @@ bool
 execute_state::do_handle_message(message_ptr m)
 {
 	message_tag tag = m->tag();
-	if (fetch_state::do_handle_message(m) && tag != command_complete_tag) {
+	if (fetch_state::do_handle_message(m)) {
 		return true;
 	} else {
 		switch (tag) {
@@ -294,21 +297,25 @@ execute_state::do_handle_message(message_ptr m)
 				}
 				return true;
 			}
-			case command_complete_tag: {
-				if (!exited) {
-					{
-						local_log() << "Command complete in execute state";
-					}
-					conn.pop_state(this);
-					conn.state()->handle_message(m);
-				}
-				return true;
-			}
 			default:
 				break;
 		}
 	}
 	return false;
+}
+
+bool
+execute_state::do_handle_complete(command_complete_message const& m)
+{
+	fetch_state::do_handle_complete(m);
+	if (!exited) {
+		{
+			local_log() << "Command complete in execute state";
+		}
+		conn.pop_state(this);
+		return conn.state()->handle_complete(m);
+	}
+	return true;
 }
 
 void

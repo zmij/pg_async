@@ -44,7 +44,7 @@ target_link_libraries(
 
 if (TEST_DATABASE)
     set(TEST_ARGS
-        -b'${TEST_DATABASE}' -s2 -x8 -q10 --run-deadline=1
+        -b'${TEST_DATABASE}' -s2 -x4 -q10 --run-deadline=1
     )
 else()
     set(TEST_ARGS)

@@ -25,6 +25,8 @@ public:
 private:
 	virtual bool
 	do_handle_message(message_ptr);
+	virtual bool
+	do_handle_complete( command_complete_message const& );
 
 	virtual bool
 	do_handle_error(notice_message const& msg);

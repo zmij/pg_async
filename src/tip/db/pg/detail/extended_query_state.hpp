@@ -35,6 +35,8 @@ private:
 	get_state() const { return connection::BUSY; }
 	virtual bool
 	do_handle_message(message_ptr);
+	virtual bool
+	do_handle_complete( command_complete_message const& );
 private:
 	enum stage_type {
 		PARSE,
@@ -120,6 +122,8 @@ private:
 	get_state() const { return connection::BUSY; }
 	virtual bool
 	do_handle_message(message_ptr);
+	virtual bool
+	do_handle_complete( command_complete_message const& );
 	virtual void
 	on_package_complete(size_t bytes);
 private:

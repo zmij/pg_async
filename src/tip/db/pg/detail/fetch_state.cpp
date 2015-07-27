@@ -81,30 +81,31 @@ fetch_state::do_handle_message(message_ptr m)
 			}
 			return true;
 		}
-		case command_complete_tag: {
-			complete_ = true;
-			std::string stat;
-			m->read(stat);
-			resultset res(result());
-			#ifdef WITH_TIP_LOG
-			local_log(logger::DEBUG) << "Command is complete " << stat
-					<< " resultset columns " << res.columns_size()
-					<< " rows " << res.size();
-			#endif
-			// TODO Add the stat to result
-			if (callback_) {
-				callback_(resultset(result()), true);
-			} else {
-				local_log(logger::WARNING) << "No results callback";
-			}
-			result_.reset();
-			return true;
-		}
 		default:
 			break;
 	}
 	return false;
 }
+
+bool
+fetch_state::do_handle_complete( command_complete_message const& m)
+{
+	complete_ = true;
+	std::string stat;
+	resultset res(result());
+	local_log(logger::DEBUG) << "Command is complete " << m.command_tag
+			<< " resultset columns " << res.columns_size()
+			<< " rows " << res.size();
+	// TODO Add the stat to result
+	if (callback_) {
+		callback_(resultset(result()), true);
+	} else {
+		local_log(logger::WARNING) << "No results callback";
+	}
+	result_.reset();
+	return true;
+}
+
 
 void
 fetch_state::on_package_complete(size_t bytes)

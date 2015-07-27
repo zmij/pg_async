@@ -88,19 +88,6 @@ transaction_state::do_handle_message(message_ptr m)
 {
 	message_tag tag = m->tag();
 	switch (tag) {
-		case command_complete_tag: {
-			std::string stat;
-			m->read(stat);
-			local_log(logger::DEBUG) << "Command is complete " << stat;
-
-			message_pending_ = false;
-
-			if (complete_ && !exited) {
-				local_log() << "Pop state from handle message";
-				conn.pop_state(this);
-			}
-			return true;
-		}
 		case ready_for_query_tag: {
 			if (command_complete_) {
 				simple_callback cb = command_complete_;
@@ -113,6 +100,20 @@ transaction_state::do_handle_message(message_ptr m)
 			break;
 	}
 	return false;
+}
+
+bool
+transaction_state::do_handle_complete( command_complete_message const& m )
+{
+	local_log(logger::DEBUG) << "Command is complete " << m.command_tag;
+
+	message_pending_ = false;
+
+	if (complete_ && !exited) {
+		local_log() << "Pop state from handle message";
+		conn.pop_state(this);
+	}
+	return true;
 }
 
 bool

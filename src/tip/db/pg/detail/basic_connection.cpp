@@ -255,57 +255,60 @@ connection_base::handle_message(message_ptr m)
         		<< " state " << state_.name();
     }
 	if (message::backend_tags().count(tag)) {
-		if (tag == error_response_tag) {
-			notice_message msg;
-			m->read(msg);
+		switch(tag) {
+			case error_response_tag: {
+				notice_message msg;
+				m->read(msg);
 
-			if (!state_.handle_error(msg)) {
-				#ifdef WITH_TIP_LOG
-				local_log(logger::ERROR)
-						<< "Error " << msg << " is not handled in "
-						<< state_.name() << " state";
-				#endif
+				if (!state_.handle_error(msg)) {
+					local_log(logger::ERROR)
+							<< "Error " << msg << " is not handled in "
+							<< state_.name() << " state";
+				}
+				break;
 			}
+			case parameter_status_tag: {
+				std::string key;
+				std::string value;
 
-		} else {
-			switch(tag) {
-				// TODO Handle server general messages
-				case parameter_status_tag: {
-					std::string key;
-					std::string value;
+				m->read(key);
+				m->read(value);
 
-					m->read(key);
-					m->read(value);
-
-					//local_log() << "Parameter " << key << " = " << value;
-					settings_[key] = value;
-					break;
+				//local_log() << "Parameter " << key << " = " << value;
+				settings_[key] = value;
+				break;
+			}
+			case backend_key_data_tag: {
+				m->read(serverPid_);
+				m->read(serverSecret_);
+				//local_log() << "Server pid: " << serverPid_ << " secret: " << serverSecret_;
+				break;
+			}
+			case notice_response_tag : {
+				notice_message msg;
+				m->read(msg);
+				local_log(logger::INFO) << "Notice " << msg;
+				break;
+			}
+			case command_complete_tag: {
+				command_complete_message complete;
+				m->read(complete.command_tag);
+				if (!state_.handle_complete(complete)) {
+					local_log(logger::WARNING) << "Command complete ("
+							<< complete.command_tag << ") is not handled in "
+							<< state_.name() << " state";
 				}
-				case backend_key_data_tag: {
-					m->read(serverPid_);
-					m->read(serverSecret_);
-					//local_log() << "Server pid: " << serverPid_ << " secret: " << serverSecret_;
-					break;
-				}
-				case notice_response_tag : {
-					notice_message msg;
-					m->read(msg);
-
+				break;
+			}
+			default: {
+				if (!state_.handle_message(m)) {
 					#ifdef WITH_TIP_LOG
-					local_log(logger::INFO) << "Notice " << msg;
+					local_log(logger::WARNING) << "Tag '" << (char)tag
+							<< "' is not handled in " << state_.name()
+							<< " state";
 					#endif
-					break;
 				}
-				default: {
-					if (!state_.handle_message(m)) {
-						#ifdef WITH_TIP_LOG
-						local_log(logger::WARNING) << "Tag '" << (char)tag
-								<< "' is not handled in " << state_.name()
-								<< " state";
-						#endif
-					}
-					break;
-				}
+				break;
 			}
 		}
 	} else {

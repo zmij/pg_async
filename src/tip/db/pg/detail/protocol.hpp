@@ -345,6 +345,10 @@ struct notice_message {
 std::ostream&
 operator << (std::ostream&, notice_message const&);
 
+struct command_complete_message {
+	std::string command_tag;
+};
+
 }  // namespace detail
 }  // namespace pg
 }  // namespace db

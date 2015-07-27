@@ -99,6 +99,12 @@ basic_state::handle_error(notice_message const& m)
 	return do_handle_error(m);
 }
 
+bool
+basic_state::handle_complete(command_complete_message const& m)
+{
+	return do_handle_complete(m);
+}
+
 void
 basic_state::package_complete(size_t bytes)
 {
@@ -371,6 +377,12 @@ bool
 state_stack::do_handle_error(notice_message const& m)
 {
 	return current()->handle_error(m);
+}
+
+bool
+state_stack::do_handle_complete(command_complete_message const& m)
+{
+	return current()->handle_complete(m);
 }
 
 void
