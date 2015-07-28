@@ -57,20 +57,20 @@ TEST(QueryTest, SimpleMode)
 		connection_options opts = connection_options::parse(test::environment::test_database);
 		{
 			query (opts.alias, "create temporary table pg_async_test(b bigint)", true).run_async(
-			[&](connection_lock_ptr c, resultset, bool){
+			[&](transaction_ptr c, resultset, bool){
 				local_log() << "Query one finished";
 				EXPECT_TRUE(c.get());
 				query(c, "insert into pg_async_test values(1),(2),(3)").run_async(
-				[&](connection_lock_ptr c, resultset, bool){
+				[&](transaction_ptr c, resultset, bool){
 					local_log() << "Query two finished";
 					EXPECT_TRUE(c.get());
 					query(c, "select * from pg_async_test").run_async(
-					[&](connection_lock_ptr c, resultset r, bool) {
+					[&](transaction_ptr c, resultset r, bool) {
 						local_log() << "Query three finished";
 						EXPECT_TRUE(c.get());
 						res = r;
 						query(c, "drop table pg_async_test").run_async(
-						[&](connection_lock_ptr c, resultset r, bool) {
+						[&](transaction_ptr c, resultset r, bool) {
 							local_log() << "Query four finished";
 							EXPECT_TRUE(c.get());
                             timer.cancel();
@@ -123,7 +123,7 @@ TEST(QueryTest, BasicResultParsing)
 			}
 			connection_options opts = connection_options::parse(test::environment::test_database);
 			query(opts.alias, script_str).run_async(
-			[&](connection_lock_ptr c, resultset res, bool complete) {
+			[&](transaction_ptr c, resultset res, bool complete) {
 				{
 					local_log() << "Received a resultset. Columns: " << res.columns_size()
 							<< " rows: " << res.size() << " empty: " << res.empty();

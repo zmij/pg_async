@@ -79,14 +79,14 @@ db_service::add_connection(std::string const& connection_string, optional_size)
 
 void
 db_service::get_connection_async(std::string const& connection_string,
-		connection_lock_callback const& result, error_callback const& error)
+		transaction_callback const& result, error_callback const& error)
 {
 	impl()->get_connection(connection_string, result, error);
 }
 
 void
 db_service::get_connection_async(dbalias const& alias,
-		connection_lock_callback const& result,
+		transaction_callback const& result,
 		error_callback const& error)
 {
 	impl()->get_connection(alias, result, error);

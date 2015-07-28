@@ -116,12 +116,12 @@ void
 connection::execute_query(std::string const& query,
 		result_callback const& cb,
 		error_callback const& err,
-		connection_lock_ptr l)
+		transaction_ptr t)
 {
 	pimpl_->execute_query(query,
 			std::bind(&connection::query_executed,
 					shared_from_this(), cb,
-					std::placeholders::_1, std::placeholders::_2, l),
+					std::placeholders::_1, std::placeholders::_2, t),
 			err);
 }
 
@@ -131,14 +131,14 @@ connection::execute_prepared(std::string const& query,
 				buffer_type const& params,
 				result_callback const& cb,
 				error_callback const& err,
-				connection_lock_ptr l)
+				transaction_ptr t)
 {
 	pimpl_->execute_prepared(query,
 			param_types,
 			params,
 			std::bind(&connection::query_executed,
 					shared_from_this(), cb,
-					std::placeholders::_1, std::placeholders::_2, l),
+					std::placeholders::_1, std::placeholders::_2, t),
 			err);
 }
 
@@ -148,11 +148,11 @@ connection::terminate()
 	pimpl_->terminate();
 }
 
-connection_lock_ptr
+transaction_ptr
 connection::lock()
 {
 	pimpl_->lock();
-	return connection_lock_ptr(new detail::connection_lock( shared_from_this(),
+	return transaction_ptr(new detail::connection_lock( shared_from_this(),
 			boost::bind(&connection::unlock, shared_from_this() )));
 }
 
@@ -163,7 +163,7 @@ connection::unlock()
 }
 
 void
-connection::begin_transaction(connection_lock_callback const& cb,
+connection::begin_transaction(transaction_callback const& cb,
 		error_callback const& err, bool autocommit)
 {
 	pimpl_->begin_transaction(
@@ -173,21 +173,21 @@ connection::begin_transaction(connection_lock_callback const& cb,
 }
 
 void
-connection::commit_transaction(connection_lock_ptr l,
-		connection_lock_callback const& cb, error_callback const& err)
+connection::commit_transaction(transaction_ptr t,
+		transaction_callback const& cb, error_callback const& err)
 {
 	pimpl_->commit_transaction(
-			std::bind(&connection::transaction_finished, shared_from_this(), l, cb),
+			std::bind(&connection::transaction_finished, shared_from_this(), t, cb),
 			err
 	);
 }
 
 void
-connection::rollback_transaction(connection_lock_ptr l,
-		connection_lock_callback const& cb, error_callback const& err)
+connection::rollback_transaction(transaction_ptr t,
+		transaction_callback const& cb, error_callback const& err)
 {
 	pimpl_->rollback_transaction(
-			std::bind(&connection::transaction_finished, shared_from_this(), l, cb),
+			std::bind(&connection::transaction_finished, shared_from_this(), t, cb),
 			err
 	);
 }
@@ -218,21 +218,22 @@ connection::implementation_error(connection_error_callback handler, connection_e
 }
 
 void
-connection::transaction_started(connection_lock_callback cb)
+connection::transaction_started(transaction_callback cb)
 {
 	cb(lock());
 }
 
 void
-connection::transaction_finished(connection_lock_ptr l, connection_lock_callback cb)
+connection::transaction_finished(transaction_ptr t, transaction_callback cb)
 {
-	cb(l);
+	cb(t);
 }
 
 void
-connection::query_executed(result_callback cb, resultset r, bool complete, connection_lock_ptr l)
+connection::query_executed(result_callback cb, resultset r, bool complete, transaction_ptr t)
 {
-	cb(l ? l : lock(), r, complete);
+	// FIXME No default transaction
+	cb(t ? t : lock(), r, complete);
 }
 
 }  // namespace pg

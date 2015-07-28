@@ -166,13 +166,13 @@ TEST( ConnectionTest, ConnectionPool )
 				int t_no = t;
 				for (int i = 0; i < req_count; ++i) {
 					pool->get_connection(
-					[&] (connection_lock_ptr c) {
+					[&] (transaction_ptr c) {
 						int req_no = i;
 						EXPECT_TRUE(c.get());
 						local_log(logger::TRACE) << "Obtained connection thread  "
 								<< t_no << " request " << req_no;
 						(*c)->execute_query( "select * from pg_catalog.pg_class",
-						[&] (connection_lock_ptr c, resultset r, bool complete) {
+						[&] (transaction_ptr c, resultset r, bool complete) {
 							EXPECT_TRUE(c.get());
 							if (complete)
 								++res_count;
@@ -236,17 +236,17 @@ TEST( ConnectionTest, ExecutePrepared )
 			if (queries == 0) {
 				++queries;
 				c->begin_transaction(
-				[&](connection_lock_ptr c_lock){
+				[&](transaction_ptr c_lock){
 					(*c_lock)->execute_prepared(
 					"select * from pg_catalog.pg_type where typelem > $1 limit $2",
 					param_types, params,
-					[&](connection_lock_ptr c_lock, resultset r, bool complete) {
+					[&](transaction_ptr c_lock, resultset r, bool complete) {
 						EXPECT_TRUE(r);
 						EXPECT_TRUE(r.size());
 						EXPECT_TRUE(r.columns_size());
 						EXPECT_FALSE(r.empty());
 						(*c_lock)->commit_transaction(c_lock,
-						[](connection_lock_ptr c_lock){
+						[](transaction_ptr c_lock){
 							local_log() << "Transaction commited";
 						}, [](db_error const& ) {
 							local_log() << "Failed to commit transaction";
@@ -282,30 +282,30 @@ TEST( TransactionTest, CleanExit )
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_THROW(
-					c->commit_transaction( connection_lock_ptr(), connection_lock_callback(), error_callback() ),
+					c->commit_transaction( transaction_ptr(), transaction_callback(), error_callback() ),
 					db_error
 			);
 			{
 				bool error_callback_fired = false;
 				ASSERT_NO_THROW(
 				c->commit_transaction(
-				connection_lock_ptr(),
-				connection_lock_callback(),
+				transaction_ptr(),
+				transaction_callback(),
 				[&]( db_error const& err ) {
 					error_callback_fired = true;
 				}));
 				EXPECT_TRUE(error_callback_fired);
 			}
 			ASSERT_THROW(
-					c->rollback_transaction( connection_lock_ptr(), connection_lock_callback(), error_callback() ),
+					c->rollback_transaction( transaction_ptr(), transaction_callback(), error_callback() ),
 					db_error
 			);
 			{
 				bool error_callback_fired = false;
 				ASSERT_NO_THROW(
 				c->rollback_transaction(
-				connection_lock_ptr(),
-				connection_lock_callback(),
+				transaction_ptr(),
+				transaction_callback(),
 				[&]( db_error const& err ) {
 					error_callback_fired = true;
 				}));
@@ -313,12 +313,12 @@ TEST( TransactionTest, CleanExit )
 			}
 			if (!transactions) {
 				ASSERT_NO_THROW(c->begin_transaction(
-				[&](connection_lock_ptr c_lock){
+				[&](transaction_ptr c_lock){
 					EXPECT_TRUE(c_lock.get());
 					EXPECT_TRUE((*c_lock)->in_transaction());
 					ASSERT_NO_THROW(
 					(*c_lock)->commit_transaction(c_lock,
-					[&](connection_lock_ptr c_lock){
+					[&](transaction_ptr c_lock){
 						(*c_lock)->terminate();
 					}, [&](db_error const&) {
 						(*c_lock)->terminate();
@@ -354,7 +354,7 @@ TEST(TransactionTest, DirtyTerminate)
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_NO_THROW(c->begin_transaction(
-			[&](connection_lock_ptr c_lock){
+			[&](transaction_ptr c_lock){
 				EXPECT_TRUE(c_lock.get());
 				EXPECT_TRUE((*c_lock)->in_transaction());
 
@@ -386,7 +386,7 @@ TEST(TransactionTest, Autocommit)
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_NO_THROW(c->begin_transaction(
-			[&](connection_lock_ptr c_lock){
+			[&](transaction_ptr c_lock){
 				EXPECT_TRUE(c_lock.get());
 				EXPECT_TRUE((*c_lock)->in_transaction());
 
@@ -425,7 +425,7 @@ TEST(TransactionTest, DirtyUnlock)
 		[&](connection_ptr c) {
 			if (!transactions) {
 				ASSERT_NO_THROW(c->begin_transaction(
-				[&](connection_lock_ptr c_lock){
+				[&](transaction_ptr c_lock){
 					local_log() << "Transaction begin callback";
 					EXPECT_TRUE(c_lock.get());
 					EXPECT_TRUE((*c_lock)->in_transaction());
@@ -466,11 +466,11 @@ TEST(TransactionTest, Query)
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_NO_THROW(c->begin_transaction(
-			[&](connection_lock_ptr c_lock){
+			[&](transaction_ptr c_lock){
 				EXPECT_TRUE(c_lock.get());
 				EXPECT_TRUE((*c_lock)->in_transaction());
 				(*c_lock)->execute_query( "select * from pg_catalog.pg_class",
-				[&] (connection_lock_ptr c_lock, resultset r, bool complete) {
+				[&] (transaction_ptr c_lock, resultset r, bool complete) {
 					local_log() << "Received a resultset columns: " << r.columns_size()
 							<< " rows: " << r.size()
 							<< " completed: " << std::boolalpha << complete;
@@ -500,7 +500,7 @@ TEST(DatabaseTest, Service)
 	using namespace tip::db::pg;
 	ASSERT_THROW(
 			db_service::get_connection_async("notthere"_db,
-					connection_lock_callback(), error_callback()),
+					transaction_callback(), error_callback()),
 					std::runtime_error);
 
 	if (!test::environment::test_database.empty()) {
@@ -526,7 +526,7 @@ TEST(DatabaseTest, Service)
 		});
 
 		db_service::get_connection_async(test::environment::test_database,
-		[&](connection_lock_ptr c){
+		[&](transaction_ptr c){
             timer.cancel();
 			db_service::stop();
 		}, [](db_error const& ec) {

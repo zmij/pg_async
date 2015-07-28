@@ -38,7 +38,7 @@ public:
 	typedef std::vector<connection_ptr> connections_container;
 	typedef std::queue<connection_ptr> connections_queue;
 
-	typedef std::pair<connection_lock_callback, error_callback> request_callbacks;
+	typedef std::pair<transaction_callback, error_callback> request_callbacks;
 	typedef std::queue< request_callbacks > request_callbacks_queue;
 
 	typedef std::recursive_mutex mutex_type;
@@ -64,7 +64,7 @@ public:
 	{ return co_.alias; }
 
 	void
-	get_connection(connection_lock_callback const&, error_callback const&);
+	get_connection(transaction_callback const&, error_callback const&);
 
 	void
 	close();

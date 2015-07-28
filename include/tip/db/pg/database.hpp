@@ -100,7 +100,7 @@ public:
 	 * @param error callback function that will be called in case of an error.
 	 */
 	static void
-	get_connection_async(std::string const&, connection_lock_callback const&,
+	get_connection_async(std::string const&, transaction_callback const&,
 			error_callback const&);
 
 	/**
@@ -113,7 +113,7 @@ public:
 	 * @param error callback function that will be called in case of an error.
 	 */
 	static void
-	get_connection_async(dbalias const&, connection_lock_callback const&,
+	get_connection_async(dbalias const&, transaction_callback const&,
 			error_callback const&);
 
 	static void

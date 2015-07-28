@@ -57,7 +57,7 @@ main(int argc, char* argv[])
 			#endif
 			if (!query_count && argc > 2) {
 				c->execute_query(argv[2],
-					[](connection_lock_ptr c, resultset res, bool complete) {
+					[](transaction_ptr c, resultset res, bool complete) {
 					#ifdef WITH_TIP_LOG
 					tip::log::local local = local_log(logger::INFO);
 					local << "Received a result set:\n";

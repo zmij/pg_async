@@ -37,7 +37,7 @@ using tip::log::logger;
 
 struct query::impl : std::enable_shared_from_this<query::impl> {
 	dbalias alias_;
-	connection_lock_ptr conn_;
+	transaction_ptr conn_;
 	std::string expression_;
 
 	bool start_tran_;
@@ -53,7 +53,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	{
 	}
 
-	impl(connection_lock_ptr conn, std::string const& expression)
+	impl(transaction_ptr conn, std::string const& expression)
 		: alias_{}, conn_(conn), expression_(expression),
 		  start_tran_(false), autocommit_(false)
 	{
@@ -83,7 +83,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 		}
 	}
 	void
-	handle_get_connection(connection_lock_ptr c,
+	handle_get_connection(transaction_ptr c,
 			query_result_callback const& res,
 			error_callback const& err)
 	{
@@ -101,7 +101,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	void
-	handle_get_transaction(connection_lock_ptr c,
+	handle_get_transaction(transaction_ptr c,
 			query_result_callback const& res,
 			error_callback const& err)
 	{
@@ -148,7 +148,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	void
-	handle_get_results(connection_lock_ptr c, resultset r, bool complete,
+	handle_get_results(transaction_ptr c, resultset r, bool complete,
 			query_result_callback const& res)
 	{
 		conn_ = c;
@@ -161,7 +161,7 @@ query::query(dbalias const& alias, std::string const& expression,
 	: pimpl_(new impl(alias, expression, start_tran, autocommit))
 {
 }
-query::query(connection_lock_ptr c, std::string const& expression)
+query::query(transaction_ptr c, std::string const& expression)
 	: pimpl_(new impl(c, expression))
 {
 }
@@ -185,7 +185,7 @@ query::operator ()(query_result_callback const& res, error_callback const& err)
 	run_async(res, err);
 }
 
-connection_lock_ptr
+transaction_ptr
 query::connection()
 {
 	return pimpl_->conn_;
@@ -199,7 +199,7 @@ query::create_impl(dbalias const& alias, std::string const& expression,
 }
 
 void
-query::create_impl(connection_lock_ptr c, std::string const& expression)
+query::create_impl(transaction_ptr c, std::string const& expression)
 {
 	pimpl_.reset(new impl(c, expression));
 }

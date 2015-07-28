@@ -270,7 +270,7 @@ struct query_error;
 namespace detail {
 struct connection_lock;
 }  // namespace detail
-typedef std::shared_ptr<detail::connection_lock> connection_lock_ptr;
+typedef std::shared_ptr<detail::connection_lock> transaction_ptr;
 typedef std::shared_ptr<connection> connection_ptr;
 //@}
 
@@ -278,10 +278,10 @@ typedef std::function< void () > simple_callback;
 /** Callback for error handling */
 typedef std::function< void (db_error const&) > error_callback;
 /** Callback for connection acquiring */
-typedef std::function< void (connection_lock_ptr) > connection_lock_callback;
+typedef std::function< void (transaction_ptr) > transaction_callback;
 
 /** Callback for query results */
-typedef std::function< void (connection_lock_ptr, resultset, bool) > query_result_callback;
+typedef std::function< void (transaction_ptr, resultset, bool) > query_result_callback;
 typedef std::function< void (query_error const&) > query_error_callback;
 
 typedef std::function< void (connection_ptr) > connection_event_callback;

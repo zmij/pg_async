@@ -314,10 +314,10 @@ query::query(dbalias const& alias, std::string const& expression,
 }
 
 template < typename ... T >
-query::query(connection_lock_ptr c, std::string const& expression,
+query::query(transaction_ptr t, std::string const& expression,
 		T const& ... params)
 {
-	create_impl(c, expression);
+	create_impl(t, expression);
 	bind_params(params ...);
 }
 

@@ -113,7 +113,7 @@ database_impl::add_pool(connection_options const& co,
 
 void
 database_impl::get_connection(std::string const& connection_string,
-		connection_lock_callback const& cb,
+		transaction_callback const& cb,
 		error_callback const& err)
 {
 	connection_options co = connection_options::parse(connection_string);
@@ -135,7 +135,7 @@ database_impl::get_connection(std::string const& connection_string,
 
 void
 database_impl::get_connection(dbalias const& alias,
-		connection_lock_callback const& cb,
+		transaction_callback const& cb,
 		error_callback const& err)
 {
 	if (!connections_.count(alias)) {

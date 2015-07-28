@@ -71,7 +71,7 @@ public:
 	 * @param connection
 	 * @param expression
 	 */
-	query(connection_lock_ptr, std::string const& expression);
+	query(transaction_ptr, std::string const& expression);
 	/**
 	 * Construct a prepared query with params to bind
 	 * @param
@@ -79,7 +79,7 @@ public:
 	 * @param params
 	 */
 	template < typename ... T >
-	query(connection_lock_ptr, std::string const& expression,
+	query(transaction_ptr, std::string const& expression,
 			T const& ... params);
 
 	/**
@@ -108,7 +108,7 @@ public:
 	void
 	operator()(query_result_callback const&, error_callback const&);
 
-	connection_lock_ptr
+	transaction_ptr
 	connection();
 private:
 	typedef std::vector< oids::type::oid_type > type_oid_sequence;
@@ -118,7 +118,7 @@ private:
 	create_impl(dbalias const&, std::string const& expression,
 			bool start_tran, bool autocommit);
 	void
-	create_impl(connection_lock_ptr, std::string const& expression);
+	create_impl(transaction_ptr, std::string const& expression);
 	type_oid_sequence&
 	param_types();
 	params_buffer&

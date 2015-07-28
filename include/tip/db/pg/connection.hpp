@@ -79,17 +79,17 @@ public:
 	void
 	terminate();
 
-	connection_lock_ptr
+	transaction_ptr
 	lock();
 
 	void
-	begin_transaction(connection_lock_callback const&, error_callback const&,
+	begin_transaction(transaction_callback const&, error_callback const&,
 			bool autocommit = false);
 	void
-	commit_transaction(connection_lock_ptr, connection_lock_callback const&,
+	commit_transaction(transaction_ptr, transaction_callback const&,
 			error_callback const&);
 	void
-	rollback_transaction(connection_lock_ptr, connection_lock_callback const&,
+	rollback_transaction(transaction_ptr, transaction_callback const&,
 			error_callback const&);
 
 	bool
@@ -99,14 +99,14 @@ public:
 	execute_query(std::string const& query,
 			result_callback const& cb,
 			error_callback const& err,
-			connection_lock_ptr l = connection_lock_ptr());
+			transaction_ptr t = transaction_ptr());
 	void
 	execute_prepared(std::string const& query,
 			type_oid_sequence const& param_types,
 			buffer_type const& params,
 			result_callback const& cb,
 			error_callback const& err,
-			connection_lock_ptr l = connection_lock_ptr());
+			transaction_ptr t = transaction_ptr());
 private:
 	typedef std::shared_ptr<detail::connection_base> pimpl;
 
@@ -119,12 +119,12 @@ private:
 	implementation_error(connection_error_callback err,
 			connection_error const& ec);
 	void
-	transaction_started(connection_lock_callback);
+	transaction_started(transaction_callback);
 	void
-	transaction_finished(connection_lock_ptr, connection_lock_callback);
+	transaction_finished(transaction_ptr, transaction_callback);
 	void
 	query_executed(result_callback cb, resultset r,
-			bool complete, connection_lock_ptr);
+			bool complete, transaction_ptr);
 
 	pimpl pimpl_;
 };

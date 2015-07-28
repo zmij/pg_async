@@ -72,11 +72,11 @@ test_execute_prepared()
 		[&](connection_ptr c) {
 			if (!tran_count) {
 				c->begin_transaction(
-				[&](connection_lock_ptr c_lock){
+				[&](transaction_ptr c_lock){
 					tran_count++;
 					(*c_lock)->execute_prepared("select * from pg_catalog.pg_type where typelem > $1 limit $2",
 					param_types, params,
-					[&](connection_lock_ptr c, resultset r, bool complete) {
+					[&](transaction_ptr c, resultset r, bool complete) {
 						local_log() << "Received a resultset columns: " << r.columns_size()
 								<< " rows: " << r.size()
 								<< " completed: " << std::boolalpha << complete;
