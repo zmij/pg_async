@@ -84,7 +84,8 @@ public:
 			optional_size = optional_size());
 
 	/**
-	 * Create a connection or retrieve a connection from the connection pool.
+	 * Create a connection or retrieve a connection from the connection pool
+	 * and start a transaction.
 	 * Will also register a connection with an alias supplied or an alias
 	 * generated from connection uri, user and database.
 	 * If the alias is already registered, will search for idle connections
@@ -100,11 +101,11 @@ public:
 	 * @param error callback function that will be called in case of an error.
 	 */
 	static void
-	get_connection_async(std::string const&, transaction_callback const&,
+	begin(std::string const&, transaction_callback const&,
 			error_callback const&);
 
 	/**
-	 * @see get_connection_async(std::string const&, result_callback, error_callback)
+	 * @see begin(std::string const&, result_callback, error_callback)
 	 * Will lookup a connection by alias. If a new connection must be created,
 	 * it will be created with the connection string associated with the alias.
 	 * @param connection_string @see @c connection_options for details
@@ -113,7 +114,7 @@ public:
 	 * @param error callback function that will be called in case of an error.
 	 */
 	static void
-	get_connection_async(dbalias const&, transaction_callback const&,
+	begin(dbalias const&, transaction_callback const&,
 			error_callback const&);
 
 	static void

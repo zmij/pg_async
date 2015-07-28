@@ -71,9 +71,9 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	run_async(query_result_callback const& res, error_callback const& err)
 	{
 		if (!conn_) {
-			db_service::get_connection_async(
+			db_service::begin(
 				alias_,
-				std::bind(&impl::handle_get_connection,
+				std::bind(&impl::handle_get_transaction,
 						shared_from_this(), std::placeholders::_1, res, err),
 				std::bind(&impl::handle_get_connection_error,
 						shared_from_this(), std::placeholders::_1, err)
@@ -82,23 +82,23 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 			handle_get_transaction(conn_, res, err);
 		}
 	}
-	void
-	handle_get_connection(transaction_ptr c,
-			query_result_callback const& res,
-			error_callback const& err)
-	{
-		if (start_tran_) {
-			(*c)->begin_transaction(
-				std::bind(&impl::handle_get_transaction,
-						shared_from_this(), std::placeholders::_1, res, err),
-				std::bind(&impl::handle_get_connection_error,
-						shared_from_this(), std::placeholders::_1, err),
-				autocommit_
-			);
-		} else {
-			handle_get_transaction(c, res, err);
-		}
-	}
+//	void
+//	handle_get_connection(transaction_ptr c,
+//			query_result_callback const& res,
+//			error_callback const& err)
+//	{
+//		if (start_tran_) {
+//			(*c)->begin_transaction(
+//				std::bind(&impl::handle_get_transaction,
+//						shared_from_this(), std::placeholders::_1, res, err),
+//				std::bind(&impl::handle_get_connection_error,
+//						shared_from_this(), std::placeholders::_1, err),
+//				autocommit_
+//			);
+//		} else {
+//			handle_get_transaction(c, res, err);
+//		}
+//	}
 
 	void
 	handle_get_transaction(transaction_ptr c,

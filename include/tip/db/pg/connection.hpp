@@ -79,9 +79,6 @@ public:
 	void
 	terminate();
 
-	transaction_ptr
-	lock();
-
 	void
 	begin_transaction(transaction_callback const&, error_callback const&,
 			bool autocommit = false);
@@ -109,6 +106,9 @@ public:
 			transaction_ptr t = transaction_ptr());
 private:
 	typedef std::shared_ptr<detail::connection_base> pimpl;
+
+	transaction_ptr
+	lock();
 
 	void
 	unlock();

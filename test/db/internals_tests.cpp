@@ -171,27 +171,29 @@ TEST( ConnectionTest, ConnectionPool )
 						EXPECT_TRUE(tran.get());
 						local_log(logger::TRACE) << "Obtained connection thread  "
 								<< t_no << " request " << req_no;
-						(*tran)->execute_query( "select * from pg_catalog.pg_class",
+						(*tran)->execute_query( "select * from pg_catalog.pg_class limit 10",
 						[&] (transaction_ptr t1, resultset r, bool complete) {
 							EXPECT_TRUE(t1.get());
-							if (complete)
+							if (complete) {
 								++res_count;
+							}
 							local_log() << "Received a resultset columns: " << r.columns_size()
 									<< " rows: " << r.size()
 									<< " completed: " << std::boolalpha << complete;
 							local_log() << "Sent requests: " << sent_count
 									<< " Received results: " << res_count;
+							if (complete)
+								t1->commit();
 
 							if (res_count >= req_count * thread_count) {
 								pool->close();
 								timer.cancel();
 							}
-						}, [](db_error const&){},
-						tran);
+						}, [](db_error const&){}, tran);
 						++sent_count;
 					},
 					[&] (db_error const& ec) {
-						++fail_count;
+						++fail_count; // transaction rolled back
 					});
 				}
 				io_service.run();
@@ -203,11 +205,10 @@ TEST( ConnectionTest, ConnectionPool )
 			t->join();
 		}
 		if (fail_count) {
-			EXPECT_EQ(req_count * thread_count, fail_count);
-		} else {
-			EXPECT_EQ(req_count * thread_count, sent_count);
-			EXPECT_EQ(req_count * thread_count, res_count);
+			EXPECT_EQ(pool_size, fail_count); // Transaction will fail in each connection
 		}
+		EXPECT_EQ(req_count * thread_count, sent_count);
+		EXPECT_EQ(req_count * thread_count, res_count);
 		tp = clock_type::now();
 		clock_type::duration run = tp.time_since_epoch() - start;
 		double seconds = (double)run.count() * clock_type::period::num / clock_type::period::den;;
@@ -499,7 +500,7 @@ TEST(DatabaseTest, Service)
 	typedef std::chrono::high_resolution_clock clock_type;
 	using namespace tip::db::pg;
 	ASSERT_THROW(
-			db_service::get_connection_async("notthere"_db,
+			db_service::begin("notthere"_db,
 					transaction_callback(), error_callback()),
 					std::runtime_error);
 
@@ -525,7 +526,7 @@ TEST(DatabaseTest, Service)
 			{"application_name", "test-pg-async"}
 		});
 
-		db_service::get_connection_async(test::environment::test_database,
+		db_service::begin(test::environment::test_database,
 		[&](transaction_ptr c){
             timer.cancel();
 			db_service::stop();

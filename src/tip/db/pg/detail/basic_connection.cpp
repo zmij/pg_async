@@ -76,6 +76,11 @@ connection_base::connection_base(io_service& service,
 	incoming_.prepare(8192);
 }
 
+connection_base::~connection_base()
+{
+	local_log(logger::DEBUG) << "**** connection_base::~connection_base()";
+}
+
 connection::state_type
 connection_base::connection_state() const
 {

@@ -130,14 +130,12 @@ connection_pool::connection_ready(connection_ptr c)
 		if (!waiting_.empty()) {
 			request_callbacks req = waiting_.front();
 			waiting_.pop();
-			#ifdef WITH_TIP_LOG
 			local_log()
 					<< (util::CLEAR) << (util::RED | util::BRIGHT)
 					<< alias().value
 					<< logger::severity_color()
 					<< " queue size " << waiting_.size() << " (dequeue)";
-			#endif
-			req.first(c->lock());
+			c->begin_transaction(req.first, req.second);
 		} else {
 			#ifdef WITH_TIP_LOG
 			local_log()
@@ -224,7 +222,8 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 		#endif
 		connection_ptr conn = ready_connections_.front();
 		ready_connections_.pop();
-		conn_cb(conn->lock());
+		conn->begin_transaction(conn_cb, err, false);
+		//conn_cb(conn->lock());
 	} else {
 		#ifdef WITH_TIP_LOG
 		local_log()

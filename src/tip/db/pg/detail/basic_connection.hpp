@@ -59,7 +59,7 @@ public:
 					event_callback const& terminated,
 					connection_error_callback const& err,
 					options_type const& aux);
-	virtual ~connection_base() {}
+	virtual ~connection_base();
 public:
 	connection::state_type
 	connection_state() const;

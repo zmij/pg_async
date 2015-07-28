@@ -32,12 +32,18 @@ transaction::in_transaction() const
 void
 transaction::commit(transaction_callback tcb, error_callback err)
 {
+	if (!tcb) tcb = [](transaction_ptr) {};
+	if (!err) err = [](db_error const&) {};
+
 	connection_->commit_transaction( shared_from_this(), tcb, err );
 }
 
 void
 transaction::rollback(transaction_callback tcb, error_callback err)
 {
+	if (!tcb) tcb = [](transaction_ptr) {};
+	if (!err) err = [](db_error const&) {};
+
 	connection_->rollback_transaction( shared_from_this(), tcb, err );
 }
 
