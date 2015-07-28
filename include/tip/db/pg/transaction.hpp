@@ -1,8 +1,8 @@
-/*
- * connection_lock.h
+/**
+ *	@file tip/pg/db/transaction.hpp
  *
- *  Created on: 14 июля 2015 г.
- *     @author: zmij
+ *  @date Jul 14, 2015
+ *  @author zmij
  */
 
 #ifndef TIP_DB_PG_DETAIL_CONNECTION_LOCK_HPP_
@@ -16,7 +16,7 @@ namespace db {
 namespace pg {
 class connection;
 
-class transaction {
+class transaction : public std::enable_shared_from_this< transaction > {
 public:
 	typedef std::shared_ptr<connection> connection_ptr;
 	typedef std::function< void () > release_func;
@@ -33,6 +33,8 @@ public:
 	transaction&
 	operator = (transaction&&) = delete;
 
+	//@{
+	/** Access to underlying connection object */
 	pointer
 	operator-> ()
 	{
@@ -54,6 +56,17 @@ public:
 	{
 		return connection_.get();
 	}
+	//@}
+
+	bool
+	in_transaction() const;
+
+	void
+	commit(transaction_callback = transaction_callback(),
+			error_callback = error_callback());
+	void
+	rollback(transaction_callback = transaction_callback(),
+			error_callback = error_callback());
 private:
 	connection_ptr connection_;
 	release_func release_;

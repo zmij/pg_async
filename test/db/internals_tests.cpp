@@ -166,14 +166,14 @@ TEST( ConnectionTest, ConnectionPool )
 				int t_no = t;
 				for (int i = 0; i < req_count; ++i) {
 					pool->get_connection(
-					[&] (transaction_ptr c) {
+					[&] (transaction_ptr tran) {
 						int req_no = i;
-						EXPECT_TRUE(c.get());
+						EXPECT_TRUE(tran.get());
 						local_log(logger::TRACE) << "Obtained connection thread  "
 								<< t_no << " request " << req_no;
-						(*c)->execute_query( "select * from pg_catalog.pg_class",
-						[&] (transaction_ptr c, resultset r, bool complete) {
-							EXPECT_TRUE(c.get());
+						(*tran)->execute_query( "select * from pg_catalog.pg_class",
+						[&] (transaction_ptr t1, resultset r, bool complete) {
+							EXPECT_TRUE(t1.get());
 							if (complete)
 								++res_count;
 							local_log() << "Received a resultset columns: " << r.columns_size()
@@ -187,7 +187,7 @@ TEST( ConnectionTest, ConnectionPool )
 								timer.cancel();
 							}
 						}, [](db_error const&){},
-						c);
+						tran);
 						++sent_count;
 					},
 					[&] (db_error const& ec) {
@@ -236,23 +236,23 @@ TEST( ConnectionTest, ExecutePrepared )
 			if (queries == 0) {
 				++queries;
 				c->begin_transaction(
-				[&](transaction_ptr c_lock){
-					(*c_lock)->execute_prepared(
+				[&](transaction_ptr tran){
+					(*tran)->execute_prepared(
 					"select * from pg_catalog.pg_type where typelem > $1 limit $2",
 					param_types, params,
-					[&](transaction_ptr c_lock, resultset r, bool complete) {
+					[&](transaction_ptr tran, resultset r, bool complete) {
 						EXPECT_TRUE(r);
 						EXPECT_TRUE(r.size());
 						EXPECT_TRUE(r.columns_size());
 						EXPECT_FALSE(r.empty());
-						(*c_lock)->commit_transaction(c_lock,
-						[](transaction_ptr c_lock){
+						tran->commit(
+						[](transaction_ptr tran){
 							local_log() << "Transaction commited";
 						}, [](db_error const& ) {
 							local_log() << "Failed to commit transaction";
 						});
 					}, [&](db_error const& ) {
-					}, c_lock);
+					}, tran);
 				}, [](db_error const&) {
 				});
 			} else {
@@ -313,15 +313,15 @@ TEST( TransactionTest, CleanExit )
 			}
 			if (!transactions) {
 				ASSERT_NO_THROW(c->begin_transaction(
-				[&](transaction_ptr c_lock){
-					EXPECT_TRUE(c_lock.get());
-					EXPECT_TRUE((*c_lock)->in_transaction());
+				[&](transaction_ptr tran){
+					EXPECT_TRUE(tran.get());
+					EXPECT_TRUE(tran->in_transaction());
 					ASSERT_NO_THROW(
-					(*c_lock)->commit_transaction(c_lock,
-					[&](transaction_ptr c_lock){
-						(*c_lock)->terminate();
+					tran->commit(
+					[&](transaction_ptr tran){
+						(*tran)->terminate();
 					}, [&](db_error const&) {
-						(*c_lock)->terminate();
+						(*tran)->terminate();
 					} ));
 				},
 				[](db_error const&){
@@ -354,11 +354,11 @@ TEST(TransactionTest, DirtyTerminate)
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_NO_THROW(c->begin_transaction(
-			[&](transaction_ptr c_lock){
-				EXPECT_TRUE(c_lock.get());
-				EXPECT_TRUE((*c_lock)->in_transaction());
+			[&](transaction_ptr tran){
+				EXPECT_TRUE(tran.get());
+				EXPECT_TRUE(tran->in_transaction());
 
-				(*c_lock)->terminate();
+				(*tran)->terminate();
 			},
 			[&](db_error const&){
 				transaction_error = true;
@@ -386,11 +386,11 @@ TEST(TransactionTest, Autocommit)
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_NO_THROW(c->begin_transaction(
-			[&](transaction_ptr c_lock){
-				EXPECT_TRUE(c_lock.get());
-				EXPECT_TRUE((*c_lock)->in_transaction());
+			[&](transaction_ptr tran){
+				EXPECT_TRUE(tran.get());
+				EXPECT_TRUE(tran->in_transaction());
 
-				(*c_lock)->terminate();
+				(*tran)->terminate();
 			},
 			[&](db_error const&){
 				transaction_error = false;
@@ -425,10 +425,10 @@ TEST(TransactionTest, DirtyUnlock)
 		[&](connection_ptr c) {
 			if (!transactions) {
 				ASSERT_NO_THROW(c->begin_transaction(
-				[&](transaction_ptr c_lock){
+				[&](transaction_ptr tran){
 					local_log() << "Transaction begin callback";
-					EXPECT_TRUE(c_lock.get());
-					EXPECT_TRUE((*c_lock)->in_transaction());
+					EXPECT_TRUE(tran.get());
+					EXPECT_TRUE(tran->in_transaction());
 					timer.async_wait([&](boost::system::error_code const& ec){
 						if (!ec) {
 							local_log(logger::WARNING) << "Transaction dirty unlock test timer expired";
@@ -466,17 +466,17 @@ TEST(TransactionTest, Query)
 		connection_ptr conn(connection::create(io_service,
 		[&](connection_ptr c) {
 			ASSERT_NO_THROW(c->begin_transaction(
-			[&](transaction_ptr c_lock){
-				EXPECT_TRUE(c_lock.get());
-				EXPECT_TRUE((*c_lock)->in_transaction());
-				(*c_lock)->execute_query( "select * from pg_catalog.pg_class",
-				[&] (transaction_ptr c_lock, resultset r, bool complete) {
+			[&](transaction_ptr tran){
+				EXPECT_TRUE(tran.get());
+				EXPECT_TRUE(tran->in_transaction());
+				(*tran)->execute_query( "select * from pg_catalog.pg_class",
+				[&] (transaction_ptr tran, resultset r, bool complete) {
 					local_log() << "Received a resultset columns: " << r.columns_size()
 							<< " rows: " << r.size()
 							<< " completed: " << std::boolalpha << complete;
 					if (complete)
-						(*c_lock)->terminate();
-				}, [] (db_error const&) {}, c_lock);
+						(*tran)->terminate();
+				}, [] (db_error const&) {}, tran);
 			},
 			[&](db_error const&){
 				transaction_error = true;
