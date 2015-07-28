@@ -14,25 +14,24 @@
 namespace tip {
 namespace db {
 namespace pg {
-struct connection;
-namespace detail {
+class connection;
 
-class connection_lock {
+class transaction {
 public:
 	typedef std::shared_ptr<connection> connection_ptr;
 	typedef std::function< void () > release_func;
 	typedef connection* pointer;
 	typedef connection const* const_pointer;
 public:
-	connection_lock(connection_ptr, release_func);
-	~connection_lock();
+	transaction(connection_ptr, release_func);
+	~transaction();
 
-	connection_lock(connection_lock const&) = delete;
-	connection_lock&
-	operator = (connection_lock const&) = delete;
-	connection_lock(connection_lock&&) = delete;
-	connection_lock&
-	operator = (connection_lock&&) = delete;
+	transaction(transaction const&) = delete;
+	transaction&
+	operator = (transaction const&) = delete;
+	transaction(transaction&&) = delete;
+	transaction&
+	operator = (transaction&&) = delete;
 
 	pointer
 	operator-> ()
@@ -60,7 +59,6 @@ private:
 	release_func release_;
 };
 
-} /* namespace detail */
 } /* namespace pg */
 } /* namespace db */
 } /* namespace tip */

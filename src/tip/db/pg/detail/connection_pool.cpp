@@ -6,7 +6,7 @@
  */
 
 #include <tip/db/pg/detail/connection_pool.hpp>
-#include <tip/db/pg/detail/connection_lock.hpp>
+#include <tip/db/pg/transaction.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/error.hpp>
 

@@ -15,6 +15,7 @@ set(
     sqlstates.cpp
     pg_types.cpp
     protocol_io_traits.cpp
+    transaction.cpp
     detail/md5.cpp
     detail/protocol.cpp
     detail/protocol_parsers.cpp
@@ -31,7 +32,6 @@ set(
     detail/result_impl.cpp
     detail/database_impl.cpp
     detail/connection_pool.cpp
-    detail/connection_lock.cpp
 )
 
 add_library(tip-pgsql SHARED ${pgsql_lib_SRCS})

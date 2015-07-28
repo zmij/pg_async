@@ -17,7 +17,7 @@
 
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/detail/connection_pool.hpp>
-#include <tip/db/pg/detail/connection_lock.hpp>
+#include <tip/db/pg/transaction.hpp>
 
 #include <tip/db/pg/log.hpp>
 

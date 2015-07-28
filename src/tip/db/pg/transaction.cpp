@@ -6,26 +6,24 @@
  */
 
 #include <tip/db/pg/connection.hpp>
-#include <tip/db/pg/detail/connection_lock.hpp>
+#include <tip/db/pg/transaction.hpp>
 
 namespace tip {
 namespace db {
 namespace pg {
-namespace detail {
 
-connection_lock::connection_lock(connection_ptr conn,release_func rel)
+transaction::transaction(connection_ptr conn,release_func rel)
 	: connection_(conn), release_(rel)
 {
 }
 
-connection_lock::~connection_lock()
+transaction::~transaction()
 {
 	if (release_)
 		release_();
 }
 
 
-} /* namespace detail */
 } /* namespace pg */
 } /* namespace db */
 } /* namespace tip */

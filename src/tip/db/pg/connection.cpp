@@ -9,7 +9,7 @@
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/detail/connection_impl.hpp>
-#include <tip/db/pg/detail/connection_lock.hpp>
+#include <tip/db/pg/transaction.hpp>
 
 #include <tip/db/pg/log.hpp>
 
@@ -152,7 +152,7 @@ transaction_ptr
 connection::lock()
 {
 	pimpl_->lock();
-	return transaction_ptr(new detail::connection_lock( shared_from_this(),
+	return transaction_ptr(new transaction( shared_from_this(),
 			boost::bind(&connection::unlock, shared_from_this() )));
 }
 

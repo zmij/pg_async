@@ -262,15 +262,16 @@ struct field_description {
 
 //@{
 /** @name Forward declarations */
-struct resultset;
-struct connection;
-struct db_error;
-struct connection_error;
-struct query_error;
-namespace detail {
-struct connection_lock;
-}  // namespace detail
-typedef std::shared_ptr<detail::connection_lock> transaction_ptr;
+class resultset;
+class connection;
+class db_error;
+class connection_error;
+class query_error;
+class transaction;
+//@}
+//@{
+/** @name Pointer types */
+typedef std::shared_ptr<transaction> transaction_ptr;
 typedef std::shared_ptr<connection> connection_ptr;
 //@}
 
