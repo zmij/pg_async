@@ -156,7 +156,7 @@ public:
 	typedef std::tuple< oid_sequence, buffer_type, size_t > test_data;
 
 	template < typename ... T >
-	static constexpr test_data
+	static test_data
 	make_test_data(T const& ... args)
 	{
 		oid_sequence param_types;
