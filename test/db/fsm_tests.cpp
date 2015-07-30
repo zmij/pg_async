@@ -9,6 +9,7 @@
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
 #include <boost/msm/front/functor_row.hpp>
+#include <boost/msm/front/euml/operator.hpp>
 
 #include <tip/db/pg/log.hpp>
 
@@ -60,6 +61,8 @@ struct connection_ : public boost::msm::front::state_machine_def< connection_ > 
 	template < typename ... T >
 	using Internal = boost::msm::front::Internal< T ... >;
 	typedef boost::msm::front::none none;
+	template < typename T >
+	using Not = boost::msm::front::euml::Not_< T >;
 	//@{
 	/** @name States */
 	struct unplugged : public boost::msm::front::state<> {
@@ -242,19 +245,73 @@ struct connection_ : public boost::msm::front::state_machine_def< connection_ > 
 
 
 			//@{
-			/** @name Simple query sub-states */
-			struct waiting : public boost::msm::front::state<> {
+			/** @name Extended query sub-states */
+			struct prepare : public boost::msm::front::state<> {
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
-				{ local_log() << "entering: waiting"; }
+				{ local_log() << "entering: prepare"; }
 				template < typename Event, typename FSM >
 				void
 				on_exit(Event const&, FSM&)
-				{ local_log() << "leaving: waiting"; }
+				{ local_log() << "leaving: prepare"; }
 			};
 
-			typedef waiting initial_state;
+			struct parse : public boost::msm::front::state<> {
+				template < typename Event, typename FSM >
+				void
+				on_entry(Event const&, FSM&)
+				{ local_log() << "entering: parse"; }
+				template < typename Event, typename FSM >
+				void
+				on_exit(Event const&, FSM&)
+				{ local_log() << "leaving: parse"; }
+			};
+
+			struct bind : public boost::msm::front::state<> {
+				template < typename Event, typename FSM >
+				void
+				on_entry(Event const&, FSM&)
+				{ local_log() << "entering: bind"; }
+				template < typename Event, typename FSM >
+				void
+				on_exit(Event const&, FSM&)
+				{ local_log() << "leaving: bind"; }
+			};
+
+			struct exec : public boost::msm::front::state<> {
+				template < typename Event, typename FSM >
+				void
+				on_entry(Event const&, FSM&)
+				{ local_log() << "entering: execute"; }
+				template < typename Event, typename FSM >
+				void
+				on_exit(Event const&, FSM&)
+				{ local_log() << "leaving: execute"; }
+			};
+
+			typedef prepare initial_state;
+			//@}
+
+	        struct is_prepared
+	        {
+	            template <class EVT,class FSM,class SourceState,class TargetState>
+	            bool
+				operator()(EVT const& evt,FSM& fsm,SourceState& src,TargetState& tgt)
+	            {
+	                return false;
+	            }
+	        };
+			//@{
+			/** Transitions */
+			struct transition_table : boost::mpl::vector<
+				/*		Start			Event				Next			Action			Guard			      */
+				/*  +-----------------+-------------------+---------------+---------------+---------------------+ */
+				 Row<	prepare,		none,				parse,			none,			Not<is_prepared>	>,
+				 Row<	prepare,		none,				bind,			none,			is_prepared			>,
+				 Row<	parse,			complete,			bind,			none,			none				>,
+				 Row<	bind,			complete,			exec,			none,			none				>
+			>{};
 			//@}
 		};
 		typedef boost::msm::back::state_machine< extended_query_ > extended_query;
@@ -463,5 +520,26 @@ TEST(FSM, SimpleQueryMode)
 	}
 	c.process_event(complete());	// fetch_data -> waiting
 
-	c.process_event(ready_for_query()); // simple query -> transaction
+	c.process_event(ready_for_query()); // simple query -> transaction::idle
+	c.process_event(commit());		// transaction::idle -> transaction::exiting
+	c.process_event(complete());	// transaction -> idle
+}
+
+TEST(FSM, ExtendedQueryMode)
+{
+	connection c;
+	c.start();
+	//	Connection
+	c.process_event(connect());		// unplugged 	-> t_conn
+	c.process_event(complete());	// t_conn		-> authn
+	c.process_event(complete());	// authn		-> idle
+
+	// Begin transaction
+	c.process_event(begin());		// idle			-> transaction::starting
+	c.process_event(complete());	// transaction::starting -> transaction::idle
+
+	// Start extended query mode
+	c.process_event(execute_prepared()); // transaction::idle -> eqm::prepare -> parse
+	c.process_event(complete());	// parse -> bind
+	c.process_event(complete());	// bind -> exec
 }
