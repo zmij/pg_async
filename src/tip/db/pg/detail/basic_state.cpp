@@ -100,7 +100,7 @@ basic_state::handle_error(notice_message const& m)
 }
 
 bool
-basic_state::handle_complete(command_complete_message const& m)
+basic_state::handle_complete(command_complete const& m)
 {
 	return do_handle_complete(m);
 }
@@ -380,7 +380,7 @@ state_stack::do_handle_error(notice_message const& m)
 }
 
 bool
-state_stack::do_handle_complete(command_complete_message const& m)
+state_stack::do_handle_complete(command_complete const& m)
 {
 	return current()->handle_complete(m);
 }

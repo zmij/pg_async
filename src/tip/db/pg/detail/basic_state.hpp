@@ -27,7 +27,7 @@ namespace detail {
 
 struct message;
 struct notice_message;
-struct command_complete_message;
+struct command_complete;
 
 typedef std::shared_ptr<message> message_ptr;
 
@@ -62,7 +62,7 @@ public:
 	bool
 	handle_error(notice_message const&);
 	bool
-	handle_complete(command_complete_message const&);
+	handle_complete(command_complete const&);
 	void
 	package_complete(size_t bytes);
 	void
@@ -133,7 +133,7 @@ private:
 	do_handle_error(notice_message const&)
 	{ return false; }
 	virtual bool
-	do_handle_complete(command_complete_message const&)
+	do_handle_complete(command_complete const&)
 	{ return false; }
 
 	virtual void
@@ -205,7 +205,7 @@ private:
 	virtual bool
 	do_handle_error(notice_message const&);
 	virtual bool
-	do_handle_complete(command_complete_message const&);
+	do_handle_complete(command_complete const&);
 
 	virtual void
 	on_package_complete(size_t bytes);

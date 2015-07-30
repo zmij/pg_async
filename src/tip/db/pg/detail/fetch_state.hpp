@@ -28,7 +28,7 @@ protected:
 	virtual bool
 	do_handle_message(message_ptr);
 	virtual bool
-	do_handle_complete( command_complete_message const& );
+	do_handle_complete( command_complete const& );
 private:
 	virtual std::string const
 	get_name() const

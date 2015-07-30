@@ -88,7 +88,7 @@ fetch_state::do_handle_message(message_ptr m)
 }
 
 bool
-fetch_state::do_handle_complete( command_complete_message const& m)
+fetch_state::do_handle_complete( command_complete const& m)
 {
 	complete_ = true;
 	std::string stat;

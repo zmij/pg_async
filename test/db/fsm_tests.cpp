@@ -86,9 +86,10 @@ using namespace tip::db::pg::detail;
 typedef boost::msm::back::state_machine< connection_fsm_< dummy_transport > > fsm;
 typedef std::shared_ptr<fsm> fsm_ptr;
 fsm::client_options_type client_options {
-	{"client_encoding", "UTF8"},
-	{"application_name", "pg_async"},
-	{"client_min_messages", "debug5"}
+	{"client_encoding", 		"UTF8"},
+	{"application_name", 		"pg_async"},
+	//{"autocommit", 				"off"},
+	{"client_min_messages", 	"debug5"}
 };
 
 TEST(DummyFSM, NormalFlow)
@@ -98,25 +99,25 @@ TEST(DummyFSM, NormalFlow)
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
-	c->process_event(complete());	// authn		-> idle
+	c->process_event(ready_for_query());	// authn		-> idle
 
 	// Begin transaction
 	c->process_event(begin());		// idle			-> transaction::starting
-	c->process_event(complete());	// transaction::starting -> transaction::idle
+	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
 	// Commit transaction
 	c->process_event(commit());		// transaction::idle	-> transaction::exiting
-	c->process_event(complete());	// transaction::exiting	-> idle
+	c->process_event(ready_for_query());	// transaction::exiting	-> idle
 
 	// Begin transaction
 	c->process_event(begin());		// idle			-> transaction::starting
-	c->process_event(complete());	// transaction::starting -> transaction::idle
+	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
 	c->process_event(complete());	// transaction::exiting	-> idle
 
 	// Rollback transaction
 	c->process_event(rollback());	// transaction::idle	-> transaction::exiting
-	c->process_event(complete());	// transaction::exiting	-> idle
+	c->process_event(ready_for_query());	// transaction::exiting	-> idle
 
 	// Terminate connection
 	c->process_event(terminate());	// idle -> X
@@ -129,16 +130,16 @@ TEST(DummyFSM, TerminateTran)
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
-	c->process_event(complete());	// authn		-> idle
+	c->process_event(ready_for_query());	// authn		-> idle
 
 	// Begin transaction
 	c->process_event(begin());		// idle			-> transaction::starting
-	c->process_event(complete());	// transaction::starting -> transaction::idle
+	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
 	c->process_event(terminate());	// deferred event
 
 	c->process_event(rollback());	// transaction::idle -> transaction::exiting
-	c->process_event(complete());	// transaction::exiting -> idle
+	c->process_event(ready_for_query());	// transaction::exiting -> idle
 }
 
 TEST(DummyFSM, SimpleQueryMode)
@@ -148,13 +149,13 @@ TEST(DummyFSM, SimpleQueryMode)
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
-	c->process_event(complete());	// authn		-> idle
+	c->process_event(ready_for_query());	// authn		-> idle
 
 	// Begin transaction
 	c->process_event(begin());		// idle			-> transaction::starting
-	c->process_event(complete());	// transaction::starting -> transaction::idle
+	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
-	c->process_event(execute());		// transaction -> simple query
+	c->process_event(execute{ "bla" });		// transaction -> simple query
 	c->process_event(row_description()); // waiting -> fetch_data
 	for (int i = 0; i < 10; ++i) {
 		c->process_event(row_data());
@@ -169,7 +170,7 @@ TEST(DummyFSM, SimpleQueryMode)
 
 	c->process_event(ready_for_query()); // simple query -> transaction::idle
 	c->process_event(commit());		// transaction::idle -> transaction::exiting
-	c->process_event(complete());	// transaction -> idle
+	c->process_event(ready_for_query());	// transaction -> idle
 }
 
 TEST(DummyFSM, ExtendedQueryMode)
@@ -179,11 +180,11 @@ TEST(DummyFSM, ExtendedQueryMode)
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
-	c->process_event(complete());	// authn		-> idle
+	c->process_event(ready_for_query());	// authn		-> idle
 
 	// Begin transaction
 	c->process_event(begin());		// idle			-> transaction::starting
-	c->process_event(complete());	// transaction::starting -> transaction::idle
+	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
 	// Start extended query mode
 	c->process_event(execute_prepared()); // transaction::idle -> eqm::prepare -> parse
@@ -191,21 +192,148 @@ TEST(DummyFSM, ExtendedQueryMode)
 	c->process_event(complete());	// bind -> exec
 }
 
-typedef boost::msm::back::state_machine< connection_fsm_< tcp_transport > > tcp_fsm;
-typedef std::shared_ptr< tcp_fsm > tcp_fsm_ptr;
+template < typename TransportType >
+void
+test_normal_flow(tip::db::pg::connection_options const& opts)
+{
+	using namespace tip::db::pg;
+	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef std::shared_ptr< fsm_type > fsm_ptr;
+
+	boost::asio::io_service svc;
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+
+	c->start();
+	c->process_event(opts);
+	c->process_event(begin());
+	c->process_event(execute{ "select * from pg_catalog.pg_type; select * from pg_catalog.pg_class" });
+	c->process_event(execute{ "create temporary table dummy (id bigint)" });
+	c->process_event(commit());
+	c->process_event(terminate());
+
+	svc.run();
+}
 
 TEST(FSM, NormalFlow)
 {
 	using namespace tip::db::pg;
 	if (! test::environment::test_database.empty() ) {
-		boost::asio::io_service svc;
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		tcp_fsm_ptr c(new tcp_fsm(std::ref(svc), client_options));
-		c->start();
-		c->process_event(opts);
-
-
-		svc.run();
+		if (opts.schema == "tcp") {
+			test_normal_flow< tcp_transport >(opts);
+		} else if (opts.schema == "socket") {
+			test_normal_flow< socket_transport >(opts);
+		}
 	}
 }
+
+template < typename TransportType >
+void
+test_preliminary_terminate(tip::db::pg::connection_options const& opts)
+{
+	using namespace tip::db::pg;
+	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef std::shared_ptr< fsm_type > fsm_ptr;
+
+	boost::asio::io_service svc;
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+
+	c->start();
+	c->process_event(opts);
+	c->process_event(begin());
+	c->process_event(terminate());
+	c->process_event(rollback());
+
+	svc.run();
+}
+
+TEST(FSM, PreliminaryTerminate)
+{
+	using namespace tip::db::pg;
+	if (! test::environment::test_database.empty() ) {
+		connection_options opts = connection_options::parse(test::environment::test_database);
+
+		if (opts.schema == "tcp") {
+			test_preliminary_terminate< tcp_transport >(opts);
+		} else if (opts.schema == "socket") {
+			test_preliminary_terminate< socket_transport >(opts);
+		}
+	}
+}
+
+template < typename TransportType >
+void
+test_error_in_query(tip::db::pg::connection_options const& opts)
+{
+	using namespace tip::db::pg;
+	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef std::shared_ptr< fsm_type > fsm_ptr;
+
+	boost::asio::io_service svc;
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+
+	c->start();
+	c->process_event(opts);
+	c->process_event(begin());
+	c->process_event(begin());
+	c->process_event(execute{ "select * from _shouldnt_be_there_" });
+	//c->process_event(rollback());
+	c->process_event(terminate());
+
+	svc.run();
+}
+
+TEST(FSM, ErrorInSimpleQuery)
+{
+	using namespace tip::db::pg;
+	if (! test::environment::test_database.empty() ) {
+		connection_options opts = connection_options::parse(test::environment::test_database);
+
+		if (opts.schema == "tcp") {
+			test_error_in_query< tcp_transport >(opts);
+		} else if (opts.schema == "socket") {
+			test_error_in_query< socket_transport >(opts);
+		}
+	}
+}
+
+template < typename TransportType >
+void
+test_exec_prepared(tip::db::pg::connection_options const& opts)
+{
+	using namespace tip::db::pg;
+	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef std::shared_ptr< fsm_type > fsm_ptr;
+
+	boost::asio::io_service svc;
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+
+	c->start();
+	c->process_event(opts);
+	c->process_event(begin());
+
+	c->process_event(execute_prepared{
+		"select * from pg_catalog.pg_type"
+	});
+
+	c->process_event(commit());
+	c->process_event(terminate());
+
+	svc.run();
+}
+
+TEST(FSM, ExecPrepared)
+{
+	using namespace tip::db::pg;
+	if (! test::environment::test_database.empty() ) {
+		connection_options opts = connection_options::parse(test::environment::test_database);
+
+		if (opts.schema == "tcp") {
+			test_exec_prepared< tcp_transport >(opts);
+		} else if (opts.schema == "socket") {
+			test_exec_prepared< socket_transport >(opts);
+		}
+	}
+}
+

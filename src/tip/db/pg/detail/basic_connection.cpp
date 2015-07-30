@@ -285,7 +285,7 @@ connection_base::handle_message(message_ptr m)
 				break;
 			}
 			case command_complete_tag: {
-				command_complete_message complete;
+				command_complete complete;
 				m->read(complete.command_tag);
 				if (!state_.handle_complete(complete)) {
 					local_log(logger::WARNING) << "Command complete ("

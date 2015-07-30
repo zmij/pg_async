@@ -79,7 +79,7 @@ extended_query_state::do_handle_message(message_ptr m)
 }
 
 bool
-extended_query_state::do_handle_complete(command_complete_message const& m)
+extended_query_state::do_handle_complete(command_complete const& m)
 {
 	conn.pop_state(this);
 	conn.state()->handle_complete(m);
@@ -305,7 +305,7 @@ execute_state::do_handle_message(message_ptr m)
 }
 
 bool
-execute_state::do_handle_complete(command_complete_message const& m)
+execute_state::do_handle_complete(command_complete const& m)
 {
 	fetch_state::do_handle_complete(m);
 	if (!exited) {

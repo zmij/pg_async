@@ -367,7 +367,7 @@ struct notice_message {
 std::ostream&
 operator << (std::ostream&, notice_message const&);
 
-struct command_complete_message {
+struct command_complete {
 	std::string command_tag;
 };
 

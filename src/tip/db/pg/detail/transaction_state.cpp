@@ -103,7 +103,7 @@ transaction_state::do_handle_message(message_ptr m)
 }
 
 bool
-transaction_state::do_handle_complete( command_complete_message const& m )
+transaction_state::do_handle_complete( command_complete const& m )
 {
 	local_log(logger::DEBUG) << "Command is complete " << m.command_tag;
 

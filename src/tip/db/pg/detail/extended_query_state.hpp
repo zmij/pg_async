@@ -36,7 +36,7 @@ private:
 	virtual bool
 	do_handle_message(message_ptr);
 	virtual bool
-	do_handle_complete( command_complete_message const& );
+	do_handle_complete( command_complete const& );
 private:
 	enum stage_type {
 		PARSE,
@@ -123,7 +123,7 @@ private:
 	virtual bool
 	do_handle_message(message_ptr);
 	virtual bool
-	do_handle_complete( command_complete_message const& );
+	do_handle_complete( command_complete const& );
 	virtual void
 	on_package_complete(size_t bytes);
 private:
