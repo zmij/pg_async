@@ -19,6 +19,11 @@
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/detail/basic_state.hpp>
 
+#include <boost/msm/back/state_machine.hpp>
+#include <boost/msm/front/state_machine_def.hpp>
+#include <boost/msm/front/functor_row.hpp>
+#include <boost/msm/front/euml/operator.hpp>
+
 namespace tip {
 namespace db {
 namespace pg {

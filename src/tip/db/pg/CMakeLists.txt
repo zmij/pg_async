@@ -20,6 +20,8 @@ set(
     detail/protocol.cpp
     detail/protocol_parsers.cpp
     detail/basic_connection.cpp
+    detail/connection_fsm.cpp
+    detail/transport.cpp
     detail/connection_impl.cpp
     detail/basic_state.cpp
     detail/startup.cpp

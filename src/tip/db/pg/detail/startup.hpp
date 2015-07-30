@@ -18,26 +18,6 @@ namespace detail {
 
 class startup_state : public basic_state {
 public:
-	enum auth_states {
-		OK				= 0, /**< Specifies that the authentication was successful. */
-		KerberosV5		= 2, /**< Specifies that Kerberos V5 authentication is required. */
-		Cleartext		= 3, /**< Specifies that a clear-text password is required. */
-		/**
-		 * Specifies that an MD5-encrypted password is required.
-		 * Message contains additional 4 bytes of salt
-		 */
-		MD5Password		= 5,
-		SCMCredential	= 6, /**< Specifies that an SCM credentials message is required. */
-		GSS				= 7, /**< Specifies that GSSAPI authentication is required. */
-		/**
-		 * Specifies that this message contains GSSAPI or SSPI data.
-		 * Message contains additional bytes with GSSAPI or SSPI authentication data.
-		 */
-		GSSContinue		= 8,
-		SSPI			= 9, /**< Specifies that SSPI authentication is required. */
-
-	};
-public:
 	startup_state(connection_base& conn);
 	virtual ~startup_state() {}
 private:

@@ -36,17 +36,6 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 using tip::log::logger;
 
-namespace options {
-
-const std::string HOST				= "host";
-const std::string PORT				= "port";
-const std::string USER				= "user";
-const std::string DATABASE			= "database";
-const std::string CLIENT_ENCODING	= "client_encoding";
-const std::string APPLICATION_NAME	= "application_name";
-
-}  // namespace options
-
 template < typename InputIter, typename OutputIter >
 InputIter
 copy(InputIter in, InputIter end, size_t max, OutputIter out)

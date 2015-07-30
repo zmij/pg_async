@@ -11,64 +11,12 @@
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/detail/terminated_state.hpp>
 #include <tip/db/pg/error.hpp>
+#include <tip/db/pg/detail/transport.hpp>
 
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
-
-
-struct tcp_transport {
-	typedef asio::io_service io_service;
-	typedef boost::asio::ip::tcp tcp;
-	typedef boost::system::error_code error_code;
-	typedef std::function< void (boost::system::error_code const&) > connect_callback;
-	typedef tcp::socket socket_type;
-
-	socket_type socket;
-
-	tcp_transport(io_service&);
-
-	void
-	connect_async(connection_options const&, connect_callback);
-
-	bool
-	connected() const;
-
-	void
-	close();
-private:
-	tcp::resolver resolver_;
-	connect_callback connect_;
-
-	void
-	handle_resolve(error_code const& ec,
-					tcp::resolver::iterator endpoint_iterator);
-	void
-	handle_connect(error_code const& ec);
-};
-
-struct socket_transport {
-	typedef asio::io_service io_service;
-	typedef boost::asio::local::stream_protocol::socket socket_type;
-	typedef boost::system::error_code error_code;
-	typedef std::function< void (boost::system::error_code const&) > connect_callback;
-
-	socket_type socket;
-
-	socket_transport(io_service&);
-
-	void
-	connect_async(connection_options const&, connect_callback);
-
-	bool
-	connected() const;
-
-	void
-	close();
-private:
-	connect_callback connect_;
-};
 
 template < typename TransportType >
 class connection_impl: public connection_base {
@@ -103,7 +51,7 @@ public:
 						asio::placeholders::error,
 						asio::placeholders::bytes_transferred);
 			}
-			asio::async_write(transport.socket,
+			transport.async_write(
 					boost::asio::buffer(&*data_range.first,
 							data_range.second - data_range.first),
 					strand_.wrap(handler));
@@ -132,7 +80,7 @@ private:
 	{
 		std::shared_ptr< connection_impl > shared_this =
 				std::dynamic_pointer_cast< connection_impl > (shared_from_this());
-		asio::async_read(transport.socket, incoming_, asio::transfer_at_least(1),
+		transport.async_read(incoming_,
 				strand_.wrap(boost::bind(&connection_impl::handle_read, shared_this,
 						asio::placeholders::error, asio::placeholders::bytes_transferred)));
 	}
@@ -147,7 +95,7 @@ private:
 			read_message(in, bytes_transferred);
 			std::shared_ptr< connection_impl > shared_this =
 					std::dynamic_pointer_cast< connection_impl > (shared_from_this());
-			asio::async_read(transport.socket, incoming_, asio::transfer_at_least(1),
+			transport.async_read(incoming_,
 					strand_.wrap(boost::bind(&connection_impl::handle_read, shared_this,
 							asio::placeholders::error, asio::placeholders::bytes_transferred)));
 			read_package_complete(bytes_transferred);

@@ -293,6 +293,16 @@ typedef std::function< void (resultset, bool) > internal_result_callback;
 
 }  // namespace detail
 
+namespace options {
+
+const std::string HOST				= "host";
+const std::string PORT				= "port";
+const std::string USER				= "user";
+const std::string DATABASE			= "database";
+const std::string CLIENT_ENCODING	= "client_encoding";
+const std::string APPLICATION_NAME	= "application_name";
+
+}  // namespace options
 
 }  // namespace pg
 }  // namespace db
