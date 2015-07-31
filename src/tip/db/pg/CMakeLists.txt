@@ -7,7 +7,6 @@ cmake_minimum_required(VERSION 2.6)
 set(
     pgsql_lib_SRCS
     common.cpp
-    connection.cpp
     database.cpp
     error.cpp
     resultset.cpp

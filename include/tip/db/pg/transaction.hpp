@@ -14,16 +14,15 @@
 namespace tip {
 namespace db {
 namespace pg {
-class connection;
+class basic_connection;
 
 class transaction : public std::enable_shared_from_this< transaction > {
 public:
-	typedef std::shared_ptr<connection> connection_ptr;
-	typedef std::function< void () > release_func;
-	typedef connection* pointer;
-	typedef connection const* const_pointer;
+	typedef std::shared_ptr<basic_connection> connection_ptr;
+	typedef basic_connection* pointer;
+	typedef basic_connection const* const_pointer;
 public:
-	transaction(connection_ptr, release_func);
+	transaction(connection_ptr);
 	~transaction();
 
 	transaction(transaction const&) = delete;
@@ -62,14 +61,11 @@ public:
 	in_transaction() const;
 
 	void
-	commit(transaction_callback = transaction_callback(),
-			error_callback = error_callback());
+	commit();
 	void
-	rollback(transaction_callback = transaction_callback(),
-			error_callback = error_callback());
+	rollback();
 private:
 	connection_ptr connection_;
-	release_func release_;
 };
 
 } /* namespace pg */

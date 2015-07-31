@@ -29,6 +29,67 @@ namespace db {
 namespace pg {
 
 class resultset;
+class transaction;
+typedef std::shared_ptr< transaction > transaction_ptr;
+
+class basic_connection;
+typedef std::shared_ptr< basic_connection > basic_connection_ptr;
+
+typedef std::function < void (basic_connection_ptr) > basic_connection_event;
+
+struct connection_callbacks {
+	basic_connection_event		idle;
+	basic_connection_event		terminated;
+	connection_error_callback	error;
+};
+
+namespace events {
+struct begin {
+	// TODO Transaction isolation etc
+	transaction_callback	started;
+	error_callback			error;
+};
+
+struct commit {};
+struct rollback {};
+}
+
+class basic_connection : public boost::noncopyable {
+public:
+	typedef boost::asio::io_service io_service;
+	typedef std::map< std::string, std::string > client_options_type;
+public:
+	static basic_connection_ptr
+	create(io_service& svc, connection_options const&,
+			client_options_type const&, connection_callbacks const&);
+public:
+	virtual ~basic_connection() {}
+
+	void
+	connect(connection_options const&);
+
+	void
+	begin(events::begin const&);
+	void
+	commit();
+	void
+	rollback();
+
+	bool
+	in_transaction() const;
+protected:
+	basic_connection();
+
+private:
+	virtual void
+	do_connect(connection_options const& ) = 0;
+
+	virtual bool
+	is_in_transaction() const = 0;
+
+	virtual void
+	do_begin(events::begin const&) = 0;
+};
 
 namespace detail {
 

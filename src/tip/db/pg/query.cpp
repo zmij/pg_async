@@ -114,14 +114,14 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 						<< logger::severity_color();
 			}
 			conn_ = c;
-			(*conn_)->execute_query(expression_,
-				std::bind(&impl::handle_get_results,
-						shared_from_this(),
-						std::placeholders::_1,
-						std::placeholders::_2,
-						std::placeholders::_3,
-						res),
-				err, c);
+//			(*conn_)->execute_query(expression_,
+//				std::bind(&impl::handle_get_results,
+//						shared_from_this(),
+//						std::placeholders::_1,
+//						std::placeholders::_2,
+//						std::placeholders::_3,
+//						res),
+//				err, c);
 		} else {
 			{
 				local_log() << "Execute prepared query "
@@ -130,14 +130,14 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 						<< logger::severity_color();
 			}
 			conn_ = c;
-			(*conn_)->execute_prepared(expression_, param_types_, params_,
-				std::bind(&impl::handle_get_results,
-						shared_from_this(),
-						std::placeholders::_1,
-						std::placeholders::_2,
-						std::placeholders::_3,
-						res),
-				err, c);
+//			(*conn_)->execute_prepared(expression_, param_types_, params_,
+//				std::bind(&impl::handle_get_results,
+//						shared_from_this(),
+//						std::placeholders::_1,
+//						std::placeholders::_2,
+//						std::placeholders::_3,
+//						res),
+//				err, c);
 		}
 	}
 

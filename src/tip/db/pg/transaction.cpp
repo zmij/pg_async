@@ -12,39 +12,34 @@ namespace tip {
 namespace db {
 namespace pg {
 
-transaction::transaction(connection_ptr conn,release_func rel)
-	: connection_(conn), release_(rel)
+transaction::transaction(connection_ptr conn)
+	: connection_(conn)
 {
 }
 
 transaction::~transaction()
 {
-	if (release_)
-		release_();
 }
 
 bool
 transaction::in_transaction() const
 {
-	return connection_->in_transaction();
+	//return connection_->in_transaction();
+	return true;
 }
 
 void
-transaction::commit(transaction_callback tcb, error_callback err)
+transaction::commit()
 {
-	if (!tcb) tcb = [](transaction_ptr) {};
-	if (!err) err = [](db_error const&) {};
 
-	connection_->commit_transaction( shared_from_this(), tcb, err );
+	//connection_->commit_transaction( shared_from_this(), tcb, err );
 }
 
 void
-transaction::rollback(transaction_callback tcb, error_callback err)
+transaction::rollback()
 {
-	if (!tcb) tcb = [](transaction_ptr) {};
-	if (!err) err = [](db_error const&) {};
 
-	connection_->rollback_transaction( shared_from_this(), tcb, err );
+	//connection_->rollback_transaction( shared_from_this(), tcb, err );
 }
 
 } /* namespace pg */

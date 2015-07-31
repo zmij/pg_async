@@ -23,7 +23,7 @@ using namespace tip::log;
 const std::string LOG_CATEGORY = "PGFSM";
 logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
 local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
+test_log(logger::event_severity s = DEFAULT_SEVERITY)
 {
 	return local(LOG_CATEGORY, s);
 }
@@ -84,7 +84,27 @@ struct dummy_transport {
 }  // namespace tip
 
 using namespace tip::db::pg::detail;
-typedef boost::msm::back::state_machine< connection_fsm_< dummy_transport > > fsm;
+using namespace tip::db::pg::events;
+struct fsm : boost::msm::back::state_machine< connection_fsm_< dummy_transport, fsm > > {
+	typedef boost::msm::back::state_machine< connection_fsm_< dummy_transport, fsm > > base_type;
+	fsm(boost::asio::io_service& svc, client_options_type const& co)
+		: base_type(std::ref(svc), co)
+	{
+	}
+	virtual ~fsm() {}
+	virtual void do_notify_idle()
+	{
+		test_log(logger::INFO) << "Connection notified idle";
+	}
+	virtual void do_notify_terminated()
+	{
+		test_log(logger::INFO) << "Connection notified terminated";
+	}
+	virtual void do_notify_error(tip::db::pg::connection_error const& e)
+	{
+		test_log(logger::INFO) << "Connection notified error " << e.what();
+	}
+};
 typedef std::shared_ptr<fsm> fsm_ptr;
 fsm::client_options_type client_options {
 	{"client_encoding", 		"UTF8"},
@@ -194,11 +214,40 @@ TEST(DummyFSM, ExtendedQueryMode)
 }
 
 template < typename TransportType >
+struct test_connection :
+		boost::msm::back::state_machine< connection_fsm_<
+			TransportType,
+			test_connection< TransportType > > > {
+	typedef boost::msm::back::state_machine<
+			connection_fsm_< TransportType, test_connection< TransportType > > > base_type;
+
+	test_connection(boost::asio::io_service& svc,
+			typename base_type::client_options_type const& co)
+		: base_type(std::ref(svc), co)
+	{
+	}
+	virtual ~test_connection() {}
+
+	virtual void do_notify_idle()
+	{
+		test_log(logger::INFO) << "Connection notified idle";
+	}
+	virtual void do_notify_terminated()
+	{
+		test_log(logger::INFO) << "Connection notified terminated";
+	}
+	virtual void do_notify_error(tip::db::pg::connection_error const& e)
+	{
+		test_log(logger::INFO) << "Connection notified error " << e.what();
+	}
+};
+
+template < typename TransportType >
 void
 test_normal_flow(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef test_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
 	boost::asio::io_service svc;
@@ -234,7 +283,7 @@ void
 test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef test_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
 	boost::asio::io_service svc;
@@ -268,7 +317,7 @@ void
 test_error_in_query(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef test_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
 	boost::asio::io_service svc;
@@ -304,7 +353,7 @@ void
 test_exec_prepared(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
+	typedef test_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 	typedef std::vector< char > buffer_type;
 	typedef std::vector< oids::type::oid_type > oid_sequence;
