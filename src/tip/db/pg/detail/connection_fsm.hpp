@@ -84,6 +84,8 @@ struct row_description {
 	mutable std::vector<field_description> fields;
 };
 
+struct no_data {}; // Prepared query doesn't return data
+
 struct terminate {};
 
 template < typename TransportType >
@@ -104,15 +106,17 @@ struct connection_fsm_ :
 	//@{
 	/** @name Misc typedefs */
 	typedef TransportType transport_type;
-	typedef boost::msm::back::state_machine< connection_fsm_< transport_type > > fsm_type;
+	typedef boost::msm::back::state_machine< connection_fsm_< transport_type > > connection;
 	typedef std::shared_ptr< message > message_ptr;
+	typedef std::map< std::string, row_description > prepared_statements_map;
+	typedef std::shared_ptr< result_impl > result_ptr;
 	//@}
 	//@{
 	/** @name Actions */
 	struct on_connection_error {
 		template < typename SourceState, typename TargetState >
 		void
-		operator() (connection_error const& err, fsm_type& fsm, SourceState&, TargetState&)
+		operator() (connection_error const& err, connection& fsm, SourceState&, TargetState&)
 		{
 			local_log(logger::ERROR) << "connection::on_connection_error Error: "
 					<< err.what();
@@ -145,13 +149,13 @@ struct connection_fsm_ :
 	struct finish_transaction {
 		template < typename SourceState, typename TargetState >
 		void
-		operator() (ready_for_query const&, fsm_type&, SourceState&, TargetState&)
+		operator() (ready_for_query const&, connection&, SourceState&, TargetState&)
 		{
 			local_log() << "connection::finish_transaction";
 		}
 		template < typename SourceState, typename TargetState >
 		void
-		operator() (command_complete const&, fsm_type&, SourceState&, TargetState&)
+		operator() (command_complete const&, connection&, SourceState&, TargetState&)
 		{
 			local_log() << "connection::finish_transaction";
 		}
@@ -167,7 +171,7 @@ struct connection_fsm_ :
 	struct disconnect {
 		template < typename SourceState, typename TargetState >
 		void
-		operator() (terminate const&, fsm_type& fsm, SourceState&, TargetState&)
+		operator() (terminate const&, connection& fsm, SourceState&, TargetState&)
 		{
 			local_log() << "connection: disconnect";
 			fsm.send(message(terminate_tag));
@@ -190,7 +194,7 @@ struct connection_fsm_ :
 	struct terminated : boost::msm::front::terminate_state<> {
 		template < typename Event >
 		void
-		on_entry(Event const&, fsm_type& fsm)
+		on_entry(Event const&, connection& fsm)
 		{
 			local_log(logger::DEBUG) << "entering: terminated";
 			fsm.send(message(terminate_tag));
@@ -207,7 +211,7 @@ struct connection_fsm_ :
 				execute_prepared
 			> deferred_events;
 		void
-		on_entry(connection_options const& opts, fsm_type& fsm)
+		on_entry(connection_options const& opts, connection& fsm)
 		{
 			local_log() << "entering: transport connecting";
 			fsm.connect_transport(opts);
@@ -220,7 +224,7 @@ struct connection_fsm_ :
 
 		template < typename Event >
 		void
-		on_exit(Event const&, fsm_type& fsm)
+		on_exit(Event const&, connection& fsm)
 		{
 			local_log() << "leaving:  transport connecting";
 			fsm.start_read();
@@ -238,7 +242,7 @@ struct connection_fsm_ :
 			> deferred_events;
 		template < typename Event >
 		void
-		on_entry(Event const&, fsm_type& fsm)
+		on_entry(Event const&, connection& fsm)
 		{
 			local_log() << "entering: authenticating";
 			fsm.send_startup_message();
@@ -251,7 +255,7 @@ struct connection_fsm_ :
 		struct handle_authn_event {
 			template < typename SourceState, typename TargetState >
 			void
-			operator() (authn_event const& evt, fsm_type& fsm, SourceState&, TargetState&)
+			operator() (authn_event const& evt, connection& fsm, SourceState&, TargetState&)
 			{
 				local_log() << "authn: handle auth_event";
 				switch (evt.state) {
@@ -320,7 +324,7 @@ struct connection_fsm_ :
 		/** @name Transaction entry-exit */
 		template < typename Event >
 		void
-		on_entry(Event const&, fsm_type& fsm)
+		on_entry(Event const&, connection& fsm)
 		{
 			local_log(logger::DEBUG) << "entering: transaction";
 			connection_ = &fsm;
@@ -384,9 +388,9 @@ struct connection_fsm_ :
 					rollback
 				> deferred_events;
 
-			template < typename Event >
+			//template < typename Event >
 			void
-			on_entry(Event const&, tran_fsm& tran)
+			on_entry(begin const& evt, tran_fsm& tran)
 			{
 				local_log() << "entering: starting";
 				tran.connection_->send_begin();
@@ -439,6 +443,11 @@ struct connection_fsm_ :
 			void
 			on_exit(Event const&, FSM&)
 			{ local_log() << "leaving: exit transaction"; }
+			struct internal_transition_table : boost::mpl::vector<
+			/*				Event				Action					Guard	 */
+			/*			+---------------------+-----------------------+---------+*/
+				Internal< command_complete,		none,					none 	>
+			> {};
 		};
 
 		struct simple_query_ : public boost::msm::front::state_machine_def<simple_query_> {
@@ -495,7 +504,6 @@ struct connection_fsm_ :
 
 			struct fetch_data : public boost::msm::front::state<> {
 				typedef boost::mpl::vector< ready_for_query > deferred_events;
-				typedef std::shared_ptr< result_impl > result_ptr;
 
 				fetch_data() : result_( new result_impl ) {}
 
@@ -546,50 +554,168 @@ struct connection_fsm_ :
 				 Row<	waiting,		row_description,	fetch_data,		none,			none			>,
 				 Row<	fetch_data,		command_complete,	waiting,		none,			none			>
 			> {};
-			fsm_type* connection_;
+			connection* connection_;
 		};
 		typedef boost::msm::back::state_machine< simple_query_ > simple_query;
 
 		struct extended_query_ : public boost::msm::front::state_machine_def<extended_query_> {
+
+			typedef boost::msm::back::state_machine< extended_query_ > extended_query;
+
+			extended_query_() : connection_(nullptr), row_limit_(0),
+					result_(new result_impl) {}
+
 			template < typename Event, typename FSM >
 			void
 			on_entry(Event const&, FSM&)
-			{ local_log() << tip::util::MAGENTA << "entering: extended query"; }
+			{ local_log(logger::WARNING) << tip::util::MAGENTA << "entering: extended query (unexpected event)"; }
+			void
+			on_entry(execute_prepared const& q, tran_fsm& tran)
+			{
+				local_log(logger::DEBUG) << tip::util::MAGENTA << "entering: extended query";
+				connection_ = tran.connection_;
+				query_ = q;
+				std::ostringstream os;
+				os << query_.expression;
+				if (!query_.param_types.empty()) {
+					os << "{";
+					std::ostream_iterator< oids::type::oid_type > out(os, ",");
+					std::copy( query_.param_types.begin(), query_.param_types.end() - 1, out );
+					os << query_.param_types.back() << "}";
+				}
+				local_log() << "query signature " << os.str();
+				query_name_ = "q_" +
+					std::string( boost::md5( os.str().c_str() ).digest().hex_str_value() );
+				//result_.reset(new result_impl);
+			}
 			template < typename Event, typename FSM >
 			void
 			on_exit(Event const&, FSM&)
-			{ local_log() << tip::util::MAGENTA << "leaving: extended query"; }
+			{ local_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query"; }
 
+			typedef boost::mpl::vector< execute, execute_prepared, commit, rollback > deferred_events;
 
 			//@{
-			/** @name Extended query sub-states */
-			struct prepare : public boost::msm::front::state<> {
-				template < typename Event, typename FSM >
+			struct store_prepared_desc {
+				template < typename SourceState, typename TargetState >
 				void
-				on_entry(Event const&, FSM&)
-				{ local_log() << "entering: prepare"; }
-				template < typename Event, typename FSM >
+				operator() (row_description const& row, extended_query& fsm,
+						SourceState&, TargetState&)
+				{
+					fsm.result_.reset(new result_impl);
+					fsm.result_->row_description() = row.fields; // copy!
+					fsm.connection_->set_prepared(fsm.query_name_, row);
+				}
+				template < typename SourceState, typename TargetState >
 				void
-				on_exit(Event const&, FSM&)
-				{ local_log() << "leaving: prepare"; }
+				operator() (no_data const&, extended_query& fsm,
+						SourceState&, TargetState&)
+				{
+					fsm.result_.reset(new result_impl);
+					row_description row;
+					fsm.connection_->set_prepared(fsm.query_name_, row);
+				}
 			};
+			struct parse_data_row {
+				template < typename SourceState, typename TargetState >
+				void
+				operator() (row_data const& row, extended_query& fsm,
+						SourceState&, TargetState&)
+				{
+					fsm.result_->rows().push_back(row);
+				}
+			};
+			struct complete_execution {
+				template < typename SourceState, typename TargetState >
+				void
+				operator() (command_complete const& complete, extended_query& fsm,
+						SourceState&, TargetState&)
+				{
+					local_log() << "Execute complete " << complete.command_tag
+							<< " resultset columns "
+							<< fsm.result_->row_description().size()
+							<< " rows " << fsm.result_->size();
+				}
+			};
+			//@}
+			//@{
+			/** @name Extended query sub-states */
+			struct prepare : public boost::msm::front::state<> {};
 
 			struct parse : public boost::msm::front::state<> {
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
-				{ local_log() << "entering: parse"; }
+				{ local_log() << "entering: parse (unexpected fsm)"; }
+				template < typename Event >
+				void
+				on_entry(Event const&, extended_query& fsm)
+				{
+					local_log() << "entering: parse";
+					local_log(logger::DEBUG) << "Parse query " << fsm.query_.expression;
+					message parse(parse_tag);
+					parse.write(fsm.query_name_);
+					parse.write(fsm.query_.expression);
+					parse.write( (smallint)fsm.query_.param_types.size() );
+					for (oids::type::oid_type oid : fsm.query_.param_types) {
+						parse.write( (integer)oid );
+					}
+
+					message describe(describe_tag);
+					describe.write('S');
+					describe.write(fsm.query_name_);
+					parse.pack(describe);
+
+					parse.pack(message(sync_tag));
+
+					fsm.connection_->send(parse);
+				}
 				template < typename Event, typename FSM >
 				void
 				on_exit(Event const&, FSM&)
 				{ local_log() << "leaving: parse"; }
+
+				struct internal_transition_table : boost::mpl::vector<
+					Internal< row_description,	store_prepared_desc,	none >,
+					Internal< no_data,			store_prepared_desc,	none >
+				> {};
 			};
 
 			struct bind : public boost::msm::front::state<> {
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
-				{ local_log() << "entering: bind"; }
+				{ local_log() << "entering: bind (unexpected fsm)"; }
+				template < typename Event >
+				void
+				on_entry( Event const&, extended_query& fsm )
+				{
+					local_log() << "entering: bind";
+					message bind(bind_tag);
+					bind.write(fsm.portal_name_);
+					bind.write(fsm.query_name_);
+					if (!fsm.query_.params.empty()) {
+						auto out = bind.output();
+						std::copy(fsm.query_.params.begin(), fsm.query_.params.end(), out);
+					} else {
+						bind.write((smallint)0); // parameter format codes
+						bind.write((smallint)0); // number of parameters
+					}
+					if (fsm.connection_->is_prepared(fsm.query_name_)) {
+						row_description const& row =
+								fsm.connection_->get_prepared(fsm.query_name_);
+						bind.write((smallint)row.fields.size());
+						for (auto fd : row.fields) {
+							bind.write((smallint)fd.format_code);
+						}
+					} else {
+						bind.write((smallint)0); // no row description
+					}
+
+					bind.pack(message(sync_tag));
+
+					fsm.connection_->send(bind);
+				}
 				template < typename Event, typename FSM >
 				void
 				on_exit(Event const&, FSM&)
@@ -600,11 +726,27 @@ struct connection_fsm_ :
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
-				{ local_log() << "entering: execute"; }
+				{ local_log() << "entering: execute (unexpected fsm)"; }
+				template < typename Event >
+				void
+				on_entry( Event const&, extended_query& fsm )
+				{
+					local_log() << "entering: execute";
+					message execute(execute_tag);
+					execute.write(fsm.portal_name_);
+					execute.write(fsm.row_limit_);
+					execute.pack(message(sync_tag));
+					fsm.connection_->send(execute);
+				}
 				template < typename Event, typename FSM >
 				void
 				on_exit(Event const&, FSM&)
 				{ local_log() << "leaving: execute"; }
+
+				struct internal_transition_table : boost::mpl::vector<
+					Internal< row_data,			parse_data_row,			none >,
+					Internal< command_complete, complete_execution, 	none >
+				> {};
 			};
 
 			typedef prepare initial_state;
@@ -612,24 +754,36 @@ struct connection_fsm_ :
 
 	        struct is_prepared
 	        {
-	            template <class EVT,class FSM,class SourceState,class TargetState>
+	            template < class EVT, class SourceState, class TargetState>
 	            bool
-				operator()(EVT const& evt,FSM& fsm,SourceState& src,TargetState& tgt)
+				operator()(EVT const& evt, extended_query& fsm,
+						SourceState& src,TargetState& tgt)
 	            {
+	            	if (fsm.connection_) {
+	            		return fsm.connection_->is_prepared(fsm.query_name_);
+	            	}
 	                return false;
 	            }
 	        };
 			//@{
-			/** Transitions */
+			/** Transitions for extended query  */
 			struct transition_table : boost::mpl::vector<
 				/*		Start			Event				Next			Action			Guard			      */
 				/*  +-----------------+-------------------+---------------+---------------+---------------------+ */
 				 Row<	prepare,		none,				parse,			none,			Not<is_prepared>	>,
 				 Row<	prepare,		none,				bind,			none,			is_prepared			>,
-				 Row<	parse,			complete,			bind,			none,			none				>,
-				 Row<	bind,			complete,			exec,			none,			none				>
+				 Row<	parse,			ready_for_query,	bind,			none,			none				>,
+				 Row<	bind,			ready_for_query,	exec,			none,			none				>
 			>{};
 			//@}
+			connection* connection_;
+
+			execute_prepared query_;
+			std::string query_name_;
+			std::string portal_name_;
+			integer row_limit_;
+
+			result_ptr result_;
 		};
 		typedef boost::msm::back::state_machine< extended_query_ > extended_query;
 
@@ -638,7 +792,7 @@ struct connection_fsm_ :
 
 
 		//@{
-		/** @name Transitions */
+		/** @name Transition table for transaction */
 		struct transition_table : boost::mpl::vector<
 			/*		Start			Event				Next			Action						Guard				  */
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
@@ -667,7 +821,7 @@ struct connection_fsm_ :
 		}
 		//@}
 
-		fsm_type* connection_;
+		connection* connection_;
 	}; // transaction state machine
 	typedef boost::msm::back::state_machine< transaction_ > transaction;
 
@@ -798,11 +952,33 @@ struct connection_fsm_ :
 	connection_options const&
 	options() const
 	{ return conn_opts_; }
+
+	bool
+	is_prepared ( std::string const& query )
+	{
+		return prepared_.count(query);
+	}
+
+	void
+	set_prepared( std::string const& query, row_description const& row )
+	{
+		prepared_.insert(std::make_pair(query, row));
+	}
+	row_description const&
+	get_prepared( std::string const& query_name ) const
+	{
+		// FIXME Handle "not there"
+		auto f = prepared_.find(query_name);
+		if (f != prepared_.end()) {
+			return f->second;
+		}
+		throw db_error("Query is not prepared");
+	}
 private:
-	fsm_type&
+	connection&
 	fsm()
 	{
-		return static_cast< fsm_type& >(*this);
+		return static_cast< connection& >(*this);
 	}
     void
     handle_connect(boost::system::error_code const& ec)
@@ -995,6 +1171,22 @@ private:
 					}
 					break;
 				}
+				case parse_complete_tag: {
+					local_log() << "Parse complete";
+					break;
+				}
+				case parameter_desription_tag: {
+					local_log() << "Parameter descriptions";
+					break;
+				}
+				case bind_complete_tag: {
+					local_log() << "Bind complete";
+					break;
+				}
+				case no_data_tag: {
+					fsm().process_event(no_data());
+					break;
+				}
 				default: {
 				    {
 				        local_log(logger::TRACE) << "Unhandled message "
@@ -1021,6 +1213,8 @@ private:
 
 	integer serverPid_;
 	integer	serverSecret_;
+
+	prepared_statements_map prepared_;
 };
 
 class basic_connection;

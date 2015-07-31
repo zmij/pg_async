@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 #include <tip/db/pg/detail/connection_fsm.hpp>
 #include <tip/db/pg/detail/transport.hpp>
+#include <tip/db/pg/query.hpp>
 
 #include <boost/system/error_code.hpp>
 
@@ -305,6 +306,8 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	using namespace tip::db::pg;
 	typedef boost::msm::back::state_machine< connection_fsm_< TransportType > > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::vector< char > buffer_type;
+	typedef std::vector< oids::type::oid_type > oid_sequence;
 
 	boost::asio::io_service svc;
 	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
@@ -316,6 +319,31 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	c->process_event(execute_prepared{
 		"select * from pg_catalog.pg_type"
 	});
+
+	c->process_event(execute{
+		"create temporary table test_exec_prepared (id bigint, name text)"
+	});
+
+	{
+		oid_sequence param_types;
+		buffer_type params;
+		tip::db::pg::detail::write_params(param_types, params, 100500, std::string("foo"));
+		c->process_event(execute_prepared{
+			"insert into test_exec_prepared(id, name) values ($1, $2)",
+			param_types,
+			params
+		});
+	}
+	{
+		oid_sequence param_types;
+		buffer_type params;
+		tip::db::pg::detail::write_params(param_types, params, 100501, std::string("bar"));
+		c->process_event(execute_prepared{
+			"insert into test_exec_prepared(id, name) values ($1, $2)",
+			param_types,
+			params
+		});
+	}
 
 	c->process_event(commit());
 	c->process_event(terminate());
