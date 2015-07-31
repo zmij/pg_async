@@ -24,6 +24,7 @@
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/error.hpp>
 #include <tip/db/pg/transaction.hpp>
+#include <tip/db/pg/resultset.hpp>
 
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
@@ -64,15 +65,6 @@ struct authn_event {
 };
 
 struct complete {};
-
-struct execute {
-	std::string expression;
-};
-struct execute_prepared {
-	std::string expression;
-	std::vector< oids::type::oid_type > param_types;
-	std::vector< byte > params;
-};
 
 struct ready_for_query {
 	char status;
@@ -186,8 +178,8 @@ struct connection_fsm_ :
 				events::begin,
 				events::commit,
 				events::rollback,
-				execute,
-				execute_prepared
+				events::execute,
+				events::execute_prepared
 			> deferred_events;
 	};
 
@@ -208,8 +200,8 @@ struct connection_fsm_ :
 				events::begin,
 				events::commit,
 				events::rollback,
-				execute,
-				execute_prepared
+				events::execute,
+				events::execute_prepared
 			> deferred_events;
 		void
 		on_entry(connection_options const& opts, connection& fsm)
@@ -238,8 +230,8 @@ struct connection_fsm_ :
 				events::begin,
 				events::commit,
 				events::rollback,
-				execute,
-				execute_prepared
+				events::execute,
+				events::execute_prepared
 			> deferred_events;
 		template < typename Event >
 		void
@@ -389,8 +381,8 @@ struct connection_fsm_ :
 		/** @name Transaction sub-states */
 		struct starting : public boost::msm::front::state<> {
 			typedef boost::mpl::vector<
-					execute,
-					execute_prepared,
+					events::execute,
+					events::execute_prepared,
 					events::commit,
 					events::rollback
 				> deferred_events;
@@ -473,6 +465,7 @@ struct connection_fsm_ :
 		};
 
 		struct simple_query_ : public boost::msm::front::state_machine_def<simple_query_> {
+			typedef boost::msm::back::state_machine< simple_query_ > simple_query;
 			template < typename Event >
 			void
 			on_entry(Event const& q, tran_fsm& tran)
@@ -482,10 +475,11 @@ struct connection_fsm_ :
 				connection_ = tran.connection_;
 			}
 			void
-			on_entry(execute const& q, tran_fsm& tran)
+			on_entry(events::execute const& q, tran_fsm& tran)
 			{
 				local_log(logger::DEBUG) << tip::util::MAGENTA << "entering: simple query (execute event)";
 				connection_ = tran.connection_;
+				query_ = q;
 				message m(query_tag);
 				m.write(q.expression);
 				connection_->send(m);
@@ -496,8 +490,8 @@ struct connection_fsm_ :
 			{ local_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: simple query"; }
 
 			typedef boost::mpl::vector<
-					execute,
-					execute_prepared,
+					events::execute,
+					events::execute_prepared,
 					events::commit,
 					events::rollback
 				> deferred_events;
@@ -515,12 +509,18 @@ struct connection_fsm_ :
 				{ local_log() << "leaving: waiting"; }
 				// TODO Internal transition for command complete - non select query
 				struct non_select_result {
-					template < typename FSM >
 					void
-					operator()(command_complete const& evt, FSM&, waiting&, waiting&)
+					operator()(command_complete const& evt, simple_query& fsm,
+							waiting&, waiting&)
 					{
 						local_log() << "Non-select query complete "
 								<< evt.command_tag;
+						if (fsm.query_.result) {
+							// FIXME Pass the transaction pointer
+							// FIXME Non-select query result
+							fsm.query_.result( transaction_ptr(),
+									resultset(result_ptr(new result_impl)), true);
+						}
 					}
 				};
 
@@ -548,13 +548,28 @@ struct connection_fsm_ :
 					result_.reset(new result_impl);
 					result_->row_description().swap(rd.fields);
 				}
-				template < typename Event, typename FSM >
+
+				template < typename Event >
 				void
-				on_exit(Event const&, FSM&)
+				on_exit(Event const&, simple_query& fsm)
 				{
 					local_log() << "leaving: fetch_data result size: "
 							<< result_->size();
+					if (fsm.query_.result) {
+						// FIXME Pass the transaction pointer
+						fsm.query_.result( transaction_ptr(),
+								resultset(result_), true);
+					}
 				}
+
+				void
+				on_exit(query_error const& err, simple_query& fsm)
+				{
+					if (fsm.query_.error) {
+						fsm.query_.error(err);
+					}
+				}
+
 
 				struct parse_data_row {
 					template < typename FSM, typename TargetState >
@@ -582,6 +597,7 @@ struct connection_fsm_ :
 				 Row<	fetch_data,		command_complete,	waiting,		none,			none			>
 			> {};
 			connection* connection_;
+			events::execute query_;
 		};
 		typedef boost::msm::back::state_machine< simple_query_ > simple_query;
 
@@ -597,7 +613,7 @@ struct connection_fsm_ :
 			on_entry(Event const&, FSM&)
 			{ local_log(logger::WARNING) << tip::util::MAGENTA << "entering: extended query (unexpected event)"; }
 			void
-			on_entry(execute_prepared const& q, tran_fsm& tran)
+			on_entry(events::execute_prepared const& q, tran_fsm& tran)
 			{
 				local_log(logger::DEBUG) << tip::util::MAGENTA << "entering: extended query";
 				connection_ = tran.connection_;
@@ -621,8 +637,8 @@ struct connection_fsm_ :
 			{ local_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query"; }
 
 			typedef boost::mpl::vector<
-					execute,
-					execute_prepared,
+					events::execute,
+					events::execute_prepared,
 					events::commit,
 					events::rollback
 				> deferred_events;
@@ -667,6 +683,10 @@ struct connection_fsm_ :
 							<< " resultset columns "
 							<< fsm.result_->row_description().size()
 							<< " rows " << fsm.result_->size();
+					if (fsm.query_.result) {
+						// FIXME Transaction pointer
+						fsm.query_.result( transaction_ptr(), fsm.result_, true );
+					}
 				}
 			};
 			//@}
@@ -810,7 +830,7 @@ struct connection_fsm_ :
 			//@}
 			connection* connection_;
 
-			execute_prepared query_;
+			events::execute_prepared query_;
 			std::string query_name_;
 			std::string portal_name_;
 			integer row_limit_;
@@ -833,11 +853,12 @@ struct connection_fsm_ :
 			 Row<	idle,			events::commit,		exiting,		commit_transaction,			none			>,
 			 Row<	idle,			events::rollback,	exiting,		rollback_transaction,		none			>,
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
-			 Row<	idle,			execute,			simple_query,	none,						none			>,
+			 Row<	idle,			events::execute,	simple_query,	none,						none			>,
 			 Row<	simple_query,	ready_for_query,	idle,			none,						none			>,
 			 Row<	simple_query,	query_error,		tran_error,		none,						none			>,
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
-			 Row<	idle,			execute_prepared,	extended_query,	none,						none			>,
+			 Row<	idle,			events::
+			 	 	 	 	 	 	 execute_prepared,	extended_query,	none,						none			>,
 			 Row<	extended_query,	ready_for_query,	idle,			none,						none			>,
 		 	 Row<	extended_query,	query_error,		tran_error,		none,						none			>,
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
@@ -1338,6 +1359,24 @@ private:
 	do_begin(events::begin const& evt)
 	{
 		fsm_type::process_event(evt);
+	}
+
+	virtual void
+	do_commit()
+	{
+		fsm_type::process_event(events::commit{});
+	}
+
+	virtual void
+	do_rollback()
+	{
+		fsm_type::process_event(events::rollback{});
+	}
+
+	virtual void
+	do_terminate()
+	{
+		fsm_type::process_event(detail::terminate{});
 	}
 private:
 	connection_callbacks callbacks_;

@@ -6,7 +6,6 @@
  */
 
 #include <tip/db/pg/query.hpp>
-#include <tip/db/pg/connection.hpp>
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/database.hpp>
 #include <tip/db/pg/transaction.hpp>

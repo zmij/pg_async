@@ -15,14 +15,12 @@
 #include <stack>
 #include <set>
 
-#include <tip/db/pg/connection.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
-#include <tip/db/pg/detail/basic_state.hpp>
 
-#include <boost/msm/back/state_machine.hpp>
-#include <boost/msm/front/state_machine_def.hpp>
-#include <boost/msm/front/functor_row.hpp>
-#include <boost/msm/front/euml/operator.hpp>
+//#include <boost/msm/back/state_machine.hpp>
+//#include <boost/msm/front/state_machine_def.hpp>
+//#include <boost/msm/front/functor_row.hpp>
+//#include <boost/msm/front/euml/operator.hpp>
 
 namespace tip {
 namespace db {
@@ -35,11 +33,12 @@ typedef std::shared_ptr< transaction > transaction_ptr;
 class basic_connection;
 typedef std::shared_ptr< basic_connection > basic_connection_ptr;
 
-typedef std::function < void (basic_connection_ptr) > basic_connection_event;
+typedef std::function < void (basic_connection_ptr) > connection_event_callback;
+typedef std::function < void (basic_connection_ptr, connection_error) > connection_error_callback;
 
 struct connection_callbacks {
-	basic_connection_event		idle;
-	basic_connection_event		terminated;
+	connection_event_callback	idle;
+	connection_event_callback	terminated;
 	connection_error_callback	error;
 };
 
@@ -52,12 +51,25 @@ struct begin {
 
 struct commit {};
 struct rollback {};
+
+struct execute {
+	std::string				expression;
+	query_result_callback	result;
+	query_error_callback	error;
+};
+struct execute_prepared {
+	std::string expression;
+	std::vector< oids::type::oid_type > param_types;
+	std::vector< byte > params;
+	query_result_callback	result;
+	query_error_callback	error;
+};
+
 }
 
 class basic_connection : public boost::noncopyable {
 public:
 	typedef boost::asio::io_service io_service;
-	typedef std::map< std::string, std::string > client_options_type;
 public:
 	static basic_connection_ptr
 	create(io_service& svc, connection_options const&,
@@ -77,6 +89,9 @@ public:
 
 	bool
 	in_transaction() const;
+
+	void
+	terminate();
 protected:
 	basic_connection();
 
@@ -89,6 +104,13 @@ private:
 
 	virtual void
 	do_begin(events::begin const&) = 0;
+	virtual void
+	do_commit() = 0;
+	virtual void
+	do_rollback() = 0;
+
+	virtual void
+	do_terminate() = 0;
 };
 
 }  // namespace pg

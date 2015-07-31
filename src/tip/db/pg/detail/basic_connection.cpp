@@ -41,7 +41,7 @@ template < typename TransportType >
 std::shared_ptr< detail::concrete_connection< TransportType > >
 create_connection(boost::asio::io_service& svc,
 		connection_options const& opts,
-		basic_connection::client_options_type const& co,
+		client_options_type const& co,
 		connection_callbacks const& callbacks)
 {
 	typedef detail::concrete_connection< TransportType > connection_type;
@@ -82,10 +82,28 @@ basic_connection::begin(events::begin const& evt)
 	do_begin(evt);
 }
 
+void
+basic_connection::commit()
+{
+	do_commit();
+}
+
+void
+basic_connection::rollback()
+{
+	do_rollback();
+}
+
 bool
 basic_connection::in_transaction() const
 {
 	return is_in_transaction();
+}
+
+void
+basic_connection::terminate()
+{
+	do_terminate();
 }
 
 }  // namespace pg

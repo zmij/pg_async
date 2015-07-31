@@ -137,6 +137,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <map>
 #include <boost/integer.hpp>
 
 #include <tip/util/streambuf.hpp>
@@ -263,17 +264,19 @@ struct field_description {
 //@{
 /** @name Forward declarations */
 class resultset;
-class connection;
 class db_error;
 class connection_error;
 class query_error;
 class transaction;
+class basic_connection;
 //@}
 //@{
 /** @name Pointer types */
 typedef std::shared_ptr<transaction> transaction_ptr;
-typedef std::shared_ptr<connection> connection_ptr;
+typedef std::shared_ptr<basic_connection> connection_ptr;
 //@}
+
+typedef std::map< std::string, std::string > client_options_type;
 
 typedef std::function< void () > simple_callback;
 /** Callback for error handling */
@@ -285,8 +288,6 @@ typedef std::function< void (transaction_ptr) > transaction_callback;
 typedef std::function< void (transaction_ptr, resultset, bool) > query_result_callback;
 typedef std::function< void (query_error const&) > query_error_callback;
 
-typedef std::function< void (connection_ptr) > connection_event_callback;
-typedef std::function< void (connection_ptr, connection_error const&) > connection_error_callback;
 namespace detail {
 /** Callback for internal results passing */
 typedef std::function< void (resultset, bool) > internal_result_callback;

@@ -23,7 +23,7 @@ set(
     detail/transport.cpp
     detail/result_impl.cpp
     detail/database_impl.cpp
-    #detail/connection_pool.cpp
+    detail/connection_pool.cpp
 )
 
 add_library(tip-pgsql SHARED ${pgsql_lib_SRCS})

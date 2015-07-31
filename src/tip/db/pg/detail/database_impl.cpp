@@ -37,7 +37,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 using tip::log::logger;
 #endif
 
-database_impl::database_impl(size_t pool_size, connection_params const& defaults)
+database_impl::database_impl(size_t pool_size, client_options_type const& defaults)
 	: pool_size_(pool_size), defaults_(defaults)
 {
 	#ifdef WITH_TIP_LOG
@@ -54,7 +54,7 @@ database_impl::~database_impl()
 }
 
 void
-database_impl::set_defaults(size_t pool_size, connection_params const& defaults)
+database_impl::set_defaults(size_t pool_size, client_options_type const& defaults)
 {
 	pool_size_ = pool_size;
 	defaults_ = defaults;
@@ -63,7 +63,7 @@ database_impl::set_defaults(size_t pool_size, connection_params const& defaults)
 void
 database_impl::add_connection(std::string const& connection_string,
 		db_service::optional_size pool_size,
-		connection_params const& params)
+		client_options_type const& params)
 {
 	connection_options co = connection_options::parse(connection_string);
 	if (co.uri.empty())
@@ -85,7 +85,7 @@ database_impl::add_connection(std::string const& connection_string,
 database_impl::connection_pool_ptr
 database_impl::add_pool(connection_options const& co,
 		db_service::optional_size pool_size,
-		connection_params const& params)
+		client_options_type const& params)
 {
 	if (!connections_.count(co.alias)) {
 		if (!pool_size.is_initialized()) {
@@ -94,7 +94,7 @@ database_impl::add_pool(connection_options const& co,
 		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Create a new connection pool " << co.alias.value;
 		#endif
-		connection_params parms(params);
+		client_options_type parms(params);
 		for (auto p : defaults_) {
 			if (!parms.count(p.first)) {
 				parms.insert(p);

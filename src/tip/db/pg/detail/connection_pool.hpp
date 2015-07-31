@@ -13,7 +13,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/asio.hpp>
 
-#include <tip/db/pg/connection.hpp>
 #include <tip/db/pg/database.hpp>
 
 #include <vector>
@@ -23,8 +22,8 @@
 namespace tip {
 namespace db {
 namespace pg {
+
 namespace detail {
-struct connection_lock;
 
 /**
  * Container of connections to the same database
@@ -33,7 +32,6 @@ class connection_pool : public std::enable_shared_from_this<connection_pool>,
 		private boost::noncopyable {
 public:
 	typedef boost::asio::io_service io_service;
-	typedef connection::connection_params connection_params;
 
 	typedef std::vector<connection_ptr> connections_container;
 	typedef std::queue<connection_ptr> connections_queue;
@@ -50,12 +48,12 @@ public:
 private:
 	connection_pool(io_service& service, size_t pool_size,
 			connection_options const& co,
-			connection_params const&);
+			client_options_type const&);
 public:
 	static connection_pool_ptr
 	create(io_service& service, size_t pool_size,
 			connection_options const& co,
-			connection_params const& = connection_params());
+			client_options_type const& = client_options_type());
 
 	~connection_pool();
 
@@ -81,7 +79,7 @@ private:
 	io_service& 			service_;
 	size_t					pool_size_;
 	connection_options		co_;
-	connection_params		params_;
+	client_options_type		params_;
 
 	mutex_type				mutex_;
 

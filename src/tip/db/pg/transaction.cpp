@@ -5,8 +5,8 @@
  *     @author: zmij
  */
 
-#include <tip/db/pg/connection.hpp>
 #include <tip/db/pg/transaction.hpp>
+#include <tip/db/pg/detail/basic_connection.hpp>
 
 namespace tip {
 namespace db {

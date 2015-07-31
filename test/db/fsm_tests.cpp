@@ -85,28 +85,10 @@ struct dummy_transport {
 
 using namespace tip::db::pg::detail;
 using namespace tip::db::pg::events;
-struct fsm : boost::msm::back::state_machine< connection_fsm_< dummy_transport, fsm > > {
-	typedef boost::msm::back::state_machine< connection_fsm_< dummy_transport, fsm > > base_type;
-	fsm(boost::asio::io_service& svc, client_options_type const& co)
-		: base_type(std::ref(svc), co)
-	{
-	}
-	virtual ~fsm() {}
-	virtual void do_notify_idle()
-	{
-		test_log(logger::INFO) << "Connection notified idle";
-	}
-	virtual void do_notify_terminated()
-	{
-		test_log(logger::INFO) << "Connection notified terminated";
-	}
-	virtual void do_notify_error(tip::db::pg::connection_error const& e)
-	{
-		test_log(logger::INFO) << "Connection notified error " << e.what();
-	}
-};
+
+typedef concrete_connection<dummy_transport> fsm;
 typedef std::shared_ptr<fsm> fsm_ptr;
-fsm::client_options_type client_options {
+tip::db::pg::client_options_type client_options {
 	{"client_encoding", 		"UTF8"},
 	{"application_name", 		"pg_async"},
 	//{"autocommit", 				"off"},
@@ -116,7 +98,7 @@ fsm::client_options_type client_options {
 TEST(DummyFSM, NormalFlow)
 {
 	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options) );
+	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -147,7 +129,7 @@ TEST(DummyFSM, NormalFlow)
 TEST(DummyFSM, TerminateTran)
 {
 	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options) );
+	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -166,7 +148,7 @@ TEST(DummyFSM, TerminateTran)
 TEST(DummyFSM, SimpleQueryMode)
 {
 	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options) );
+	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -197,7 +179,7 @@ TEST(DummyFSM, SimpleQueryMode)
 TEST(DummyFSM, ExtendedQueryMode)
 {
 	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options) );
+	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -214,44 +196,15 @@ TEST(DummyFSM, ExtendedQueryMode)
 }
 
 template < typename TransportType >
-struct test_connection :
-		boost::msm::back::state_machine< connection_fsm_<
-			TransportType,
-			test_connection< TransportType > > > {
-	typedef boost::msm::back::state_machine<
-			connection_fsm_< TransportType, test_connection< TransportType > > > base_type;
-
-	test_connection(boost::asio::io_service& svc,
-			typename base_type::client_options_type const& co)
-		: base_type(std::ref(svc), co)
-	{
-	}
-	virtual ~test_connection() {}
-
-	virtual void do_notify_idle()
-	{
-		test_log(logger::INFO) << "Connection notified idle";
-	}
-	virtual void do_notify_terminated()
-	{
-		test_log(logger::INFO) << "Connection notified terminated";
-	}
-	virtual void do_notify_error(tip::db::pg::connection_error const& e)
-	{
-		test_log(logger::INFO) << "Connection notified error " << e.what();
-	}
-};
-
-template < typename TransportType >
 void
 test_normal_flow(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef test_connection< TransportType > fsm_type;
+	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
 	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -283,11 +236,11 @@ void
 test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef test_connection< TransportType > fsm_type;
+	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
 	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -317,11 +270,11 @@ void
 test_error_in_query(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef test_connection< TransportType > fsm_type;
+	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
 	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -353,13 +306,13 @@ void
 test_exec_prepared(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
-	typedef test_connection< TransportType > fsm_type;
+	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 	typedef std::vector< char > buffer_type;
 	typedef std::vector< oids::type::oid_type > oid_sequence;
 
 	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options));
+	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
 	c->process_event(opts);

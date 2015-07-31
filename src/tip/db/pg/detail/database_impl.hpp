@@ -10,7 +10,6 @@
 
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/database.hpp>
-#include <tip/db/pg/connection.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <boost/asio/io_service.hpp>
@@ -27,18 +26,17 @@ struct connection_pool;
 class database_impl : private boost::noncopyable {
 	typedef std::shared_ptr<connection_pool> connection_pool_ptr;
 	typedef std::map<dbalias, connection_pool_ptr> connections_map;
-	typedef connection::connection_params connection_params;
 public:
-	database_impl(size_t pool_size, connection_params const& defaults);
+	database_impl(size_t pool_size, client_options_type const& defaults);
 	virtual ~database_impl();
 
 	void
-	set_defaults(size_t pool_size, connection_params const& defaults);
+	set_defaults(size_t pool_size, client_options_type const& defaults);
 
 	void
 	add_connection(std::string const& connection_string,
 			db_service::optional_size pool_size = db_service::optional_size(),
-			connection_params const& params = connection_params());
+			client_options_type const& params = client_options_type());
 	void
 	get_connection(std::string const& connection_string,
 			transaction_callback const&, error_callback const&);
@@ -61,13 +59,13 @@ private:
 	connection_pool_ptr
 	add_pool(connection_options const&,
 			db_service::optional_size = db_service::optional_size(),
-			connection_params const& = {});
+			client_options_type const& = {});
 
 	boost::asio::io_service		service_;
 	size_t						pool_size_;
 
 	connections_map				connections_;
-	connection_params			defaults_;
+	client_options_type			defaults_;
 };
 
 } /* namespace detail */

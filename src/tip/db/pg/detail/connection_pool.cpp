@@ -6,6 +6,7 @@
  */
 
 #include <tip/db/pg/detail/connection_pool.hpp>
+#include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/transaction.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/error.hpp>
@@ -42,7 +43,7 @@ using tip::log::logger;
 connection_pool::connection_pool(io_service& service,
 		size_t pool_size,
 		connection_options const& co,
-		connection_params const& params)
+		client_options_type const& params)
 	: service_(service), pool_size_(pool_size),
 	  co_(co), params_(params), closed_(false)
 {
@@ -70,7 +71,7 @@ connection_pool::connection_pool_ptr
 connection_pool::create(io_service& service,
 		size_t pool_size,
 		connection_options const& co,
-		connection_params const& params)
+		client_options_type const& params)
 {
 	connection_pool_ptr pool(new connection_pool( service, pool_size, co, params ));
 	pool->create_new_connection();
@@ -92,11 +93,11 @@ connection_pool::create_new_connection()
 				<< " connection";
 	}
 	#endif
-	connection_ptr conn(connection::create(service_,
+	connection_ptr conn = basic_connection::create(service_, co_, params_, {
 			boost::bind(&connection_pool::connection_ready, shared_from_this(), _1),
 			boost::bind(&connection_pool::connection_terminated, shared_from_this(), _1),
 			boost::bind(&connection_pool::connection_error, shared_from_this(), _1, _2),
-			co_, params_));
+	});
 
 	connections_.push_back(conn);
 	#ifdef WITH_TIP_LOG
@@ -114,38 +115,32 @@ connection_pool::create_new_connection()
 void
 connection_pool::connection_ready(connection_ptr c)
 {
-	if (c->state() == connection::IDLE) {
-		#ifdef WITH_TIP_LOG
-		{
-			auto local = local_log();
-			local << "Connection "
-					<< (util::CLEAR) << (util::RED | util::BRIGHT)
-					<< alias().value
-					<< logger::severity_color()
-					<< " ready";
-		}
-		#endif
-		lock_type lock(mutex_);
+	{
+		auto local = local_log();
+		local << "Connection "
+				<< (util::CLEAR) << (util::RED | util::BRIGHT)
+				<< alias().value
+				<< logger::severity_color()
+				<< " ready";
+	}
+	lock_type lock(mutex_);
 
-		if (!waiting_.empty()) {
-			request_callbacks req = waiting_.front();
-			waiting_.pop();
-			local_log()
-					<< (util::CLEAR) << (util::RED | util::BRIGHT)
-					<< alias().value
-					<< logger::severity_color()
-					<< " queue size " << waiting_.size() << " (dequeue)";
-			c->begin_transaction(req.first, req.second);
-		} else {
-			#ifdef WITH_TIP_LOG
-			local_log()
-					<< (util::CLEAR) << (util::RED | util::BRIGHT)
-					<< alias().value
-					<< logger::severity_color()
-					<< " queue size " << waiting_.size();
-			#endif
-			ready_connections_.push(c);
-		}
+	if (!waiting_.empty()) {
+		request_callbacks req = waiting_.front();
+		waiting_.pop();
+		local_log()
+				<< (util::CLEAR) << (util::RED | util::BRIGHT)
+				<< alias().value
+				<< logger::severity_color()
+				<< " queue size " << waiting_.size() << " (dequeue)";
+		c->begin({req.first, req.second});
+	} else {
+		local_log()
+				<< (util::CLEAR) << (util::RED | util::BRIGHT)
+				<< alias().value
+				<< logger::severity_color()
+				<< " queue size " << waiting_.size();
+		ready_connections_.push(c);
 	}
 }
 
@@ -183,26 +178,18 @@ connection_pool::connection_terminated(connection_ptr c)
 void
 connection_pool::connection_error(connection_ptr c, class connection_error const& ec)
 {
-	#ifdef WITH_TIP_LOG
 	local_log(logger::ERROR) << "Connection " << alias().value << " error: "
 			<< ec.what();
-	#endif
-	if (c->state() == connection::DISCONNECTED) {
-		lock_type lock(mutex_);
-		#ifdef WITH_TIP_LOG
-		local_log() << "Erase connection from the connection pool";
-		#endif
-		auto f = std::find(connections_.begin(), connections_.end(), c);
-		if (f != connections_.end()) {
-			connections_.erase(f);
-		}
-		while (!waiting_.empty()) {
-			request_callbacks req = waiting_.front();
-			waiting_.pop();
-			req.second(ec);
-		}
-	} else {
-		// FIXME Handle the error
+	lock_type lock(mutex_);
+	local_log() << "Erase connection from the connection pool";
+	auto f = std::find(connections_.begin(), connections_.end(), c);
+	if (f != connections_.end()) {
+		connections_.erase(f);
+	}
+	while (!waiting_.empty()) {
+		request_callbacks req = waiting_.front();
+		waiting_.pop();
+		req.second(ec);
 	}
 }
 
@@ -222,8 +209,7 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 		#endif
 		connection_ptr conn = ready_connections_.front();
 		ready_connections_.pop();
-		conn->begin_transaction(conn_cb, err, false);
-		//conn_cb(conn->lock());
+		conn->begin({conn_cb, err});
 	} else {
 		#ifdef WITH_TIP_LOG
 		local_log()
