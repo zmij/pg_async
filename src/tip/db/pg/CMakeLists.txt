@@ -21,18 +21,9 @@ set(
     detail/basic_connection.cpp
     detail/connection_fsm.cpp
     detail/transport.cpp
-    detail/connection_impl.cpp
-    detail/basic_state.cpp
-    detail/startup.cpp
-    detail/idle_state.cpp
-    detail/fetch_state.cpp
-    detail/simple_query_state.cpp
-    detail/transaction_state.cpp
-    detail/extended_query_state.cpp
-    detail/terminated_state.cpp
     detail/result_impl.cpp
     detail/database_impl.cpp
-    detail/connection_pool.cpp
+    #detail/connection_pool.cpp
 )
 
 add_library(tip-pgsql SHARED ${pgsql_lib_SRCS})
@@ -53,9 +44,3 @@ set(pgsql_lib_LIBRARIES
 message(STATUS ${pgsql_lib_LIBRARIES})
 
 target_link_libraries(tip-pgsql ${pgsql_lib_LIBRARIES})
-
-add_executable(pg-async-test pg_async.cpp)
-
-target_link_libraries(pg-async-test 
-    tip-pgsql
-)

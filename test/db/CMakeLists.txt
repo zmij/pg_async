@@ -26,8 +26,8 @@ add_custom_target(test-sql-scripts
 set(test_pg_SRCS 
     fsm_tests.cpp
     #internals_tests.cpp
-    db_io_tests.cpp
-    query_tests.cpp
+    #db_io_tests.cpp
+    #query_tests.cpp
     test_main.cpp
     test-environment.cpp
 )
@@ -58,10 +58,4 @@ add_test(
 
 
 add_dependencies(${PGTEST} test-sql-scripts)
-
-add_executable(test-extended-query-mode extended_query_mode.cpp)
-target_link_libraries(test-extended-query-mode   
-    tip-pgsql
-    tip-log
-)
 
