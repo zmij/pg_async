@@ -348,6 +348,7 @@ void
 message::write(std::string const& s)
 {
 	protocol_write< TEXT_DATA_FORMAT >(payload, s);
+	payload.push_back(0);
 }
 
 void

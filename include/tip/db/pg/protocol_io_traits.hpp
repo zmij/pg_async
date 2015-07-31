@@ -494,12 +494,12 @@ struct protocol_formatter< std::string, TEXT_DATA_FORMAT > :
    size_t
 	size() const
     {
-    	return base_type::value.size() + 1;
+    	return base_type::value.size();
     }
     bool
     operator()(std::ostream& out)
     {
-        out << base_type::value << '\0';
+        out << base_type::value;
         return out.good();
     }
     bool
@@ -507,7 +507,6 @@ struct protocol_formatter< std::string, TEXT_DATA_FORMAT > :
     {
     	auto iter = std::copy(base_type::value.begin(), base_type::value.end(),
     			std::back_inserter(buffer));
-    	*iter++ = '\0';
     	return true;
     }
 
