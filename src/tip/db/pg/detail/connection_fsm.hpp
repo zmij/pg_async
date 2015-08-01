@@ -78,6 +78,10 @@ struct no_data {}; // Prepared query doesn't return data
 
 struct terminate {};
 
+namespace flags {
+struct in_transaction{};
+}  // namespace flags
+
 template < typename TransportType, typename SharedType >
 struct connection_fsm_ :
 		public boost::msm::front::state_machine_def< connection_fsm_< TransportType, SharedType > >,
@@ -332,6 +336,7 @@ struct connection_fsm_ :
 		//@}
 
 		typedef boost::mpl::vector< terminate > deferred_events;
+		typedef boost::mpl::vector< flags::in_transaction > flag_list;
 		typedef boost::msm::back::state_machine< transaction_ > tran_fsm;
 
 		typedef std::shared_ptr< pg::transaction > transaction_ptr;
@@ -1037,9 +1042,7 @@ struct connection_fsm_ :
 	bool
 	in_transaction() const
 	{
-		//return fsm().state_downcast< transaction const* >();
-		// FIXME Use state flags!
-		return true;
+		return fsm().template is_flag_active<flags::in_transaction>();
 	}
 	//@}
 	//@{
@@ -1061,6 +1064,12 @@ private:
 	{
 		return static_cast< connection& >(*this);
 	}
+	connection const&
+	fsm() const
+	{
+		return static_cast< connection const& >(*this);
+	}
+
     void
     handle_connect(boost::system::error_code const& ec)
     {
