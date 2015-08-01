@@ -51,14 +51,14 @@ struct rollback {};
 
 struct execute {
 	std::string				expression;
-	query_result_callback	result;
+	query_internal_callback	result;
 	query_error_callback	error;
 };
 struct execute_prepared {
 	std::string 			expression;
 	type_oid_sequence 		param_types;
 	std::vector< byte > 	params;
-	query_result_callback	result;
+	query_internal_callback	result;
 	query_error_callback	error;
 };
 

@@ -67,14 +67,14 @@ struct dummy_transport {
 	void
 	async_read(BufferType& buffer, HandlerType handler)
 	{
-		local_log() << "Dummy async read";
+		test_log() << "Dummy async read";
 	}
 
 	template < typename BufferType, typename HandlerType >
 	void
 	async_write(BufferType const& buffer, HandlerType handler)
 	{
-		local_log() << "Dummy async write";
+		test_log() << "Dummy async write";
 	}
 
 };

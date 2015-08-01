@@ -287,6 +287,7 @@ typedef std::function< void (transaction_ptr) > transaction_callback;
 
 /** Callback for query results */
 typedef std::function< void (transaction_ptr, resultset, bool) > query_result_callback;
+typedef std::function< void (resultset, bool) > query_internal_callback;
 typedef std::function< void (query_error const&) > query_error_callback;
 
 namespace detail {

@@ -31,6 +31,7 @@
 #include <chrono>
 #include <fstream>
 #include <sstream>
+#include <atomic>
 
 #include "db/config.hpp"
 #include "test-environment.hpp"
@@ -144,9 +145,9 @@ TEST( ConnectionTest, ConnectionPool )
 
 		ASSERT_TRUE(pool.get());
 
-		int sent_count = 0;
-		int res_count = 0;
-		int fail_count = 0;
+		std::atomic<int> sent_count(0);
+		std::atomic<int> res_count(0);
+		std::atomic<int> fail_count(0);
 
 		boost::asio::deadline_timer timer(io_service,
 				boost::posix_time::seconds(test::environment::deadline));
@@ -170,18 +171,19 @@ TEST( ConnectionTest, ConnectionPool )
 					[&] (transaction_ptr tran) {
 						int req_no = i;
 						ASSERT_TRUE(tran.get());
-						local_log(logger::TRACE) << "Obtained connection thread  "
+						local_log(logger::DEBUG) << "Obtained connection thread  "
 								<< t_no << " request " << req_no;
-						(*tran)->execute( {"select * from pg_catalog.pg_class limit 10",
+						++sent_count;
+						tran->execute( "select * from pg_catalog.pg_class limit 10",
 						[&] (transaction_ptr t1, resultset r, bool complete) {
 							ASSERT_TRUE(t1.get());
 							if (complete) {
 								++res_count;
 							}
-							local_log() << "Received a resultset columns: " << r.columns_size()
+							local_log(logger::DEBUG) << "Received a resultset columns: " << r.columns_size()
 									<< " rows: " << r.size()
 									<< " completed: " << std::boolalpha << complete;
-							local_log() << "Sent requests: " << sent_count
+							local_log(logger::DEBUG) << "Sent requests: " << sent_count
 									<< " Received results: " << res_count;
 							if (complete)
 								t1->commit();
@@ -190,8 +192,7 @@ TEST( ConnectionTest, ConnectionPool )
 								pool->close();
 								timer.cancel();
 							}
-						}, [](db_error const&){} });
-						++sent_count;
+						}, [](db_error const&){} );
 					},
 					[&] (db_error const& ec) {
 						++fail_count; // transaction rolled back
@@ -246,7 +247,7 @@ TEST( ConnectionTest, ExecutePrepared )
 				++queries;
 				c->begin({
 				[&](transaction_ptr tran){
-					(*tran)->execute({
+					tran->execute(
 					"select * from pg_catalog.pg_type where typelem > $1 limit $2",
 					param_types, params,
 					[&](transaction_ptr tran, resultset r, bool complete) {
@@ -256,7 +257,7 @@ TEST( ConnectionTest, ExecutePrepared )
 						EXPECT_FALSE(r.empty());
 						tran->commit();
 					}, [&](db_error const& ) {
-					}});
+					});
 				}, [](db_error const&) {
 				}});
 			} else {
@@ -279,6 +280,7 @@ TEST( TransactionTest, CleanExit )
 		local_log(logger::INFO) << "Transactions clean exit test";
 		boost::asio::io_service io_service;
 		int transactions = 0;
+		bool transaction_error = false;
 		connection_ptr conn(basic_connection::create(
 			io_service, opts,
 			{
@@ -286,35 +288,27 @@ TEST( TransactionTest, CleanExit )
 				{"application_name", "pg_async"}
 			},
 		{[&](connection_ptr c) {
-			ASSERT_THROW( c->commit(), db_error );
-			{
-				bool error_callback_fired = false;
-				ASSERT_NO_THROW(c->commit());
-				EXPECT_TRUE(error_callback_fired);
-			}
-			ASSERT_THROW( c->rollback(), db_error );
-			{
-				bool error_callback_fired = false;
-				ASSERT_NO_THROW(c->rollback());
-				EXPECT_TRUE(error_callback_fired);
-			}
-			if (!transactions) {
+			if (transactions < test::environment::num_requests) {
 				ASSERT_NO_THROW(c->begin({
 				[&](transaction_ptr tran){
+					//EXPECT_THROW( c->begin(events::begin()), db_error );
 					EXPECT_TRUE(tran.get());
 					EXPECT_TRUE(tran->in_transaction());
 					ASSERT_NO_THROW(tran->commit());
 				},
-				[](db_error const&){
-
+				[&](db_error const&){
+					transaction_error = true;
 				}}));
 				transactions++;
+			} else {
+				c->terminate();
 			}
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
+		EXPECT_FALSE(transaction_error);
 	}
 }
 
@@ -328,62 +322,35 @@ TEST(TransactionTest, DirtyTerminate)
 		local_log(logger::INFO) << "Transactions dirty terminate exit test";
 		#endif
 		boost::asio::io_service io_service;
-		bool transaction_error = false;
+		int transaction_error = 0;
+		int transactions = 0;
 		connection_ptr conn(basic_connection::create(io_service,  opts,
 		{
 				{"client_encoding", "UTF8"},
 				{"application_name", "pg_async"}
 		},
 		{[&](connection_ptr c) {
-			ASSERT_NO_THROW(c->begin(
-			{[&](transaction_ptr tran){
-				EXPECT_TRUE(tran.get());
-				EXPECT_TRUE(tran->in_transaction());
-
-				(*tran)->terminate();
-			},
-			[&](db_error const&){
-				transaction_error = true;
-			}}));
+			if (transactions < test::environment::num_requests) {
+				transactions++;
+				local_log() << "Obtained connection";
+				EXPECT_FALSE(c->in_transaction());
+				ASSERT_NO_THROW(c->begin(
+				{[&](transaction_ptr tran){
+					EXPECT_TRUE(tran.get());
+					EXPECT_TRUE(tran->in_transaction());
+				},
+				[&](db_error const&){
+					transaction_error++;
+				}}));
+			} else {
+				c->terminate();
+			}
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
-		EXPECT_TRUE(transaction_error);
-	}
-}
-
-TEST(TransactionTest, Autocommit)
-{
-	using namespace tip::db::pg;
-	if (!test::environment::test_database.empty()) {
-		connection_options opts = connection_options::parse(test::environment::test_database);
-		local_log(logger::INFO) << "Transactions dirty terminate autocommit exit test";
-		boost::asio::io_service io_service;
-		bool transaction_error = false;
-		connection_ptr conn(basic_connection::create(io_service, opts,
-		{
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		},
-		{[&](connection_ptr c) {
-			ASSERT_NO_THROW(c->begin({
-			[&](transaction_ptr tran){
-				EXPECT_TRUE(tran.get());
-				EXPECT_TRUE(tran->in_transaction());
-
-				(*tran)->terminate();
-			},
-			[&](db_error const&){
-				transaction_error = false;
-			}}));
-		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
-			FAIL();
-		}}));
-		io_service.run();
-		EXPECT_TRUE(!transaction_error);
+		EXPECT_EQ(test::environment::num_requests, transaction_error);
 	}
 }
 
@@ -399,7 +366,7 @@ TEST(TransactionTest, DirtyUnlock)
 
 		boost::asio::deadline_timer timer(io_service, boost::posix_time::milliseconds(100));
 
-		bool transaction_error = false;
+		int transaction_error = false;
 		int transactions = 0;
 		connection_ptr conn (basic_connection::create(io_service, opts,
 		{
@@ -443,35 +410,44 @@ TEST(TransactionTest, Query)
 		connection_options opts = connection_options::parse(test::environment::test_database);
 		local_log(logger::INFO) << "Transaction query test";
 		boost::asio::io_service io_service;
-		bool transaction_error = false;
+		int transaction_error = 0;
+		int transactions = 0;
+		int result_count = 0;
 		connection_ptr conn(basic_connection::create(io_service, opts,
 		{
 			{"client_encoding", "UTF8"},
 			{"application_name", "pg_async"}
 		},
 		{[&](connection_ptr c) {
-			ASSERT_NO_THROW(c->begin({
-			[&](transaction_ptr tran){
-				EXPECT_TRUE(tran.get());
-				EXPECT_TRUE(tran->in_transaction());
-				(*tran)->execute({ "select * from pg_catalog.pg_class",
-				[&] (transaction_ptr tran, resultset r, bool complete) {
-					local_log() << "Received a resultset columns: " << r.columns_size()
-							<< " rows: " << r.size()
-							<< " completed: " << std::boolalpha << complete;
-					if (complete)
-						(*tran)->terminate();
-				}, [] (db_error const&) {}});
-			},
-			[&](db_error const&){
-				transaction_error = true;
-			}}));
+			if (transactions < test::environment::num_requests) {
+				transactions++;
+				ASSERT_NO_THROW(c->begin({
+				[&](transaction_ptr tran){
+					EXPECT_TRUE(tran.get());
+					EXPECT_TRUE(tran->in_transaction());
+					tran->execute( "select * from pg_catalog.pg_class",
+					[&] (transaction_ptr tran, resultset r, bool complete) {
+						if (complete)
+							result_count++;
+						local_log() << "Received a resultset columns: " << r.columns_size()
+								<< " rows: " << r.size()
+								<< " completed: " << std::boolalpha << complete;
+					}, [] (db_error const&) {});
+				},
+				[&](db_error const&){
+					transaction_error++;
+				}}));
+			} else {
+				c->terminate();
+			}
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
-		EXPECT_TRUE(!transaction_error);
+
+		EXPECT_EQ(test::environment::num_requests, transaction_error);
+		EXPECT_EQ(test::environment::num_requests, result_count);
 	}
 }
 

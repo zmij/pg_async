@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <functional>
+#include <tip/db/pg/common.hpp>
 
 namespace tip {
 namespace db {
@@ -64,8 +65,21 @@ public:
 	commit();
 	void
 	rollback();
+
+	void
+	execute(std::string const& query, query_result_callback,
+			query_error_callback);
+	void
+	execute(std::string const& query, type_oid_sequence const& param_types,
+			std::vector< byte > params_buffer,
+			query_result_callback, query_error_callback);
 private:
+	void
+	handle_results(resultset, bool, query_result_callback);
+	void
+	handle_query_error(query_error const&, query_error_callback);
 	connection_ptr connection_;
+	bool finished_;
 };
 
 } /* namespace pg */
