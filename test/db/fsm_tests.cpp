@@ -281,7 +281,6 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 	c->process_event(begin());
 	c->process_event(begin());
 	c->process_event(execute{ "select * from _shouldnt_be_there_" });
-	//c->process_event(rollback());
 	c->process_event(terminate());
 
 	svc.run();

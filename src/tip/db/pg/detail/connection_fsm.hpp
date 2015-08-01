@@ -484,6 +484,7 @@ struct connection_fsm_ :
 			{
 				local_log(logger::DEBUG) << tip::util::MAGENTA << "entering: simple query (execute event)";
 				connection_ = tran.connection_;
+				tran_ = &tran;
 				query_ = q;
 				message m(query_tag);
 				m.write(q.expression);
@@ -521,9 +522,8 @@ struct connection_fsm_ :
 						local_log() << "Non-select query complete "
 								<< evt.command_tag;
 						if (fsm.query_.result) {
-							// FIXME Pass the transaction pointer
 							// FIXME Non-select query result
-							fsm.query_.result( transaction_ptr(),
+							fsm.query_.result( fsm.tran_->tran_object_.lock(),
 									resultset(result_ptr(new result_impl)), true);
 						}
 					}
@@ -561,8 +561,7 @@ struct connection_fsm_ :
 					local_log() << "leaving: fetch_data result size: "
 							<< result_->size();
 					if (fsm.query_.result) {
-						// FIXME Pass the transaction pointer
-						fsm.query_.result( transaction_ptr(),
+						fsm.query_.result( fsm.tran_->tran_object_.lock(),
 								resultset(result_), true);
 					}
 				}
@@ -602,6 +601,7 @@ struct connection_fsm_ :
 				 Row<	fetch_data,		command_complete,	waiting,		none,			none			>
 			> {};
 			connection* connection_;
+			tran_fsm* tran_;
 			events::execute query_;
 		};
 		typedef boost::msm::back::state_machine< simple_query_ > simple_query;
@@ -610,7 +610,7 @@ struct connection_fsm_ :
 
 			typedef boost::msm::back::state_machine< extended_query_ > extended_query;
 
-			extended_query_() : connection_(nullptr), row_limit_(0),
+			extended_query_() : connection_(nullptr), tran_(nullptr), row_limit_(0),
 					result_(new result_impl) {}
 
 			template < typename Event, typename FSM >
@@ -622,6 +622,7 @@ struct connection_fsm_ :
 			{
 				local_log(logger::DEBUG) << tip::util::MAGENTA << "entering: extended query";
 				connection_ = tran.connection_;
+				tran_ = &tran;
 				query_ = q;
 				std::ostringstream os;
 				os << query_.expression;
@@ -689,8 +690,8 @@ struct connection_fsm_ :
 							<< fsm.result_->row_description().size()
 							<< " rows " << fsm.result_->size();
 					if (fsm.query_.result) {
-						// FIXME Transaction pointer
-						fsm.query_.result( transaction_ptr(), fsm.result_, true );
+						fsm.query_.result( fsm.tran_->tran_object_.lock(),
+								resultset(fsm.result_), true );
 					}
 				}
 			};
@@ -834,6 +835,7 @@ struct connection_fsm_ :
 			>{};
 			//@}
 			connection* connection_;
+			tran_fsm* tran_;
 
 			events::execute_prepared query_;
 			std::string query_name_;

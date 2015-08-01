@@ -19,27 +19,27 @@ transaction::transaction(connection_ptr conn)
 
 transaction::~transaction()
 {
+	if (connection_->in_transaction())
+		connection_->rollback();
 }
 
 bool
 transaction::in_transaction() const
 {
-	//return connection_->in_transaction();
-	return true;
+	return connection_->in_transaction();
 }
 
 void
 transaction::commit()
 {
 
-	//connection_->commit_transaction( shared_from_this(), tcb, err );
+	connection_->commit();
 }
 
 void
 transaction::rollback()
 {
-
-	//connection_->rollback_transaction( shared_from_this(), tcb, err );
+	connection_->rollback();
 }
 
 } /* namespace pg */
