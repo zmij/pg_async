@@ -277,6 +277,7 @@ typedef std::shared_ptr<basic_connection> connection_ptr;
 //@}
 
 typedef std::map< std::string, std::string > client_options_type;
+typedef std::vector< oids::type::oid_type > type_oid_sequence;
 
 typedef std::function< void () > simple_callback;
 /** Callback for error handling */

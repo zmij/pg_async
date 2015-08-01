@@ -309,7 +309,6 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 	typedef std::vector< char > buffer_type;
-	typedef std::vector< oids::type::oid_type > oid_sequence;
 
 	boost::asio::io_service svc;
 	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
@@ -322,12 +321,12 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 		"select * from pg_catalog.pg_type"
 	});
 
-	c->process_event(execute{
+	c->process_event(events::execute{
 		"create temporary table test_exec_prepared (id bigint, name text)"
 	});
 
 	{
-		oid_sequence param_types;
+		type_oid_sequence param_types;
 		buffer_type params;
 		tip::db::pg::detail::write_params(param_types, params, 100500, std::string("foo"));
 		c->process_event(execute_prepared{
@@ -337,7 +336,7 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 		});
 	}
 	{
-		oid_sequence param_types;
+		type_oid_sequence param_types;
 		buffer_type params;
 		tip::db::pg::detail::write_params(param_types, params, 100501, std::string("bar"));
 		c->process_event(execute_prepared{

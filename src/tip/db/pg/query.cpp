@@ -209,7 +209,7 @@ query::buffer()
 	return pimpl_->params_;
 }
 
-query::type_oid_sequence&
+type_oid_sequence&
 query::param_types()
 {
 	return pimpl_->param_types_;

@@ -152,14 +152,13 @@ class QueryParamsWriteTest : public ::testing::TestWithParam< std::tuple<
 public:
 	typedef std::vector< char > buffer_type;
 	typedef buffer_type::iterator buffer_iterator;
-	typedef std::vector< oids::type::oid_type > oid_sequence;
-	typedef std::tuple< oid_sequence, buffer_type, size_t > test_data;
+	typedef std::tuple< type_oid_sequence, buffer_type, size_t > test_data;
 
 	template < typename ... T >
 	static test_data
 	make_test_data(T const& ... args)
 	{
-		oid_sequence param_types;
+		type_oid_sequence param_types;
 		buffer_type buffer;
 		tip::db::pg::detail::write_params( param_types, buffer, args ... );
 		return std::make_tuple(param_types, buffer, sizeof ... (T));
@@ -169,7 +168,7 @@ public:
 TEST_P(QueryParamsWriteTest, Buffers)
 {
 	using namespace tip::db::pg;
-	oid_sequence param_types;
+	type_oid_sequence param_types;
 	buffer_type buffer;
 	size_t expected_param_count;
 	std::tie(param_types, buffer, expected_param_count) = GetParam();

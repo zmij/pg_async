@@ -111,7 +111,6 @@ public:
 	transaction_ptr
 	connection();
 private:
-	typedef std::vector< oids::type::oid_type > type_oid_sequence;
 	typedef std::vector<byte> params_buffer;
 
 	void

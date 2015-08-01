@@ -101,7 +101,6 @@ struct format_selector< 0, T > {
 	typedef traits::best_formatter<type> best_formatter;
 	typedef typename best_formatter::type formatter_type;
 
-	typedef std::vector< oids::type::oid_type > oid_sequence;
 	typedef traits::cpppg_data_mapping< T > data_mapping;
 
 	static constexpr protocol_data_format data_format = best_formatter::value;
@@ -111,7 +110,7 @@ struct format_selector< 0, T > {
 	};
 
 	static void
-	write_type(oid_sequence& param_types)
+	write_type(type_oid_sequence& param_types)
 	{
 		static_assert( traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
 				"Parameter type doesn't have a PostgreSQL typeoid mapping" );
@@ -147,7 +146,6 @@ struct format_selector< N, T, Y ... > {
 
 	typedef format_selector< N - 1, Y ...> next_param_type;
 
-	typedef std::vector< oids::type::oid_type > oid_sequence;
 	typedef traits::cpppg_data_mapping< T > data_mapping;
 
 	static constexpr protocol_data_format data_format = best_formatter::value;
@@ -159,7 +157,7 @@ struct format_selector< N, T, Y ... > {
 	};
 
 	static void
-	write_type(oid_sequence& param_types)
+	write_type(type_oid_sequence& param_types)
 	{
 		static_assert( traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
 				"Parameter type doesn't have a PostgreSQL typeoid mapping" );
@@ -219,10 +217,9 @@ struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 	typedef format_selector< last_index, T... > first_selector;
 	static constexpr protocol_data_format  data_format = first_selector::data_format;
 
-	typedef std::vector< oids::type::oid_type > oid_sequence;
 
 	bool
-	static write_params( oid_sequence& param_types, std::vector<byte>& buffer,
+	static write_params( type_oid_sequence& param_types, std::vector<byte>& buffer,
 			T const& ... args )
 	{
 		param_types.reserve(size);
@@ -253,10 +250,9 @@ struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > 
 	typedef format_selector< last_index, T... > first_selector;
 	static constexpr protocol_data_format  data_format = first_selector::data_format;
 
-	typedef std::vector< oids::type::oid_type > oid_sequence;
 
 	bool
-	static write_params( oid_sequence& param_types, std::vector<byte>& buffer,
+	static write_params( type_oid_sequence& param_types, std::vector<byte>& buffer,
 			T const& ... args )
 	{
 		param_types.reserve(size);
