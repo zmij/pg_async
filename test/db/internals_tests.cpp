@@ -8,7 +8,6 @@
 
 //#define BOOST_TEST_MODULE PostgreSQLTest
 
-#include <tip/db/pg/connection.hpp>
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/resultset.inl>
 #include <tip/db/pg/database.hpp>
@@ -105,17 +104,19 @@ TEST( ConnectionTest, Connect)
 
 		boost::asio::io_service io_service;
 		connection_ptr conn_ptr;
-		connection_ptr conn(connection::create(io_service,
+		connection_ptr conn(basic_connection::create(
+		io_service, opts, {
+				{"client_encoding", "UTF8"},
+				{"application_name", "pg_async"}
+		},
+		{
 		[&](connection_ptr c) {
 			conn_ptr = c;
 			conn->terminate();
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
-		},  opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		}));
+		}}));
 
 		io_service.run();
 		EXPECT_TRUE(conn_ptr.get());
@@ -168,12 +169,12 @@ TEST( ConnectionTest, ConnectionPool )
 					pool->get_connection(
 					[&] (transaction_ptr tran) {
 						int req_no = i;
-						EXPECT_TRUE(tran.get());
+						ASSERT_TRUE(tran.get());
 						local_log(logger::TRACE) << "Obtained connection thread  "
 								<< t_no << " request " << req_no;
-						(*tran)->execute_query( "select * from pg_catalog.pg_class limit 10",
+						(*tran)->execute( {"select * from pg_catalog.pg_class limit 10",
 						[&] (transaction_ptr t1, resultset r, bool complete) {
-							EXPECT_TRUE(t1.get());
+							ASSERT_TRUE(t1.get());
 							if (complete) {
 								++res_count;
 							}
@@ -189,7 +190,7 @@ TEST( ConnectionTest, ConnectionPool )
 								pool->close();
 								timer.cancel();
 							}
-						}, [](db_error const&){}, tran);
+						}, [](db_error const&){} });
 						++sent_count;
 					},
 					[&] (db_error const& ec) {
@@ -232,13 +233,20 @@ TEST( ConnectionTest, ExecutePrepared )
 		std::vector<char> params;
 		tip::db::pg::detail::write_params(param_types, params, 10, 20);
 
-		connection_ptr conn(connection::create(io_service,
+		connection_ptr conn(basic_connection::create(
+			io_service, opts,
+			{
+				{"client_encoding", "UTF8"},
+				{"application_name", "pg_async"},
+				{"client_min_messages", "debug5"}
+			},
+		{
 		[&](connection_ptr c) {
 			if (queries == 0) {
 				++queries;
-				c->begin_transaction(
+				c->begin({
 				[&](transaction_ptr tran){
-					(*tran)->execute_prepared(
+					(*tran)->execute({
 					"select * from pg_catalog.pg_type where typelem > $1 limit $2",
 					param_types, params,
 					[&](transaction_ptr tran, resultset r, bool complete) {
@@ -246,27 +254,18 @@ TEST( ConnectionTest, ExecutePrepared )
 						EXPECT_TRUE(r.size());
 						EXPECT_TRUE(r.columns_size());
 						EXPECT_FALSE(r.empty());
-						tran->commit(
-						[](transaction_ptr tran){
-							local_log() << "Transaction commited";
-						}, [](db_error const& ) {
-							local_log() << "Failed to commit transaction";
-						});
+						tran->commit();
 					}, [&](db_error const& ) {
-					}, tran);
+					}});
 				}, [](db_error const&) {
-				});
+				}});
 			} else {
 				c->terminate();
 			}
 		}, [](connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 
-		}, opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"},
-			{"client_min_messages", "debug5"}
-		}));
+		}}));
 		io_service.run();
 	}
 }
@@ -280,63 +279,41 @@ TEST( TransactionTest, CleanExit )
 		local_log(logger::INFO) << "Transactions clean exit test";
 		boost::asio::io_service io_service;
 		int transactions = 0;
-		connection_ptr conn(connection::create(io_service,
-		[&](connection_ptr c) {
-			ASSERT_THROW(
-					c->commit_transaction( transaction_ptr(), transaction_callback(), error_callback() ),
-					db_error
-			);
+		connection_ptr conn(basic_connection::create(
+			io_service, opts,
+			{
+				{"client_encoding", "UTF8"},
+				{"application_name", "pg_async"}
+			},
+		{[&](connection_ptr c) {
+			ASSERT_THROW( c->commit(), db_error );
 			{
 				bool error_callback_fired = false;
-				ASSERT_NO_THROW(
-				c->commit_transaction(
-				transaction_ptr(),
-				transaction_callback(),
-				[&]( db_error const& err ) {
-					error_callback_fired = true;
-				}));
+				ASSERT_NO_THROW(c->commit());
 				EXPECT_TRUE(error_callback_fired);
 			}
-			ASSERT_THROW(
-					c->rollback_transaction( transaction_ptr(), transaction_callback(), error_callback() ),
-					db_error
-			);
+			ASSERT_THROW( c->rollback(), db_error );
 			{
 				bool error_callback_fired = false;
-				ASSERT_NO_THROW(
-				c->rollback_transaction(
-				transaction_ptr(),
-				transaction_callback(),
-				[&]( db_error const& err ) {
-					error_callback_fired = true;
-				}));
+				ASSERT_NO_THROW(c->rollback());
 				EXPECT_TRUE(error_callback_fired);
 			}
 			if (!transactions) {
-				ASSERT_NO_THROW(c->begin_transaction(
+				ASSERT_NO_THROW(c->begin({
 				[&](transaction_ptr tran){
 					EXPECT_TRUE(tran.get());
 					EXPECT_TRUE(tran->in_transaction());
-					ASSERT_NO_THROW(
-					tran->commit(
-					[&](transaction_ptr tran){
-						(*tran)->terminate();
-					}, [&](db_error const&) {
-						(*tran)->terminate();
-					} ));
+					ASSERT_NO_THROW(tran->commit());
 				},
 				[](db_error const&){
 
-				}));
+				}}));
 				transactions++;
 			}
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
-		},  opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		}));
+		}}));
 		io_service.run();
 	}
 }
@@ -352,10 +329,14 @@ TEST(TransactionTest, DirtyTerminate)
 		#endif
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
-		connection_ptr conn(connection::create(io_service,
-		[&](connection_ptr c) {
-			ASSERT_NO_THROW(c->begin_transaction(
-			[&](transaction_ptr tran){
+		connection_ptr conn(basic_connection::create(io_service,  opts,
+		{
+				{"client_encoding", "UTF8"},
+				{"application_name", "pg_async"}
+		},
+		{[&](connection_ptr c) {
+			ASSERT_NO_THROW(c->begin(
+			{[&](transaction_ptr tran){
 				EXPECT_TRUE(tran.get());
 				EXPECT_TRUE(tran->in_transaction());
 
@@ -363,14 +344,11 @@ TEST(TransactionTest, DirtyTerminate)
 			},
 			[&](db_error const&){
 				transaction_error = true;
-			}));
+			}}));
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
-		},  opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		}));
+		}}));
 		io_service.run();
 		EXPECT_TRUE(transaction_error);
 	}
@@ -384,9 +362,13 @@ TEST(TransactionTest, Autocommit)
 		local_log(logger::INFO) << "Transactions dirty terminate autocommit exit test";
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
-		connection_ptr conn(connection::create(io_service,
-		[&](connection_ptr c) {
-			ASSERT_NO_THROW(c->begin_transaction(
+		connection_ptr conn(basic_connection::create(io_service, opts,
+		{
+			{"client_encoding", "UTF8"},
+			{"application_name", "pg_async"}
+		},
+		{[&](connection_ptr c) {
+			ASSERT_NO_THROW(c->begin({
 			[&](transaction_ptr tran){
 				EXPECT_TRUE(tran.get());
 				EXPECT_TRUE(tran->in_transaction());
@@ -395,14 +377,11 @@ TEST(TransactionTest, Autocommit)
 			},
 			[&](db_error const&){
 				transaction_error = false;
-			}, true));
+			}}));
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
-		},  opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		}));
+		}}));
 		io_service.run();
 		EXPECT_TRUE(!transaction_error);
 	}
@@ -422,10 +401,14 @@ TEST(TransactionTest, DirtyUnlock)
 
 		bool transaction_error = false;
 		int transactions = 0;
-		connection_ptr conn (connection::create(io_service,
-		[&](connection_ptr c) {
+		connection_ptr conn (basic_connection::create(io_service, opts,
+		{
+			{"client_encoding", "UTF8"},
+			{"application_name", "pg_async"}
+		},
+		{[&](connection_ptr c) {
 			if (!transactions) {
-				ASSERT_NO_THROW(c->begin_transaction(
+				ASSERT_NO_THROW(c->begin({
 				[&](transaction_ptr tran){
 					local_log() << "Transaction begin callback";
 					EXPECT_TRUE(tran.get());
@@ -439,16 +422,13 @@ TEST(TransactionTest, DirtyUnlock)
 				},
 				[&](db_error const&){
 					transaction_error = true;
-				}));
+				}}));
 				transactions++;
 			}
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
-		},  opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		}));
+		}}));
 		io_service.run();
 		EXPECT_TRUE(transaction_error);
 	}
@@ -464,31 +444,32 @@ TEST(TransactionTest, Query)
 		local_log(logger::INFO) << "Transaction query test";
 		boost::asio::io_service io_service;
 		bool transaction_error = false;
-		connection_ptr conn(connection::create(io_service,
-		[&](connection_ptr c) {
-			ASSERT_NO_THROW(c->begin_transaction(
+		connection_ptr conn(basic_connection::create(io_service, opts,
+		{
+			{"client_encoding", "UTF8"},
+			{"application_name", "pg_async"}
+		},
+		{[&](connection_ptr c) {
+			ASSERT_NO_THROW(c->begin({
 			[&](transaction_ptr tran){
 				EXPECT_TRUE(tran.get());
 				EXPECT_TRUE(tran->in_transaction());
-				(*tran)->execute_query( "select * from pg_catalog.pg_class",
+				(*tran)->execute({ "select * from pg_catalog.pg_class",
 				[&] (transaction_ptr tran, resultset r, bool complete) {
 					local_log() << "Received a resultset columns: " << r.columns_size()
 							<< " rows: " << r.size()
 							<< " completed: " << std::boolalpha << complete;
 					if (complete)
 						(*tran)->terminate();
-				}, [] (db_error const&) {}, tran);
+				}, [] (db_error const&) {}});
 			},
 			[&](db_error const&){
 				transaction_error = true;
-			}, true));
+			}}));
 		}, [] (connection_ptr c) {
 		}, [](connection_ptr c, connection_error const& ec) {
 			FAIL();
-		},  opts, {
-			{"client_encoding", "UTF8"},
-			{"application_name", "pg_async"}
-		}));
+		}}));
 		io_service.run();
 		EXPECT_TRUE(!transaction_error);
 	}

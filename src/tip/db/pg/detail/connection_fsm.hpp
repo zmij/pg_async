@@ -320,6 +320,13 @@ struct connection_fsm_ :
 	};
 
 	struct transaction_ : public boost::msm::front::state_machine_def<transaction_> {
+		typedef boost::mpl::vector< terminate > deferred_events;
+		typedef boost::mpl::vector< flags::in_transaction > flag_list;
+		typedef boost::msm::back::state_machine< transaction_ > tran_fsm;
+
+		typedef std::shared_ptr< pg::transaction > transaction_ptr;
+		typedef std::weak_ptr< pg::transaction > transaction_weak_ptr;
+
 		//@{
 		/** @name Transaction entry-exit */
 		void
@@ -332,15 +339,11 @@ struct connection_fsm_ :
 		template < typename Event, typename FSM >
 		void
 		on_exit(Event const&, FSM&)
-		{ local_log(logger::DEBUG) << "leaving: transaction"; }
+		{
+			local_log(logger::DEBUG) << "leaving: transaction";
+			tran_object_.reset();
+		}
 		//@}
-
-		typedef boost::mpl::vector< terminate > deferred_events;
-		typedef boost::mpl::vector< flags::in_transaction > flag_list;
-		typedef boost::msm::back::state_machine< transaction_ > tran_fsm;
-
-		typedef std::shared_ptr< pg::transaction > transaction_ptr;
-		typedef std::weak_ptr< pg::transaction > transaction_weak_ptr;
 
 		//@{
 		/** State forwards */
@@ -1323,7 +1326,8 @@ public:
 	concrete_connection(io_service& svc,
 			client_options_type const& co,
 			connection_callbacks const& callbacks)
-		: basic_connection(), fsm_type(std::ref(svc), co)
+		: basic_connection(), fsm_type(std::ref(svc), co),
+		  callbacks_(callbacks)
 	{
 		fsm_type::start();
 	}
@@ -1336,6 +1340,8 @@ private:
 	{
 		if (callbacks_.idle) {
 			callbacks_.idle(fsm_type::shared_from_this());
+		} else {
+			local_log(logger::WARNING) << "No connection idle callback";
 		}
 	}
 	virtual void
@@ -1343,14 +1349,18 @@ private:
 	{
 		if (callbacks_.terminated) {
 			callbacks_.terminated(fsm_type::shared_from_this());
+		} else {
+			local_log() << "No connection terminated callback";
 		}
 	}
 	virtual void
 	do_notify_error(connection_error const& e)
 	{
-		local_log() << "Connection notified error " << e.what();
+		local_log(logger::ERROR) << "Connection error " << e.what();
 		if (callbacks_.error) {
 			callbacks_.error(connection_ptr(), e);
+		} else {
+			local_log(logger::ERROR) << "No connection_error callback";
 		}
 	}
 	//@}
