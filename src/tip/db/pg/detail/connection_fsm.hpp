@@ -1383,6 +1383,18 @@ private:
 	}
 
 	virtual void
+	do_execute(events::execute const& query)
+	{
+		fsm_type::process_event(query);
+	}
+
+	virtual void
+	do_execute(events::execute_prepared const& query)
+	{
+		fsm_type::process_event(query);
+	}
+
+	virtual void
 	do_terminate()
 	{
 		fsm_type::process_event(detail::terminate{});

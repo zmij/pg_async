@@ -101,6 +101,18 @@ basic_connection::in_transaction() const
 }
 
 void
+basic_connection::execute(events::execute const& query)
+{
+	do_execute(query);
+}
+void
+basic_connection::execute(events::execute_prepared const& query)
+{
+	do_execute(query);
+}
+
+
+void
 basic_connection::terminate()
 {
 	do_terminate();

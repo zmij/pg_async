@@ -9,18 +9,15 @@
 #define TIP_DB_PG_DETAIL_CONNECTION_BASE_HPP_
 
 #include <boost/noncopyable.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <map>
-#include <stack>
-#include <set>
 
 #include <tip/db/pg/detail/protocol.hpp>
 
-//#include <boost/msm/back/state_machine.hpp>
-//#include <boost/msm/front/state_machine_def.hpp>
-//#include <boost/msm/front/functor_row.hpp>
-//#include <boost/msm/front/euml/operator.hpp>
+namespace boost {
+namespace asio {
+// forward declaration
+class io_service;
+}  // namespace asio
+}  // namespace boost
 
 namespace tip {
 namespace db {
@@ -58,9 +55,9 @@ struct execute {
 	query_error_callback	error;
 };
 struct execute_prepared {
-	std::string expression;
-	std::vector< oids::type::oid_type > param_types;
-	std::vector< byte > params;
+	std::string 			expression;
+	type_oid_sequence 		param_types;
+	std::vector< byte > 	params;
 	query_result_callback	result;
 	query_error_callback	error;
 };
@@ -91,6 +88,11 @@ public:
 	in_transaction() const;
 
 	void
+	execute(events::execute const&);
+	void
+	execute(events::execute_prepared const&);
+
+	void
 	terminate();
 protected:
 	basic_connection();
@@ -108,6 +110,11 @@ private:
 	do_commit() = 0;
 	virtual void
 	do_rollback() = 0;
+
+	virtual void
+	do_execute(events::execute const&) = 0;
+	virtual void
+	do_execute(events::execute_prepared const&) = 0;
 
 	virtual void
 	do_terminate() = 0;
