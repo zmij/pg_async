@@ -58,6 +58,7 @@ connection_pool::connection_pool(io_service& service,
 
 	if (co_.user.empty())
 		throw std::runtime_error("No user name in database connection string");
+	local_log() << "Connection pool max size " << pool_size;
 }
 
 connection_pool::~connection_pool()

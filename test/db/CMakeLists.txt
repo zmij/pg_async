@@ -28,6 +28,7 @@ set(test_pg_SRCS
     internals_tests.cpp
     db_io_tests.cpp
     query_tests.cpp
+    errors_tests.cpp
     test_main.cpp
     test-environment.cpp
 )

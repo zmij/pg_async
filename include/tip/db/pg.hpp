@@ -77,6 +77,7 @@
 #define TIP_DB_PG_HPP_
 
 #include <tip/db/pg/database.hpp>
+#include <tip/db/pg/transaction.hpp>
 #include <tip/db/pg/query.hpp>
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/error.hpp>

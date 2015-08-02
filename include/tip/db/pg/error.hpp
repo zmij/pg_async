@@ -19,6 +19,14 @@ class db_error : public std::runtime_error {
 public:
 	explicit db_error( std::string const& what_arg );
 	explicit db_error( char const* what_arg );
+	db_error(std::string const& message,
+			std::string severity,
+			std::string code,
+			std::string detail);
+	std::string		severity;
+	std::string		code;
+	std::string		detail;
+	sqlstate::code	sqlstate;
 };
 
 class connection_error : public db_error {
@@ -37,10 +45,13 @@ public:
 		std::string code,
 		std::string detail
 	);
-	std::string		severity;
-	std::string		code;
-	std::string		detail;
-	sqlstate::code	sqlstate;
+};
+
+class client_error : public db_error {
+public:
+	explicit client_error( std::string const& );
+	explicit client_error( char const*);
+	explicit client_error( std::exception const&);
 };
 
 class value_is_null : public db_error {

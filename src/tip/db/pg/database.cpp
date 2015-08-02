@@ -72,9 +72,9 @@ db_service::initialize(size_t pool_size, connection_params const& defaults)
 }
 
 void
-db_service::add_connection(std::string const& connection_string, optional_size)
+db_service::add_connection(std::string const& connection_string, optional_size pool_size)
 {
-	impl()->add_connection(connection_string);
+	impl()->add_connection(connection_string, pool_size);
 }
 
 void

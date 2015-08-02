@@ -7,7 +7,6 @@
 
 
 #include <tip/db/pg.hpp>
-#include <tip/db/pg/transaction.hpp>
 
 #include <tip/db/pg/log.hpp>
 
