@@ -17,6 +17,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
+#ifdef WITH_TIP_LOG
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -32,6 +33,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 }  // namespace
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
+#endif
 
 typedef std::recursive_mutex mutex_type;
 typedef std::lock_guard<mutex_type> lock_type;
