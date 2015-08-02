@@ -5,55 +5,6 @@
  *  @author: zmij
  */
 
-/**
- *  @page results Processing query results
- *
- *  Result set (@ref tip::db::pg::resultset) is passed to client via supplied
- *  callback when a query receives results from the server.
- *  A @ref tip::db::pg::resultset is an object that provides an interface
- *  to reading and converting underlying data buffers. It is lightweight
- *  and is designed to be copied around by value. It can be stored in memory
- *  for later use.
- *
- *  A resultset object mimics standard container interface for the data rows.
- *  It provides random access to data rows via indexing operator and random
- *  access iterators.
- *
- *  Result set provides interface for reading field definitions.
- *
- *	### Checking the resultset
- *
- *	@code
- *	if (res.size() > 0) {
- *		// Process the result set
- *	}
- *	if (!result.empty()) {
- *		// Process the result set
- *	}
- *	if (res) {
- *		// Process the result set
- *	}
- *	@endcode
- *
- *	@todo document iterating row and fields
- *	@todo document random access to rows in a resultset
- *	@todo document field descriptions
- *	@todo document row tie variadic interface
- *	@todo document access by index and by name to fields in a row
- *	@todo document field buffer conversion to other datatypes
- *
- *	@todo references to data parsers. documentation on data parsing and adding
- *		datatype support.
- *
- *	@todo concept of an interface for a datatype that can be stored/retrieved
- *		from the database. Template functions enabled for such an interface.
- *	@todo non-select command results
- *
- *	@see @ref querying
- *	@see tip::db::pg::resultset
- *	@see tip::db::pg::query
- *  @see tip::db::pg::field_definition
- */
 
 #ifndef TIP_DB_PG_RESULT_HPP_
 #define TIP_DB_PG_RESULT_HPP_

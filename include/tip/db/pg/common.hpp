@@ -147,32 +147,62 @@ namespace tip {
 namespace db {
 namespace pg {
 
+/**
+ * @brief 2-byte integer, to match PostgreSQL `smallint` and `smallserial` types
+ */
 typedef boost::int_t<16>::exact 	smallint;
+/**
+ * @brief 2-byte unsigned integer
+ */
 typedef boost::uint_t<16>::exact	usmallint;
+/**
+ * @brief 4-byte integer, to match PostgreSQL `integer` and `serial` types
+ */
 typedef boost::int_t<32>::exact		integer;
+/**
+ * @brief 4-byte unsigned integer
+ */
 typedef boost::uint_t<32>::exact	uinteger;
+/**
+ * @brief 8-byte integer, to match PostgreSQL `bigint` and `bigserial` types
+ */
 typedef boost::int_t<64>::exact		bigint;
+/**
+ * @brief 8-byte unsigned integer
+ */
 typedef boost::uint_t<64>::exact	ubigint;
 
-const int32_t PROTOCOL_VERSION = (3 << 16); // 3.0
+/**
+ * @brief PostgreSQL protocol version
+ */
+const integer PROTOCOL_VERSION = (3 << 16); // 3.0
 
+/**
+ * @brief 1-byte char or byte type.
+ */
 typedef char byte;
 
+/**
+ * @brief Binary data, matches PostgreSQL `bytea` type
+ */
 struct bytea {
-	typedef std::vector<byte> container_type;
-	container_type data;
+	typedef std::vector<byte> container_type;	/**< Container typedef */
+	container_type data;	/**< Binary data */
 };
 
 typedef tip::util::input_iterator_buffer field_buffer;
 
 /**
+ * @brief Short unique string to refer a database.
  * Signature structure, to pass instead of connection string
+ * @see @ref connstring
+ * @see tip::db::pg::db_service
  */
 struct dbalias {
 	std::string value;
 
 	void
-	swap(std::string& rhs)
+	swap(std::string& rhs) /* no_throw */
 	{
 		value.swap(rhs);
 	}
@@ -207,16 +237,20 @@ std::ostream&
 operator << (std::ostream& out, dbalias const&);
 
 /**
- * Postgre connection options
+ * @brief Postgre connection options
  */
 struct connection_options {
-	dbalias alias;
-	std::string schema;
-	std::string uri;
-	std::string database;
-	std::string user;
-	std::string password;
+	dbalias alias;			/**< Database alias */
+	std::string schema;		/**< Database connection schema. Currently supported are tcp and socket */
+	std::string uri;		/**< Database connection uri. `host:port` for tcp, `/path/to/file` for socket */
+	std::string database;	/**< Database name */
+	std::string user;		/**< Database user name */
+	std::string password;	/**< Database user's password */
 
+	/**
+	 * Generate an alias from username, database and uri if the alias was not
+	 * provided.
+	 */
 	void
 	generate_alias();
 	/**
@@ -229,7 +263,7 @@ struct connection_options {
 	 * // Connection via UNIX socket
 	 * opts = "socket:///tmp/.s.PGSQL.5432[database]"_pg;
 	 * @endcode
-	 *
+	 * @see connstring
 	 */
 	static connection_options
 	parse(std::string const&);
@@ -244,7 +278,7 @@ enum protocol_data_format {
 };
 
 /**
- * Description of a field returned by the backend
+ * @brief Description of a field returned by the backend
  */
 struct field_description {
 	std::string				name;				/**< The field name. */

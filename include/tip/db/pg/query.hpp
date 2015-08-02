@@ -5,18 +5,6 @@
  *  @author zmij
  */
 
-/**
- *  @page querying Running queries
- *  ## Simple queries
- *
- *  @todo document running simple queries asynchronously
- *
- *  ## Prepared queries
- *
- *  @todo document binding params and running prepared queries
- *
- */
-
 #ifndef TIP_DB_PG_QUERY_HPP_
 #define TIP_DB_PG_QUERY_HPP_
 
