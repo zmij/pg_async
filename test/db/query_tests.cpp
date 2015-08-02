@@ -156,6 +156,7 @@ TEST(QueryTest, QueryQueue)
 				}, [](db_error const&){
 					FAIL();
 				});
+				tran->commit();
 			}, [](db_error const&){});
 		}
 		db_service::run();
