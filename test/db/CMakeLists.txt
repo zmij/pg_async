@@ -27,7 +27,7 @@ set(test_pg_SRCS
     fsm_tests.cpp
     internals_tests.cpp
     db_io_tests.cpp
-    #query_tests.cpp
+    query_tests.cpp
     test_main.cpp
     test-environment.cpp
 )

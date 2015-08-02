@@ -36,7 +36,7 @@ using tip::log::logger;
 
 struct query::impl : std::enable_shared_from_this<query::impl> {
 	dbalias alias_;
-	transaction_ptr conn_;
+	transaction_ptr tran_;
 	std::string expression_;
 
 	bool start_tran_;
@@ -47,13 +47,13 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 
 	impl(dbalias const& alias, std::string const& expression,
 			bool start_tran, bool autocommit)
-		: alias_(alias), conn_(), expression_(expression),
+		: alias_(alias), tran_(), expression_(expression),
 		  start_tran_(start_tran), autocommit_(autocommit)
 	{
 	}
 
-	impl(transaction_ptr conn, std::string const& expression)
-		: alias_{}, conn_(conn), expression_(expression),
+	impl(transaction_ptr tran, std::string const& expression)
+		: alias_{}, tran_(tran), expression_(expression),
 		  start_tran_(false), autocommit_(false)
 	{
 	}
@@ -69,7 +69,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	void
 	run_async(query_result_callback const& res, error_callback const& err)
 	{
-		if (!conn_) {
+		if (!tran_) {
 			db_service::begin(
 				alias_,
 				std::bind(&impl::handle_get_transaction,
@@ -78,33 +78,16 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 						shared_from_this(), std::placeholders::_1, err)
 			);
 		} else {
-			handle_get_transaction(conn_, res, err);
+			handle_get_transaction(tran_, res, err);
 		}
 	}
-//	void
-//	handle_get_connection(transaction_ptr c,
-//			query_result_callback const& res,
-//			error_callback const& err)
-//	{
-//		if (start_tran_) {
-//			(*c)->begin_transaction(
-//				std::bind(&impl::handle_get_transaction,
-//						shared_from_this(), std::placeholders::_1, res, err),
-//				std::bind(&impl::handle_get_connection_error,
-//						shared_from_this(), std::placeholders::_1, err),
-//				autocommit_
-//			);
-//		} else {
-//			handle_get_transaction(c, res, err);
-//		}
-//	}
 
 	void
-	handle_get_transaction(transaction_ptr c,
+	handle_get_transaction(transaction_ptr t,
 			query_result_callback const& res,
 			error_callback const& err)
 	{
-		using namespace std::placeholders;
+		tran_ = t;
 		if (params_.empty()) {
 			{
 				local_log() << "Execute query "
@@ -112,15 +95,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 						<< expression_
 						<< logger::severity_color();
 			}
-			conn_ = c;
-//			(*conn_)->execute_query(expression_,
-//				std::bind(&impl::handle_get_results,
-//						shared_from_this(),
-//						std::placeholders::_1,
-//						std::placeholders::_2,
-//						std::placeholders::_3,
-//						res),
-//				err, c);
+			tran_->execute(expression_, res, err);
 		} else {
 			{
 				local_log() << "Execute prepared query "
@@ -128,30 +103,15 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 						<< expression_
 						<< logger::severity_color();
 			}
-			conn_ = c;
-//			(*conn_)->execute_prepared(expression_, param_types_, params_,
-//				std::bind(&impl::handle_get_results,
-//						shared_from_this(),
-//						std::placeholders::_1,
-//						std::placeholders::_2,
-//						std::placeholders::_3,
-//						res),
-//				err, c);
+			tran_->execute(expression_, param_types_, params_, res, err);
 		}
+		tran_.reset();
 	}
 
 	void
 	handle_get_connection_error(db_error const& ec, error_callback const& err)
 	{
 		err(ec);
-	}
-
-	void
-	handle_get_results(transaction_ptr c, resultset r, bool complete,
-			query_result_callback const& res)
-	{
-		conn_ = c;
-		res(c, r, complete);
 	}
 };
 
@@ -187,7 +147,7 @@ query::operator ()(query_result_callback const& res, error_callback const& err)
 transaction_ptr
 query::connection()
 {
-	return pimpl_->conn_;
+	return pimpl_->tran_;
 }
 
 void

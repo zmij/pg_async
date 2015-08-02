@@ -1078,7 +1078,11 @@ struct connection_fsm_ :
 	void
 	notify_idle() { do_notify_idle(); }
 	void
-	notify_terminated() { do_notify_terminated(); }
+	notify_terminated()
+	{
+		do_notify_terminated();
+		transport_.close();
+	}
 	void
 	notify_error(connection_error const& e) { do_notify_error(e); }
 	//@}
@@ -1378,6 +1382,7 @@ private:
 		} else {
 			fsm_log() << "No connection terminated callback";
 		}
+		callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
 	}
 	virtual void
 	do_notify_error(connection_error const& e)

@@ -102,6 +102,7 @@ void
 db_service::stop()
 {
 	lock_type lock(db_service_lock());
+	local_log(logger::INFO) << "Stop db service";
 	if (pimpl_) {
 		pimpl_->stop();
 	}

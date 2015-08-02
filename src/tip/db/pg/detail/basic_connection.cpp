@@ -70,6 +70,11 @@ basic_connection::basic_connection()
 {
 }
 
+basic_connection::~basic_connection()
+{
+	local_log() << "*** basic_connection::~basic_connection()";
+}
+
 void
 basic_connection::connect(connection_options const& opts)
 {
@@ -115,6 +120,7 @@ basic_connection::execute(events::execute_prepared const& query)
 void
 basic_connection::terminate()
 {
+	local_log() << "Terminate connection";
 	do_terminate();
 }
 

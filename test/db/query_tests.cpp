@@ -7,6 +7,7 @@
 
 
 #include <tip/db/pg.hpp>
+#include <tip/db/pg/transaction.hpp>
 
 #include <tip/db/pg/log.hpp>
 
@@ -74,6 +75,7 @@ TEST(QueryTest, SimpleMode)
 							local_log() << "Query four finished";
 							EXPECT_TRUE(c.get());
                             timer.cancel();
+                            //c->commit();
 							db_service::stop();
 						}, [](db_error const&){
 							FAIL();

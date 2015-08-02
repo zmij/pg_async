@@ -72,7 +72,7 @@ public:
 	create(io_service& svc, connection_options const&,
 			client_options_type const&, connection_callbacks const&);
 public:
-	virtual ~basic_connection() {}
+	virtual ~basic_connection();
 
 	void
 	connect(connection_options const&);

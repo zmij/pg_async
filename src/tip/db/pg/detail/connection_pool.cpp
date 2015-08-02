@@ -62,9 +62,7 @@ connection_pool::connection_pool(io_service& service,
 
 connection_pool::~connection_pool()
 {
-	#ifdef WITH_TIP_LOG
 	local_log(logger::DEBUG) << "*** connection_pool::~connection_pool()";
-	#endif
 }
 
 connection_pool::connection_pool_ptr
@@ -83,7 +81,6 @@ connection_pool::create_new_connection()
 {
 	if (closed_)
 		return;
-	#ifdef WITH_TIP_LOG
 	{
 		auto local = local_log(logger::INFO);
 		local << "Create new "
@@ -92,7 +89,6 @@ connection_pool::create_new_connection()
 				<< logger::severity_color()
 				<< " connection";
 	}
-	#endif
 	connection_ptr conn = basic_connection::create(service_, co_, params_, {
 			boost::bind(&connection_pool::connection_ready, shared_from_this(), _1),
 			boost::bind(&connection_pool::connection_terminated, shared_from_this(), _1),
@@ -100,7 +96,6 @@ connection_pool::create_new_connection()
 	});
 
 	connections_.push_back(conn);
-	#ifdef WITH_TIP_LOG
 	{
 		auto local = local_log();
 		local
@@ -109,7 +104,6 @@ connection_pool::create_new_connection()
 			<< logger::severity_color()
 			<< " pool size " << connections_.size();
 	}
-	#endif
 }
 
 void
@@ -147,7 +141,6 @@ connection_pool::connection_ready(connection_ptr c)
 void
 connection_pool::connection_terminated(connection_ptr c)
 {
-	#ifdef WITH_TIP_LOG
 	{
 		auto local = local_log(logger::INFO);
 		local << "Connection "
@@ -156,14 +149,12 @@ connection_pool::connection_terminated(connection_ptr c)
 				<< logger::severity_color()
 				<< " gracefully terminated";
 	}
-	#endif
 	lock_type lock(mutex_);
 	auto f = std::find(connections_.begin(), connections_.end(), c);
 	if (f != connections_.end()) {
 		connections_.erase(f);
 	}
 
-	#ifdef WITH_TIP_LOG
 	{
 		auto local = local_log();
 		local
@@ -172,7 +163,6 @@ connection_pool::connection_terminated(connection_ptr c)
 			<< logger::severity_color()
 			<< " pool size " << connections_.size();
 	}
-	#endif
 }
 
 void
@@ -200,24 +190,20 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 	// TODO Call the error callback if the pool is closed
 	lock_type lock(mutex_);
 	if (!ready_connections_.empty()) {
-		#ifdef WITH_TIP_LOG
 		local_log() << "Connection to "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< alias().value
 				<< logger::severity_color()
 				<< " is ready";
-		#endif
 		connection_ptr conn = ready_connections_.front();
 		ready_connections_.pop();
 		conn->begin({conn_cb, err});
 	} else {
-		#ifdef WITH_TIP_LOG
 		local_log()
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< alias().value
 				<< logger::severity_color()
 				<< " queue size " << waiting_.size() + 1  << " (enqueue)";;
-		#endif
 		if (connections_.size() < pool_size_) {
 			create_new_connection();
 		}
@@ -231,12 +217,10 @@ connection_pool::close()
 	lock_type lock(mutex_);
 	closed_ = true;
 
-	#ifdef WITH_TIP_LOG
 	local_log() << "Close connection pool "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
 			<< alias().value
 			<< logger::severity_color();
-	#endif
 	connections_container copy = connections_;
 	for (auto c : copy) {
 		c->terminate();
