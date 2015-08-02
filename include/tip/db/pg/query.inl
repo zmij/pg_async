@@ -302,10 +302,9 @@ write_params(std::vector< oids::type::oid_type >& param_types,
 }  // namespace detail
 
 template < typename ... T >
-query::query(dbalias const& alias, std::string const& expression,
-		bool start_tran, bool autocommit, T const& ... params)
+query::query(dbalias const& alias, std::string const& expression, T const& ... params)
 {
-	create_impl(alias, expression, start_tran, autocommit);
+	create_impl(alias, expression);
 	bind_params(params ...);
 }
 
@@ -314,7 +313,7 @@ query::query(transaction_ptr t, std::string const& expression,
 		T const& ... params)
 {
 	create_impl(t, expression);
-	bind_params(params ...);
+	bind(params ...);
 }
 
 template < typename ... T >

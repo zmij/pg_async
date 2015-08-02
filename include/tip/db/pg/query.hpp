@@ -53,8 +53,7 @@ public:
 	 * @param alias Database connection alias.
 	 * @param expression SQL query expression
 	 */
-	query(dbalias const&, std::string const& expression,
-			bool start_tran = false, bool autocommit = false);
+	query(dbalias const&, std::string const& expression);
 	/**
 	 * Construct a prepared query with params to bind
 	 * @param
@@ -64,8 +63,7 @@ public:
 	 * @param params
 	 */
 	template < typename ... T >
-	query(dbalias const&, std::string const& expression,
-			bool start_tran, bool autocommit, T const& ... params);
+	query(dbalias const&, std::string const& expression, T const& ... params);
 	/**
 	 * Construct a query.
 	 * @param connection
@@ -114,8 +112,7 @@ private:
 	typedef std::vector<byte> params_buffer;
 
 	void
-	create_impl(dbalias const&, std::string const& expression,
-			bool start_tran, bool autocommit);
+	create_impl(dbalias const&, std::string const& expression);
 	void
 	create_impl(transaction_ptr, std::string const& expression);
 	type_oid_sequence&

@@ -39,22 +39,16 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	transaction_ptr tran_;
 	std::string expression_;
 
-	bool start_tran_;
-	bool autocommit_;
-
 	type_oid_sequence param_types_;
 	params_buffer params_;
 
-	impl(dbalias const& alias, std::string const& expression,
-			bool start_tran, bool autocommit)
-		: alias_(alias), tran_(), expression_(expression),
-		  start_tran_(start_tran), autocommit_(autocommit)
+	impl(dbalias const& alias, std::string const& expression)
+		: alias_(alias), tran_(), expression_(expression)
 	{
 	}
 
 	impl(transaction_ptr tran, std::string const& expression)
-		: alias_{}, tran_(tran), expression_(expression),
-		  start_tran_(false), autocommit_(false)
+		: alias_{}, tran_(tran), expression_(expression)
 	{
 	}
 
@@ -115,9 +109,8 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 };
 
-query::query(dbalias const& alias, std::string const& expression,
-		bool start_tran, bool autocommit)
-	: pimpl_(new impl(alias, expression, start_tran, autocommit))
+query::query(dbalias const& alias, std::string const& expression)
+	: pimpl_(new impl(alias, expression))
 {
 }
 query::query(transaction_ptr c, std::string const& expression)
@@ -151,10 +144,9 @@ query::connection()
 }
 
 void
-query::create_impl(dbalias const& alias, std::string const& expression,
-		bool start_tran, bool autocommit)
+query::create_impl(dbalias const& alias, std::string const& expression)
 {
-	pimpl_.reset(new impl(alias, expression, start_tran, autocommit));
+	pimpl_.reset(new impl(alias, expression));
 }
 
 void
