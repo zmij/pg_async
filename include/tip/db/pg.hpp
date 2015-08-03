@@ -218,6 +218,8 @@
  *	});
  *  @endcode
  *
+ *  @see @ref results
+ *
  *	### Running several independent queries in one transaction
  *
  *	Independent queries (i.e. queries that do not depend on each others'
@@ -346,11 +348,17 @@
  *  It provides random access to data rows via indexing operator and random
  *  access iterators.
  *
+ *  A resultset row mimics standard container interface for the fields.
+ *  It provides index operators for accessing fields by their index or by
+ *  their name. It also provides random access iterators for iterating the
+ *  fields.
+ *
  *  Result set provides interface for reading field definitions.
  *
  *	### Checking the resultset
  *
  *	@code
+ *	resultset res;
  *	if (res.size() > 0) {
  *		// Process the result set
  *	}
@@ -362,9 +370,65 @@
  *	}
  *	@endcode
  *
- *	@todo document iterating row and fields
- *	@todo document random access to rows in a resultset
- *	@todo document field descriptions
+ *	### Accessing rows and fields
+ *
+ *	@code
+ *	resultset res;
+ *	for (auto row : res) {
+ *		for (auto field : row) {
+ *			// Do something with the field value
+ *		}
+ *	}
+ *
+ *	auto first_row = res.front();
+ *	auto last_row = res.back();
+ *	auto mid_row = res[ res.size() / 2 ]; // Index access
+ *
+ *	auto first_field = first_row[0];      // Access field by index
+ *	auto id_field = last_row["id"];       // Access field by name
+ *
+ *	@endcode
+ *
+ *	### Field descriptions
+ *
+ *	@code
+ *	resultset res;
+ *	// Get a reference to field descriptions
+ *	row_description_type const& rd = res.row_description();
+ *	@endcode
+ *
+ *	@see tip::db::pg::field_description for reference
+ *
+ *	### Accessing field data
+ *
+ *  Field values are extracted via the system of buffer parsers. Default
+ *  format for PosgreSQL protocol is text, so most if a data type is
+ *  extractable from a stream, it can be extracted from a text data buffer.
+ *  If a special parsing routine is required, a text data parser must be
+ *  provided. All datatypes can be extracted as strings.
+ *
+ *  For binary data format a data parser must be provided.
+ *
+ *  An exception tip::db::pg::value_is_null will be thrown if the field is null.
+ *  A boost::optional can be used as a nullable datatype, the value will be
+ *  cleared, and no exception will be thrown. A `coalesce` function can be used
+ *  to get a default value if the field is null.
+ *
+ *	@code
+ *	field f = row[0];
+ *	std::string s = f.as<std::string>();
+ *	f.to(s); // template parameter deduced from the paramter
+ *	int i = f.as<int>();
+ *	f.to(i);
+ *
+ *	if (f.is_null()) {
+ *		boost::optional<int> nullable = f.as< boost::optional<int> >();
+ *		int val = f.coalesce(100500);
+ *	}
+ *	@endcode
+ *
+ *	@see @ref valueio
+ *
  *	@todo document row tie variadic interface
  *	@todo document access by index and by name to fields in a row
  *	@todo document field buffer conversion to other datatypes
@@ -392,6 +456,10 @@
 
 /**
  * @page threads Threads and thread safety
+ */
+
+/**
+ * @page valueio Values input/output
  */
 
 #ifndef TIP_DB_PG_HPP_

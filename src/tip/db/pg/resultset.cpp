@@ -291,10 +291,16 @@ resultset::columns_size() const
 	return pimpl_->row_description().size();
 }
 
+row_description_type const&
+resultset::row_description() const
+{
+	return pimpl_->row_description();
+}
+
 resultset::size_type
 resultset::index_of_name(std::string const& name) const
 {
-	detail::result_impl::row_description_type const& descriptions
+	row_description_type const& descriptions
 		= pimpl_->row_description();
 	auto f = std::find_if(descriptions.begin(), descriptions.end(),
 			[name](field_description const& fd) {

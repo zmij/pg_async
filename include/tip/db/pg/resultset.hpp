@@ -33,7 +33,7 @@ struct result_impl;
  * Access to field definitions.
  * @code
  * void
- * handle_results(connection_lock_ptr c, resultset res, bool complete)
+ * handle_results(transaction_ptr tran, resultset res, bool complete)
  * {
  * 	if (complete) { // This is the last callback for the command
  * 		// C++11 style iteration
@@ -86,15 +86,17 @@ public:
 private:
 	typedef resultset const* result_pointer;
 public:
+	/** @brief Not-a-position constant */
 	static const size_type npos;
 public:
 	/**
-	 * Construct an empty resultset
+	 * @brief Construct an empty resultset
 	 */
 	resultset();
 	/**
-	 * Constructs a resultset with the pointer to internal implementation
-	 * @param
+	 * @brief Constructs a resultset with the pointer to internal implementation
+	 * Used internally by the library
+	 * @param Shared pointer to result set
 	 */
 	resultset(result_impl_ptr);
 	//@{
@@ -187,6 +189,8 @@ public:
 	size_type
 	columns_size() const; /**< Column count */
 
+	row_description_type const&
+	row_description() const;
 	/**
 	 * Get the index of field with name
 	 * @param name the field name

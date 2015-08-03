@@ -281,19 +281,40 @@ enum protocol_data_format {
  * @brief Description of a field returned by the backend
  */
 struct field_description {
-	std::string				name;				/**< The field name. */
-	integer					table_oid;			/**< If the field can be identified as a column of a specific table, the object ID of the table; otherwise zero. */
-	smallint				attribute_number;	/**< If the field can be identified as a column of a specific table, the attribute number of the column; otherwise zero. */
-	oids::type::oid_type	type_oid; 			/**< The object ID of the field's data type. */
-	smallint 				type_size;			/**< The data type size (see pg_type.typlen). Note that negative values denote variable-width types. */
-	integer					type_mod;			/**< The type modifier (see pg_attribute.atttypmod). The meaning of the modifier is type-specific. */
+	/** @brief The field name.
+	 */
+	std::string				name;
+	/** @brief If the field can be identified as a column of a specific table,
+	 * the object ID of the table; otherwise zero.
+	 */
+	integer					table_oid;
+	/** @brief If the field can be identified as a column of a specific table,
+	 * the attribute number of the column; otherwise zero.
+	 */
+	smallint				attribute_number;
+	/** @brief The object ID of the field's data type. */
+	oids::type::oid_type	type_oid;
+	/** @brief The data type size (see pg_type.typlen). Note that negative
+	 * values denote variable-width types.
+	 */
+	smallint 				type_size;
+	/** @brief The type modifier (see pg_attribute.atttypmod). The meaning of
+	 * the modifier is type-specific.
+	 */
+	integer					type_mod;
 	/**
-	 * The format code being used for the field. Currently will be zero (text) or one (binary). In a RowDescription returned from the statement
-	 * variant of Describe, the format code is not yet known and will always be zero.
+	 * @brief The format code being used for the field.
+	 * Currently will be zero (text) or one (binary). In a RowDescription
+	 * returned from the statement variant of Describe, the format code is not
+	 * yet known and will always be zero.
 	 */
 	protocol_data_format	format_code;
 	integer					max_size;			/**< Maximum size of the field in the result set */
 };
+/**
+ * @brief Result set's row description
+ */
+typedef std::vector< field_description > row_description_type;
 
 //@{
 /** @name Forward declarations */

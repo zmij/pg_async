@@ -19,7 +19,6 @@ namespace detail {
 
 class result_impl {
 public:
-	typedef std::vector<field_description> row_description_type;
 	typedef std::vector<row_data> row_set_type;
 public:
 	result_impl();
