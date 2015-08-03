@@ -13,6 +13,8 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace io {
+
 namespace traits {
 
 template < >
@@ -76,6 +78,7 @@ struct cpppg_data_mapping < double > : detail::data_mapping_base< oids::type::fl
 //@}
 
 }  // namespace traits
+}  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

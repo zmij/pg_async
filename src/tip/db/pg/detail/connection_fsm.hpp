@@ -878,7 +878,7 @@ struct connection_fsm_ :
 		void
 		no_transition(Event const& e, FSM&, int state)
 		{
-			fsm_log(logger::ERROR) << "No transition from state " << state
+			fsm_log(logger::DEBUG) << "No transition from state " << state
 					<< " on event " << typeid(e).name() << " (in transaction)";
 		}
 		//@}
@@ -1018,7 +1018,7 @@ struct connection_fsm_ :
 	void
 	no_transition(Event const& e, FSM&, int state)
 	{
-		fsm_log(logger::ERROR) << "No transition from state " << state
+		fsm_log(logger::DEBUG) << "No transition from state " << state
 				<< " on event " << typeid(e).name();
 	}
 

@@ -15,6 +15,7 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace io {
 namespace detail {
 
 class bytea_parser {
@@ -92,6 +93,7 @@ private:
 };
 
 }  // namespace detail
+}  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

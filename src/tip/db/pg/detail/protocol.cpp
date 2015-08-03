@@ -145,7 +145,7 @@ message::buffer() const
 	if (!packed_) {
 		// Encode length of message
 		integer len = size();
-		protocol_write< BINARY_DATA_FORMAT >(payload.begin() + 1, len);
+		io::protocol_write< BINARY_DATA_FORMAT >(payload.begin() + 1, len);
 	}
 
 	if (payload.front() == 0)
@@ -201,14 +201,14 @@ template <typename T>
 void
 write_int(message::buffer_type& payload, T val)
 {
-	protocol_write< BINARY_DATA_FORMAT >(payload, val);
+	io::protocol_write< BINARY_DATA_FORMAT >(payload, val);
 }
 
 
 bool
 message::read(smallint& val)
 {
-	const_iterator c = protocol_read< BINARY_DATA_FORMAT >(curr_, payload.cend(), val);
+	const_iterator c = io::protocol_read< BINARY_DATA_FORMAT >(curr_, payload.cend(), val);
 	if (curr_ == c)
 		return false;
 	curr_ = c;
@@ -218,7 +218,7 @@ message::read(smallint& val)
 bool
 message::read(integer& val)
 {
-	const_iterator c = protocol_read< BINARY_DATA_FORMAT >(curr_, payload.cend(), val);
+	const_iterator c = io::protocol_read< BINARY_DATA_FORMAT >(curr_, payload.cend(), val);
 	if (curr_ == c)
 		return false;
 	curr_ = c;
@@ -228,7 +228,7 @@ message::read(integer& val)
 bool
 message::read(std::string& val)
 {
-	const_iterator c = protocol_read< TEXT_DATA_FORMAT >( curr_, payload.cend(), val );
+	const_iterator c = io::protocol_read< TEXT_DATA_FORMAT >( curr_, payload.cend(), val );
 	if (curr_ == c)
 		return false;
 	curr_ = c;
@@ -347,7 +347,7 @@ message::write(integer v)
 void
 message::write(std::string const& s)
 {
-	protocol_write< TEXT_DATA_FORMAT >(payload, s);
+	io::protocol_write< TEXT_DATA_FORMAT >(payload, s);
 	payload.push_back(0);
 }
 

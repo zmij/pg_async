@@ -24,8 +24,6 @@
 namespace tip {
 namespace db {
 namespace pg {
-
-namespace detail {
 /**
  * Enumeration for binary parser/formatter template selection
  */
@@ -35,6 +33,9 @@ enum protocol_binary_type {
 	FLOATING_POINT,	//!< FLOATING_POINT Floating point types, requiring endianness conversion
 };
 
+namespace io {
+
+namespace detail {
 typedef std::integral_constant< protocol_binary_type, OTHER > other_binary_type;
 typedef std::integral_constant< protocol_binary_type, INTEGRAL > integral_binary_type;
 typedef std::integral_constant< protocol_binary_type, FLOATING_POINT > floating_point_binary_type;
@@ -698,6 +699,7 @@ struct protocol_parser< bytea, BINARY_DATA_FORMAT > :
 	operator()( InputIterator begin, InputIterator end );
 };
 
+}  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

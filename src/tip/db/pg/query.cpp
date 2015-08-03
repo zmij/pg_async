@@ -56,8 +56,8 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	clear_params()
 	{
 		params_buffer params;
-		protocol_write<BINARY_DATA_FORMAT>(params, (smallint)0); // format codes
-		protocol_write<BINARY_DATA_FORMAT>(params, (smallint)0); // number of parameters
+		io::protocol_write<BINARY_DATA_FORMAT>(params, (smallint)0); // format codes
+		io::protocol_write<BINARY_DATA_FORMAT>(params, (smallint)0); // number of parameters
 	}
 
 	void

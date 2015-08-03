@@ -17,6 +17,7 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace io {
 namespace detail {
 
 template <typename T>
@@ -141,6 +142,7 @@ protocol_parser< bytea, BINARY_DATA_FORMAT >::operator ()
 	std::swap(base_type::value.data, tmp);
 }
 
+}  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

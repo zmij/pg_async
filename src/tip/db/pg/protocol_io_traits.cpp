@@ -13,7 +13,7 @@
 namespace tip {
 namespace db {
 namespace pg {
-
+namespace io {
 namespace traits {
 
 namespace {
@@ -149,6 +149,7 @@ protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(buffer_type& buffer)
 	return false;
 }
 
+}  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

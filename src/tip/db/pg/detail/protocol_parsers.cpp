@@ -10,6 +10,7 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace io {
 namespace detail {
 
 char
@@ -28,6 +29,7 @@ bytea_parser::hex_to_byte(char input)
 }
 
 }  // namespace detail
+}  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

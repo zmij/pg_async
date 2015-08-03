@@ -24,14 +24,14 @@ struct nth_param {
 		index = Index
 	};
 	typedef T type;
-	typedef traits::best_formatter<type> best_formatter;
+	typedef io::traits::best_formatter<type> best_formatter;
 	static constexpr protocol_data_format data_format = best_formatter::value;
 	typedef typename best_formatter::type formatter_type;
 
 	static bool
 	write_format( std::vector<byte>& buffer )
 	{
-		return protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+		return io::protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
 	}
 
 	static bool
@@ -42,14 +42,14 @@ struct nth_param {
 		// space for length
 		buffer.resize(buffer.size() + sizeof(integer));
 		size_t prev_size = buffer.size();
-		protocol_write< data_format >(buffer, value);
+		io::protocol_write< data_format >(buffer, value);
 		integer len = buffer.size() - prev_size;
 		// write length
 		std::vector<byte>::iterator sz_iter = buffer.begin() +
 				buffer_pos;
-		protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
+		io::protocol_write< BINARY_DATA_FORMAT >( sz_iter, len );
 		integer written(0);
-		protocol_read< BINARY_DATA_FORMAT > (sz_iter, sz_iter + sizeof(integer), written);
+		io::protocol_read< BINARY_DATA_FORMAT > (sz_iter, sz_iter + sizeof(integer), written);
 		assert(written == len && "Length is written ok");
 		return true;
 	}
@@ -57,7 +57,7 @@ struct nth_param {
 	static integer
 	size(type const& value)
 	{
-		return protocol_writer< data_format >(value).size() + sizeof(integer);
+		return io::protocol_writer< data_format >(value).size() + sizeof(integer);
 	}
 };
 
@@ -67,14 +67,14 @@ struct nth_param < Index, boost::optional< T > > {
 		index = Index
 	};
 	typedef T type;
-	typedef traits::best_formatter<type> best_formatter;
+	typedef io::traits::best_formatter<type> best_formatter;
 	static constexpr protocol_data_format data_format = best_formatter::value;
 	typedef typename best_formatter::type formatter_type;
 
 	static bool
 	write_format( std::vector<byte>& buffer )
 	{
-		return protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+		return io::protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
 	}
 
 	static bool
@@ -84,7 +84,7 @@ struct nth_param < Index, boost::optional< T > > {
 			return nth_param< Index, T >::write_value( buffer, *value );
 		}
 		// NULL value
-		return protocol_write< BINARY_DATA_FORMAT >( buffer, (integer)-1 );
+		return io::protocol_write< BINARY_DATA_FORMAT >( buffer, (integer)-1 );
 	}
 };
 
@@ -98,10 +98,10 @@ struct format_selector< 0, T > {
 		index = 0
 	};
 	typedef T type;
-	typedef traits::best_formatter<type> best_formatter;
+	typedef io::traits::best_formatter<type> best_formatter;
 	typedef typename best_formatter::type formatter_type;
 
-	typedef traits::cpppg_data_mapping< T > data_mapping;
+	typedef io::traits::cpppg_data_mapping< T > data_mapping;
 
 	static constexpr protocol_data_format data_format = best_formatter::value;
 	static constexpr bool single_format = true;
@@ -112,14 +112,14 @@ struct format_selector< 0, T > {
 	static void
 	write_type(type_oid_sequence& param_types)
 	{
-		static_assert( traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
+		static_assert( io::traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
 				"Parameter type doesn't have a PostgreSQL typeoid mapping" );
 		param_types.push_back((oids::type::oid_type)type_oid);
 	}
 	static void
 	write_format( std::vector<byte>& buffer )
 	{
-		protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+		io::protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
 	}
 
 	static void
@@ -141,12 +141,12 @@ struct format_selector< N, T, Y ... > {
 		index = N
 	};
 	typedef T type;
-	typedef traits::best_formatter<type> best_formatter;
+	typedef io::traits::best_formatter<type> best_formatter;
 	typedef typename best_formatter::type formatter_type;
 
 	typedef format_selector< N - 1, Y ...> next_param_type;
 
-	typedef traits::cpppg_data_mapping< T > data_mapping;
+	typedef io::traits::cpppg_data_mapping< T > data_mapping;
 
 	static constexpr protocol_data_format data_format = best_formatter::value;
 	static constexpr bool single_format =
@@ -159,7 +159,7 @@ struct format_selector< N, T, Y ... > {
 	static void
 	write_type(type_oid_sequence& param_types)
 	{
-		static_assert( traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
+		static_assert( io::traits::cpppg_data_mapping< T >::type_oid != oids::type::unknown,
 				"Parameter type doesn't have a PostgreSQL typeoid mapping" );
 		param_types.push_back((oids::type::oid_type)type_oid);
 		next_param_type::write_type(param_types);
@@ -167,7 +167,7 @@ struct format_selector< N, T, Y ... > {
 	static void
 	write_format( std::vector<byte>& buffer )
 	{
-		protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
+		io::protocol_write< BINARY_DATA_FORMAT >(buffer, (smallint)data_format);
 		next_param_type::write_format(buffer);
 	}
 
@@ -229,8 +229,8 @@ struct param_format_builder< true, util::indexes_tuple< Indexes ... >, T ... > {
 				+ first_selector::size(args ...); // size of params
 		buffer.reserve(sz);
 
-		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)data_format);
-		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
+		io::protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)data_format);
+		io::protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
 		first_selector::write_param_value(buffer, args ...);
 		return true;
 	}
@@ -263,9 +263,9 @@ struct param_format_builder< false, util::indexes_tuple< Indexes ... >, T ... > 
 				+ first_selector::size(args ...); // params
 		buffer.reserve(sz);
 
-		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
+		io::protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
 		first_selector::write_format(buffer);
-		protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
+		io::protocol_write<BINARY_DATA_FORMAT>(buffer, (smallint)size);
 		first_selector::write_param_value(buffer, args ...);
 		return true;
 	}

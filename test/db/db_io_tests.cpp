@@ -45,12 +45,12 @@ TEST_P(BoolParseTest, Parses)
 	std::istringstream is(curr.first);
 
 	bool val;
-	EXPECT_TRUE(protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_TRUE(io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
 	EXPECT_EQ(curr.second, val);
 
 	std::vector<char> data(curr.first.begin(), curr.first.end());
 	buffer_type buffer(data.begin(), data.end());
-	EXPECT_TRUE(protocol_read< TEXT_DATA_FORMAT >(val)(buffer));
+	EXPECT_TRUE(io::protocol_read< TEXT_DATA_FORMAT >(val)(buffer));
 	EXPECT_EQ(curr.second, val);
 }
 
@@ -61,12 +61,12 @@ TEST_P(InvalidBoolParseTest, DoesntParse)
 	std::istringstream is(curr);
 
 	bool val = true;
-	EXPECT_TRUE(!protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_TRUE(!io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
 	EXPECT_TRUE(val);
 
 	std::vector<char> data(curr.begin(), curr.end());
 	buffer_type buffer(data.begin(), data.end());
-	EXPECT_TRUE(!protocol_read< TEXT_DATA_FORMAT >(val)(buffer));
+	EXPECT_TRUE(!io::protocol_read< TEXT_DATA_FORMAT >(val)(buffer));
 	EXPECT_TRUE(val);
 }
 
@@ -112,7 +112,7 @@ TEST_P(ByteaTextParseTest, Parses)
 	std::istringstream is(curr.first);
 	bytea val;
 
-	EXPECT_TRUE(protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_TRUE(io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
 	EXPECT_EQ(curr.second, val.data.size());
 }
 
@@ -123,7 +123,7 @@ TEST_P(InvalieByteaTextParseTest, DoesntParse)
 	std::istringstream is(curr);
 	bytea val { {1, 2, 3, 4} };
 
-	EXPECT_TRUE(!protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_TRUE(!io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
 	EXPECT_EQ(4, val.data.size()); // Not modified
 }
 
@@ -181,20 +181,20 @@ TEST_P(QueryParamsWriteTest, Buffers)
 	buffer_iterator e = buffer.end();
 	smallint data_format_count(0);
 
-	p = protocol_read< BINARY_DATA_FORMAT >(p, e, data_format_count);
+	p = io::protocol_read< BINARY_DATA_FORMAT >(p, e, data_format_count);
 	EXPECT_EQ(expected_param_count, data_format_count);
 	smallint df(0);
 	for (smallint dfc = 0; dfc < data_format_count && p != e; ++dfc) {
-		buffer_iterator c = protocol_read< BINARY_DATA_FORMAT >(p, e, df);
+		buffer_iterator c = io::protocol_read< BINARY_DATA_FORMAT >(p, e, df);
 		EXPECT_NE(p, c);
 		p = c;
 	}
 	smallint param_count;
-	p = protocol_read< BINARY_DATA_FORMAT >(p, e, param_count);
+	p = io::protocol_read< BINARY_DATA_FORMAT >(p, e, param_count);
 	EXPECT_EQ(expected_param_count, param_count);
 	for (smallint pno = 0; pno < param_count && p != e; ++pno) {
 		integer param_size(0);
-		p = protocol_read< BINARY_DATA_FORMAT >(p, e, param_size);
+		p = io::protocol_read< BINARY_DATA_FORMAT >(p, e, param_size);
 		EXPECT_GT(param_count, 0);
 		p += param_size;
 	}
