@@ -10,6 +10,7 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace error {
 
 db_error::db_error(std::string const& what_arg)
 	: std::runtime_error(what_arg), sqlstate(sqlstate::unknown_code)
@@ -78,6 +79,7 @@ value_is_null::value_is_null(std::string const& field_name)
 {
 }
 
+}  // namespace error
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

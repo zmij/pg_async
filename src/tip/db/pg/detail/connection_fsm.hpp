@@ -111,7 +111,8 @@ struct connection_fsm_ :
 	struct on_connection_error {
 		template < typename SourceState, typename TargetState >
 		void
-		operator() (connection_error const& err, connection& fsm, SourceState&, TargetState&)
+		operator() (error::connection_error const& err, connection& fsm,
+				SourceState&, TargetState&)
 		{
 			fsm_log(logger::ERROR) << "connection::on_connection_error Error: "
 					<< err.what();
@@ -241,7 +242,7 @@ struct connection_fsm_ :
 						std::stringstream err;
 						err << "Unsupported authentication scheme "
 								<< evt.state << " requested by server";
-						fsm.process_event(connection_error(err.str()));
+						fsm.process_event(error::connection_error(err.str()));
 					}
 				}
 			}
@@ -331,7 +332,7 @@ struct connection_fsm_ :
 			{
 				fsm_log() << "transaction::rollback_transaction";
 				tran.connection_->send_rollback();
-				tran.notify_error(query_error("Transaction rolled back"));
+				tran.notify_error(error::query_error("Transaction rolled back"));
 			}
 
 			template < typename Event, typename SourceState, typename TargetState >
@@ -340,7 +341,7 @@ struct connection_fsm_ :
 			{
 				fsm_log() << "transaction::rollback_transaction (on error)";
 				tran.connection_->send_rollback();
-				tran.notify_error(query_error("Transaction rolled back"));
+				tran.notify_error(error::query_error("Transaction rolled back"));
 			}
 		};
 		//@}
@@ -382,14 +383,14 @@ struct connection_fsm_ :
 			on_exit(Event const&, FSM&)
 			{ fsm_log() << "leaving: idle (transaction)"; }
 			void
-			on_exit(query_error const& err, tran_fsm& tran)
+			on_exit(error::query_error const& err, tran_fsm& tran)
 			{
 				fsm_log(logger::DEBUG) << tip::util::MAGENTA
 						<< "leaving: idle (transaction) (query_error)";
 				tran.notify_error(err);
 			}
 			void
-			on_exit(client_error const& err, tran_fsm& tran)
+			on_exit(error::client_error const& err, tran_fsm& tran)
 			{
 				fsm_log(logger::DEBUG) << tip::util::MAGENTA
 						<< "leaving: idle (transaction) (client_error)";
@@ -469,7 +470,7 @@ struct connection_fsm_ :
 			}
 			template < typename FSM >
 			void
-			on_exit(query_error const& err, FSM&)
+			on_exit(error::query_error const& err, FSM&)
 			{
 				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: simple query (query_error)";
 				tran_->notify_error(*this, err);
@@ -477,7 +478,7 @@ struct connection_fsm_ :
 			}
 			template < typename FSM >
 			void
-			on_exit(client_error const& err, FSM&)
+			on_exit(error::client_error const& err, FSM&)
 			{
 				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: simple query (client_error)";
 				tran_->notify_error(err);
@@ -549,7 +550,7 @@ struct connection_fsm_ :
 				}
 
 				void
-				on_exit(db_error const& err, simple_query& fsm)
+				on_exit(error::db_error const& err, simple_query& fsm)
 				{
 					fsm_log() << "leaving: fetch_data on error";
 				}
@@ -624,7 +625,7 @@ struct connection_fsm_ :
 			}
 			template < typename FSM >
 			void
-			on_exit(query_error const& err, FSM&)
+			on_exit(error::query_error const& err, FSM&)
 			{
 				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query (query_error)";
 				tran_->notify_error(*this, err);
@@ -632,7 +633,7 @@ struct connection_fsm_ :
 			}
 			template < typename FSM >
 			void
-			on_exit(client_error const& err, FSM&)
+			on_exit(error::client_error const& err, FSM&)
 			{
 				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query (client_error)";
 				tran_->notify_error(err);
@@ -857,19 +858,19 @@ struct connection_fsm_ :
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
 			 Row<	idle,			events::commit,		exiting,		commit_transaction,			none			>,
 			 Row<	idle,			events::rollback,	exiting,		rollback_transaction,		none			>,
-			 Row<	idle,			query_error,		exiting,		rollback_transaction,		none			>,
-			 Row<	idle,			client_error,		exiting,		rollback_transaction,		none			>,
+			 Row<	idle,			error::query_error,	exiting,		rollback_transaction,		none			>,
+			 Row<	idle,			error::client_error,exiting,		rollback_transaction,		none			>,
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
 			 Row<	idle,			events::execute,	simple_query,	none,						none			>,
 			 Row<	simple_query,	ready_for_query,	idle,			none,						none			>,
-			 Row<	simple_query,	query_error,		tran_error,		none,						none			>,
-			 Row<	simple_query,	client_error,		tran_error,		none,						none			>,
+			 Row<	simple_query,	error::query_error,	tran_error,		none,						none			>,
+			 Row<	simple_query,	error::client_error,tran_error,		none,						none			>,
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
 			 Row<	idle,			events::
 			 	 	 	 	 	 	 execute_prepared,	extended_query,	none,						none			>,
 			 Row<	extended_query,	ready_for_query,	idle,			none,						none			>,
-		 	 Row<	extended_query,	query_error,		tran_error,		none,						none			>,
-		 	 Row<	extended_query,	client_error,		tran_error,		none,						none			>,
+		 	 Row<	extended_query,	error::query_error,	tran_error,		none,						none			>,
+		 	 Row<	extended_query,	error::client_error,tran_error,		none,						none			>,
 			/*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
 			 Row< 	tran_error,		ready_for_query,	exiting,		rollback_transaction,		none			>
 		> {};
@@ -891,12 +892,12 @@ struct connection_fsm_ :
 				tran_object_ = t;
 				try {
 					callbacks_.started(t);
-				} catch (query_error const& e) {
+				} catch (error::query_error const& e) {
 					fsm_log(logger::ERROR)
 							<< "Transaction started handler throwed a query_error:"
 							<< e.what();
 					connection_->process_event(e);
-				} catch (db_error const& e) {
+				} catch (error::db_error const& e) {
 					fsm_log(logger::ERROR)
 							<< "Transaction started handler throwed a db_error: "
 							<< e.what();
@@ -905,11 +906,11 @@ struct connection_fsm_ :
 					fsm_log(logger::ERROR)
 							<< "Transaction started handler throwed an exception: "
 							<< e.what();
-					connection_->process_event(client_error(e));
+					connection_->process_event(error::client_error(e));
 				} catch (...) {
 					fsm_log(logger::ERROR)
 							<< "Transaction started handler throwed an unknown exception";
-					connection_->process_event(client_error("Unknown exception"));
+					connection_->process_event(error::client_error("Unknown exception"));
 				}
 			}
 		}
@@ -920,12 +921,12 @@ struct connection_fsm_ :
 			if (state.query_.result) {
 				try {
 					state.query_.result(res, complete);
-				} catch (query_error const& e) {
+				} catch (error::query_error const& e) {
 					fsm_log(logger::ERROR)
 							<< "Query result handler throwed a query_error: "
 							<< e.what();
 					connection_->process_event(e);
-				} catch (db_error const& e) {
+				} catch (error::db_error const& e) {
 					fsm_log(logger::ERROR)
 							<< "Query result handler throwed a db_error: "
 							<< e.what();
@@ -934,17 +935,17 @@ struct connection_fsm_ :
 					fsm_log(logger::ERROR)
 							<< "Query result handler throwed an exception: "
 							<< e.what();
-					connection_->process_event(client_error(e));
+					connection_->process_event(error::client_error(e));
 				} catch (...) {
 					fsm_log(logger::ERROR)
 							<< "Query result handler throwed an unknown exception";
-					connection_->process_event(client_error("Unknown exception"));
+					connection_->process_event(error::client_error("Unknown exception"));
 				}
 			}
 		}
 
 		void
-		notify_error(db_error const& qe)
+		notify_error(error::db_error const& qe)
 		{
 			if (callbacks_.error) {
 				// If the async error handler throws an exception
@@ -963,7 +964,7 @@ struct connection_fsm_ :
 		}
 		template < typename State >
 		void
-		notify_error(State& state, query_error const& qe)
+		notify_error(State& state, error::query_error const& qe)
 		{
 			if (state.query_.error) {
 				try {
@@ -973,12 +974,12 @@ struct connection_fsm_ :
 							<< "Query error handler throwed an exception: "
 							<< e.what();
 					notify_error(qe);
-					notify_error(client_error(e));
+					notify_error(error::client_error(e));
 				} catch (...) {
 					fsm_log(logger::DEBUG)
 							<< "Query error handler throwed an unexpected exception";
 					notify_error(qe);
-					notify_error(client_error("Unknown exception"));
+					notify_error(error::client_error("Unknown exception"));
 				}
 			} else {
 				fsm_log(logger::WARNING) << "No query error handler";
@@ -1001,17 +1002,21 @@ struct connection_fsm_ :
 		/*  +-----------------+-------------------+---------------+---------------------------+---------------------+ */
 	    Row <	unplugged,		connection_options,	t_conn,			none,						none				>,
 	    Row <	t_conn,			complete,			authn,			none,						none				>,
-	    Row <	t_conn,			connection_error,	terminated,		on_connection_error,		none				>,
+	    Row <	t_conn,			error::
+	    						connection_error,	terminated,		on_connection_error,		none				>,
 	    Row <	authn,			ready_for_query,	idle,			none,						none				>,
-	    Row <	authn,			connection_error,	terminated,		on_connection_error,		none				>,
+	    Row <	authn,			error::
+	    						connection_error,	terminated,		on_connection_error,		none				>,
 	    /*									Transitions from idle													  */
 		/*  +-----------------+-------------------+---------------+---------------------------+---------------------+ */
 	    Row	<	idle,			events::begin,		transaction,	none,						none				>,
 	    Row <	idle,			terminate,			terminated,		disconnect,					none				>,
-	    Row <	idle,			connection_error,	terminated,		on_connection_error,		none				>,
+	    Row <	idle,			error::
+	    						connection_error,	terminated,		on_connection_error,		none				>,
 		/*  +-----------------+-------------------+---------------+---------------------------+---------------------+ */
 	    Row <	transaction,	ready_for_query,	idle,			none,						none				>,
-	    Row <	transaction,	connection_error,	terminated,		on_connection_error,		none				>
+	    Row <	transaction,	error::
+	    						connection_error,	terminated,		on_connection_error,		none				>
 	> {};
 	//@}
 	template < typename Event, typename FSM >
@@ -1046,13 +1051,13 @@ struct connection_fsm_ :
 	connect_transport(connection_options const& opts)
 	{
 		if (opts.uri.empty()) {
-			throw connection_error("No connection uri!");
+			throw error::connection_error("No connection uri!");
 		}
 		if (opts.database.empty()) {
-			throw connection_error("No database!");
+			throw error::connection_error("No database!");
 		}
 		if (opts.user.empty()) {
-			throw connection_error("User not specified!");
+			throw error::connection_error("User not specified!");
 		}
 		conn_opts_ = opts;
 		transport_.connect_async(conn_opts_,
@@ -1147,7 +1152,7 @@ struct connection_fsm_ :
 		if (f != prepared_.end()) {
 			return f->second;
 		}
-		throw db_error("Query is not prepared");
+		throw error::db_error("Query is not prepared");
 	}
 	//@}
 
@@ -1168,12 +1173,12 @@ struct connection_fsm_ :
 		do_notify_terminated();
 	}
 	void
-	notify_error(connection_error const& e) { do_notify_error(e); }
+	notify_error(error::connection_error const& e) { do_notify_error(e); }
 	//@}
 private:
 	virtual void do_notify_idle() {};
 	virtual void do_notify_terminated() {};
-	virtual void do_notify_error(connection_error const& e) {};
+	virtual void do_notify_error(error::connection_error const& e) {};
 private:
 	connection&
 	fsm()
@@ -1192,7 +1197,7 @@ private:
         if (!ec) {
             fsm().process_event(complete());
         } else {
-            fsm().process_event( connection_error(ec.message()) );
+            fsm().process_event( error::connection_error(ec.message()) );
         }
     }
 	void
@@ -1206,7 +1211,7 @@ private:
 			start_read();
 		} else {
 			// Socket error - force termination
-			fsm().process_event(connection_error(ec.message()));
+			fsm().process_event(error::connection_error(ec.message()));
 		}
 	}
 	void
@@ -1214,7 +1219,7 @@ private:
 	{
 		if (ec) {
 			// Socket error - force termination
-			fsm().process_event(connection_error(ec.message()));
+			fsm().process_event(error::connection_error(ec.message()));
 		}
 	}
 
@@ -1315,7 +1320,7 @@ private:
 					m->read(msg);
 
 					fsm_log(logger::ERROR) << "Error " << msg ;
-					query_error err(msg.message, msg.severity,
+					error::query_error err(msg.message, msg.severity,
 							msg.sqlstate, msg.detail);
 					fsm().process_event(err);
 					break;
@@ -1469,7 +1474,7 @@ private:
 		callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
 	}
 	virtual void
-	do_notify_error(connection_error const& e)
+	do_notify_error(error::connection_error const& e)
 	{
 		fsm_log(logger::ERROR) << "Connection error " << e.what();
 		if (callbacks_.error) {
@@ -1496,7 +1501,7 @@ private:
 	{
 		if (fsm_type::in_transaction()) {
 			fsm_log(logger::ERROR) << "Cannot begin transaction: already in transaction";
-			throw db_error("Already in transaction");
+			throw error::db_error("Already in transaction");
 		}
 		fsm_type::process_event(evt);
 	}
@@ -1506,7 +1511,7 @@ private:
 	{
 		if (!fsm_type::in_transaction()) {
 			fsm_log(logger::ERROR) << "Cannot commit transaction: not in transaction";
-			throw db_error("Not in transaction");
+			throw error::db_error("Not in transaction");
 		}
 		fsm_type::process_event(events::commit{});
 	}
@@ -1516,7 +1521,7 @@ private:
 	{
 		if (!fsm_type::in_transaction()) {
 			fsm_log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
-			throw db_error("Not in transaction");
+			throw error::db_error("Not in transaction");
 		}
 		fsm_type::process_event(events::rollback{});
 	}

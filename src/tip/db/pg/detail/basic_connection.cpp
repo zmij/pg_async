@@ -63,7 +63,7 @@ basic_connection::create(io_service& svc, connection_options const& opts,
 	}
 	std::stringstream os;
 	os << "Schema " << opts.schema << " is unsupported";
-	throw db_error(os.str());
+	throw error::connection_error(os.str());
 }
 
 basic_connection::basic_connection()

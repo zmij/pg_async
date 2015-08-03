@@ -51,14 +51,14 @@ TEST(ErrorTest, InvalidQueryError)
 				local_log(logger::DEBUG) << "Query resultset callback fired";
 				query_res_callback = true;
 			},
-			[&](db_error const& e) {
+			[&](error::db_error const& e) {
 				local_log(logger::DEBUG) << "Query error callback fired";
 				query_err_callback++;
 
 				db_service::stop();
 			});
 		},
-		[&](db_error const& e){
+		[&](error::db_error const& e){
 			local_log(logger::DEBUG) << "Transaction error callback fired: "
 					<< e.what();
 			tran_err_callback++;
@@ -88,7 +88,7 @@ TEST(ErrorTest, ExceptionInTranHanlder)
 			EXPECT_TRUE(tran.get());
 			throw std::runtime_error("Bail out");
 		},
-		[&](db_error const& e) {
+		[&](error::db_error const& e) {
 			local_log(logger::DEBUG) << "Transaction error callback fired: "
 					<< e.what();
 			tran_err_callback++;
@@ -115,7 +115,7 @@ TEST(ErrorTest, ExceptionInTranErrorHandler)
 			EXPECT_TRUE(tran.get());
 			throw std::runtime_error("Bail out");
 		},
-		[&](db_error const& e) {
+		[&](error::db_error const& e) {
 			local_log(logger::DEBUG) << "Transaction error callback fired: "
 					<< e.what();
 			tran_err_callback++;
@@ -147,14 +147,14 @@ TEST(ErrorTest, ExceptionInQueryResultsHanlder)
 				query_res_callback = true;
 				throw std::runtime_error("Bail out");
 			},
-			[&](db_error const& e) {
+			[&](error::db_error const& e) {
 				local_log(logger::DEBUG) << "Query error callback fired";
 				query_err_callback++;
 
 				db_service::stop();
 			});
 		},
-		[&](db_error const& e) {
+		[&](error::db_error const& e) {
 			local_log(logger::DEBUG) << "Transaction error callback fired: "
 					<< e.what();
 			tran_err_callback++;
@@ -187,7 +187,7 @@ TEST(ErrorTest, ExceptionInQueryErrorHanlder)
 				local_log(logger::DEBUG) << "Query resultset callback fired";
 				query_res_callback = true;
 			},
-			[&](db_error const& e) {
+			[&](error::db_error const& e) {
 				local_log(logger::DEBUG) << "Query error callback fired";
 				query_err_callback++;
 
@@ -195,7 +195,7 @@ TEST(ErrorTest, ExceptionInQueryErrorHanlder)
 				throw std::runtime_error("Bail out");
 			});
 		},
-		[&](db_error const& e){
+		[&](error::db_error const& e){
 			local_log(logger::DEBUG) << "Transaction error callback fired: "
 					<< e.what();
 			tran_err_callback++;
@@ -244,14 +244,14 @@ TEST(ErrorTest, BreakQueryQueue)
 					EXPECT_TRUE(c.get());
 					query_resultsets[0] = true;
 					throw std::runtime_error("Break the queue");
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 				});
 				query(tran, "select * from pg_async_test")
 				([&](transaction_ptr c, resultset r, bool) {
 					local_log(logger::DEBUG) << "Query two finished";
 					EXPECT_TRUE(c.get());
 					query_resultsets[1] = true;
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 				});
 				query(tran, "drop table pg_async_test")
 				([&](transaction_ptr c, resultset r, bool) {
@@ -259,10 +259,10 @@ TEST(ErrorTest, BreakQueryQueue)
 					EXPECT_TRUE(c.get());
 					query_resultsets[2] = true;
 
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 				});
 				tran->commit();
-			}, [&](db_error const& e){
+			}, [&](error::db_error const& e){
 				local_log(logger::DEBUG) << "Transaction error callback fired: "
 						<< e.what();
 				transaction_error++;

@@ -103,7 +103,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	void
-	handle_get_connection_error(db_error const& ec, error_callback const& err)
+	handle_get_connection_error(error::db_error const& ec, error_callback const& err)
 	{
 		err(ec);
 	}

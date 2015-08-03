@@ -14,6 +14,7 @@
 namespace tip {
 namespace db {
 namespace pg {
+namespace error {
 
 class db_error : public std::runtime_error {
 public:
@@ -59,6 +60,7 @@ public:
 	explicit value_is_null(std::string const& field_name);
 };
 
+}  // namespace error
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

@@ -362,7 +362,7 @@ public:
 		to( T& val ) const
 		{
 			if (is_null())
-				throw value_is_null(name());
+				throw error::value_is_null(name());
 			return to_impl(val,
 					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
 		}

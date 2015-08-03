@@ -74,7 +74,7 @@ private:
 	void
 	connection_terminated(connection_ptr c);
 	void
-	connection_error(connection_ptr c, connection_error const& ec);
+	connection_error(connection_ptr c, error::connection_error const& ec);
 private:
 	io_service& 			service_;
 	size_t					pool_size_;

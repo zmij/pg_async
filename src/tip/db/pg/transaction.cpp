@@ -99,7 +99,7 @@ transaction::handle_results(resultset r, bool complete, query_result_callback re
 }
 
 void
-transaction::handle_query_error(query_error const& e, query_error_callback error)
+transaction::handle_query_error(error::query_error const& e, query_error_callback error)
 {
 	if (error) {
 		error(e);

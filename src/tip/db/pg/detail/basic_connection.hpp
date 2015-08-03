@@ -31,7 +31,8 @@ class basic_connection;
 typedef std::shared_ptr< basic_connection > basic_connection_ptr;
 
 typedef std::function < void (basic_connection_ptr) > connection_event_callback;
-typedef std::function < void (basic_connection_ptr, connection_error) > connection_error_callback;
+typedef std::function < void (basic_connection_ptr, error::connection_error) > connection_error_callback;
+typedef std::function< void (resultset, bool) > query_internal_callback;
 
 struct connection_callbacks {
 	connection_event_callback	idle;

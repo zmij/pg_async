@@ -77,7 +77,7 @@ private:
 	void
 	handle_results(resultset, bool, query_result_callback);
 	void
-	handle_query_error(query_error const&, query_error_callback);
+	handle_query_error(error::query_error const&, query_error_callback);
 	connection_ptr connection_;
 	bool finished_;
 };

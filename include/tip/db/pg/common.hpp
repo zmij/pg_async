@@ -319,11 +319,13 @@ typedef std::vector< field_description > row_description_type;
 //@{
 /** @name Forward declarations */
 class resultset;
+class transaction;
+class basic_connection;
+namespace error {
 class db_error;
 class connection_error;
 class query_error;
-class transaction;
-class basic_connection;
+} // namespace error
 //@}
 //@{
 /** @name Pointer types */
@@ -336,14 +338,13 @@ typedef std::vector< oids::type::oid_type > type_oid_sequence;
 
 typedef std::function< void () > simple_callback;
 /** Callback for error handling */
-typedef std::function< void (db_error const&) > error_callback;
+typedef std::function< void (error::db_error const&) > error_callback;
 /** Callback for connection acquiring */
 typedef std::function< void (transaction_ptr) > transaction_callback;
 
 /** Callback for query results */
 typedef std::function< void (transaction_ptr, resultset, bool) > query_result_callback;
-typedef std::function< void (resultset, bool) > query_internal_callback;
-typedef std::function< void (query_error const&) > query_error_callback;
+typedef std::function< void (error::query_error const&) > query_error_callback;
 
 namespace detail {
 /** Callback for internal results passing */

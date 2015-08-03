@@ -115,7 +115,7 @@ TEST( ConnectionTest, Connect)
 			conn_ptr = c;
 			conn->terminate();
 		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
+		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
 
@@ -192,9 +192,9 @@ TEST( ConnectionTest, ConnectionPool )
 								pool->close();
 								timer.cancel();
 							}
-						}, [](db_error const&){} );
+						}, [](error::db_error const&){} );
 					},
-					[&] (db_error const& ec) {
+					[&] (error::db_error const& ec) {
 						++fail_count; // transaction rolled back
 					});
 				}
@@ -256,15 +256,15 @@ TEST( ConnectionTest, ExecutePrepared )
 						EXPECT_TRUE(r.columns_size());
 						EXPECT_FALSE(r.empty());
 						tran->commit();
-					}, [&](db_error const& ) {
+					}, [&](error::db_error const& ) {
 					});
-				}, [](db_error const&) {
+				}, [](error::db_error const&) {
 				}});
 			} else {
 				c->terminate();
 			}
 		}, [](connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
+		}, [](connection_ptr c, error::connection_error const& ec) {
 
 		}}));
 		io_service.run();
@@ -296,7 +296,7 @@ TEST( TransactionTest, CleanExit )
 					EXPECT_TRUE(tran->in_transaction());
 					ASSERT_NO_THROW(tran->commit());
 				},
-				[&](db_error const&){
+				[&](error::db_error const&){
 					transaction_error = true;
 				}}));
 				transactions++;
@@ -304,7 +304,7 @@ TEST( TransactionTest, CleanExit )
 				c->terminate();
 			}
 		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
+		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
@@ -339,14 +339,14 @@ TEST(TransactionTest, DirtyTerminate)
 					EXPECT_TRUE(tran.get());
 					EXPECT_TRUE(tran->in_transaction());
 				},
-				[&](db_error const&){
+				[&](error::db_error const&){
 					transaction_error++;
 				}}));
 			} else {
 				c->terminate();
 			}
 		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
+		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
@@ -387,13 +387,13 @@ TEST(TransactionTest, DirtyUnlock)
 						}
 					});
 				},
-				[&](db_error const&){
+				[&](error::db_error const&){
 					transaction_error = true;
 				}}));
 				transactions++;
 			}
 		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
+		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
@@ -432,16 +432,16 @@ TEST(TransactionTest, Query)
 						local_log() << "Received a resultset columns: " << r.columns_size()
 								<< " rows: " << r.size()
 								<< " completed: " << std::boolalpha << complete;
-					}, [] (db_error const&) {});
+					}, [] (error::db_error const&) {});
 				},
-				[&](db_error const&){
+				[&](error::db_error const&){
 					transaction_error++;
 				}}));
 			} else {
 				c->terminate();
 			}
 		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, connection_error const& ec) {
+		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
 		io_service.run();
@@ -487,7 +487,7 @@ TEST(DatabaseTest, Service)
 		[&](transaction_ptr c){
             timer.cancel();
 			db_service::stop();
-		}, [](db_error const& ec) {
+		}, [](error::db_error const& ec) {
 
 		});
 

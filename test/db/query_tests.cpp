@@ -76,16 +76,16 @@ TEST(QueryTest, QueryInlay)
                             timer.cancel();
                             //c->commit();
 							db_service::stop();
-						}, [](db_error const&){
+						}, [](error::db_error const&){
 							FAIL();
 						});
-					}, [](db_error const&){
+					}, [](error::db_error const&){
 						FAIL();
 					});
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 					FAIL();
 				});
-			}, [](db_error const&){
+			}, [](error::db_error const&){
 				SUCCEED();
 			});
 		}
@@ -124,7 +124,7 @@ TEST(QueryTest, QueryQueue)
 				[&](transaction_ptr c, resultset, bool){
 					local_log(logger::DEBUG) << "Query one finished";
 					EXPECT_TRUE(c.get());
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 					SUCCEED();
 				});
 				for (int i = 0; i < test::environment::num_requests; ++i) {
@@ -132,7 +132,7 @@ TEST(QueryTest, QueryQueue)
 					([&](transaction_ptr c, resultset, bool){
 						local_log(logger::DEBUG) << "Query two finished";
 						EXPECT_TRUE(c.get());
-					}, [](db_error const&){
+					}, [](error::db_error const&){
 						FAIL();
 					});
 				}
@@ -143,7 +143,7 @@ TEST(QueryTest, QueryQueue)
 					EXPECT_EQ(test::environment::num_requests, r.size());
 					EXPECT_EQ(1, r.columns_size());
 					res = r;
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 					FAIL();
 				});
 				query(tran, "drop table pg_async_test")
@@ -153,11 +153,11 @@ TEST(QueryTest, QueryQueue)
 	                timer.cancel();
 	                //c->commit();
 					db_service::stop();
-				}, [](db_error const&){
+				}, [](error::db_error const&){
 					FAIL();
 				});
 				tran->commit();
-			}, [](db_error const&){});
+			}, [](error::db_error const&){});
 		}
 		db_service::run();
 
@@ -232,7 +232,7 @@ TEST(QueryTest, BasicResultParsing)
 						}
 					}
 				}
-			}, [&](db_error const&) {});
+			}, [&](error::db_error const&) {});
 
 			db_service::run();
 		}

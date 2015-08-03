@@ -165,7 +165,7 @@ connection_pool::connection_terminated(connection_ptr c)
 }
 
 void
-connection_pool::connection_error(connection_ptr c, class connection_error const& ec)
+connection_pool::connection_error(connection_ptr c, error::connection_error const& ec)
 {
 	local_log(logger::ERROR) << "Connection " << alias().value << " error: "
 			<< ec.what();
