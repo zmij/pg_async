@@ -36,7 +36,7 @@ using tip::log::logger;
 
 struct query::impl : std::enable_shared_from_this<query::impl> {
 	dbalias alias_;
-	transaction_ptr tran_;
+	transaction_ptr tran_; // @todo make it a weak pointer
 	std::string expression_;
 
 	type_oid_sequence param_types_;
@@ -57,6 +57,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 		: alias_(alias), tran_(), expression_(expression),
 		  param_types_(std::move(param_types)), params_(std::move(params))
 	{
+		local_log() << "Create query with " << param_types_.size() << " params";
 	}
 
 	impl(transaction_ptr tran, std::string const& expression,
@@ -64,6 +65,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 		: alias_(tran->alias()), tran_(tran), expression_(expression),
 		  param_types_(std::move(param_types)), params_(std::move(params))
 	{
+		local_log() << "Create query with " << param_types_.size() << " params";
 	}
 
 	impl(impl const& rhs)
@@ -170,7 +172,8 @@ query::pimpl
 query::create_impl(transaction_ptr t, std::string const& expression,
 		type_oid_sequence&& param_types, params_buffer&& params)
 {
-	return pimpl(new impl(t, expression));
+	return pimpl(new impl(t, expression,
+			std::move(param_types), std::move(params)));
 }
 
 query::params_buffer&
