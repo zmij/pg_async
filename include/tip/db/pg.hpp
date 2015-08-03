@@ -8,14 +8,6 @@
 /**
  *  @mainpage
  *
- *  ## Motivation
- *
- *  When developing software we deal a lot with external network resources.
- *  Most of them can be accessed through an asynchronous interface, so we don't
- *  have to block to wait for a request to finish. The lack of modern C++
- *  asynchronous interface was the reason for writing this library.
- *
- *  ## Overview
  *
  *  pg_async is an unofficial PostreSQL database asynchronous client library
  *  written in modern C++ (std=c++11) on top of boost::asio library used for
