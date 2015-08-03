@@ -28,8 +28,8 @@ set(
 add_library(tip-pgsql SHARED ${pgsql_lib_SRCS})
 set_target_properties(
     tip-pgsql PROPERTIES
-    VERSION 0.0.0
-    SOVERSION 0
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 1
 )
 
 set(pgsql_lib_LIBRARIES
@@ -40,6 +40,10 @@ set(pgsql_lib_LIBRARIES
     ${TIP_LOG_LIBRARY}
 )
 
-message(STATUS ${pgsql_lib_LIBRARIES})
-
 target_link_libraries(tip-pgsql ${pgsql_lib_LIBRARIES})
+
+install (
+    TARGETS tip-pgsql
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
