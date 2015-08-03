@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['savepoint_5fexception',['savepoint_exception',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bae96ee6ea4adfc479493db22393bb3ec5',1,'tip::db::pg::sqlstate']]],
+  ['schema_5fand_5fdata_5fstatement_5fmixing_5fnot_5fsupported',['schema_and_data_statement_mixing_not_supported',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba26f475cfa04dbe9bc060e815e26eab23',1,'tip::db::pg::sqlstate']]],
+  ['serialization_5ffailure',['serialization_failure',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba418883d702fcf1afee6962d8100ce995',1,'tip::db::pg::sqlstate']]],
+  ['sql_5froutine_5fexception',['sql_routine_exception',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba2c867f034a88be4955a063199913c008',1,'tip::db::pg::sqlstate']]],
+  ['sql_5fstatement_5fnot_5fyet_5fcomplete',['sql_statement_not_yet_complete',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad9f5ef398ac8022d9238c5c9a465db4a',1,'tip::db::pg::sqlstate']]],
+  ['sqlclient_5funable_5fto_5festablish_5fsqlconnection',['sqlclient_unable_to_establish_sqlconnection',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad3b8a8bc4954f34834e6754bb0147465',1,'tip::db::pg::sqlstate']]],
+  ['sqlserver_5frejected_5festablishment_5fof_5fsqlconnection',['sqlserver_rejected_establishment_of_sqlconnection',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad5acf3bc6027b92ca5e742db547bc315',1,'tip::db::pg::sqlstate']]],
+  ['srf_5fprotocol_5fviolated',['srf_protocol_violated',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba07395c74b3f5de04e4a379bc56889085',1,'tip::db::pg::sqlstate']]],
+  ['stacked_5fdiagnostics_5faccessed_5fwithout_5factive_5fhandler',['stacked_diagnostics_accessed_without_active_handler',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba527a3ebc0f901cad62ac7a67eb86f176',1,'tip::db::pg::sqlstate']]],
+  ['statement_5fcompletion_5funknown',['statement_completion_unknown',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba31f8a12b9243592dcdfc503659b14cf2',1,'tip::db::pg::sqlstate']]],
+  ['statement_5ftoo_5fcomplex',['statement_too_complex',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bab98fbda8add4dd534e38a6eacfe8c5b7',1,'tip::db::pg::sqlstate']]],
+  ['string',['string',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__category.html#ac27caab84b1b9ca2db889191e8e3740ea26680b5383c9bd9c94f47cab2ee9b738',1,'tip::db::pg::oids::type_category']]],
+  ['string_5fdata_5flength_5fmismatch',['string_data_length_mismatch',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bacaa8aad5c6d59fc93773ed0354c84302',1,'tip::db::pg::sqlstate']]],
+  ['string_5fdata_5fright_5ftruncation',['string_data_right_truncation',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bac3e0880a4ae6286ca18c46435d61c5e1',1,'tip::db::pg::sqlstate']]],
+  ['substring_5ferror',['substring_error',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba5b905eb3ea91de7530e4628c3dee7893',1,'tip::db::pg::sqlstate']]],
+  ['successful_5fcompletion',['successful_completion',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bae13f98d8d0b52e99e7ec399c66ac0535',1,'tip::db::pg::sqlstate']]],
+  ['syntax_5ferror',['syntax_error',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba86c6ac70a5ccb718ebaf49610c45cd1e',1,'tip::db::pg::sqlstate']]],
+  ['syntax_5ferror_5for_5faccess_5frule_5fviolation',['syntax_error_or_access_rule_violation',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74baab9e082d37302884e4fd041928dc3dff',1,'tip::db::pg::sqlstate']]],
+  ['system_5ferror',['system_error',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba5fa6171dbd895ea4877e38ddb41c6ec2',1,'tip::db::pg::sqlstate']]]
+];

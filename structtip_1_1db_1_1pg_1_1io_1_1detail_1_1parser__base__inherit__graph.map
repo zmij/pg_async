@@ -1,0 +1,4 @@
+<map id="tip::db::pg::io::detail::parser_base&lt; T &gt;" name="tip::db::pg::io::detail::parser_base&lt; T &gt;">
+<area shape="rect" id="node2" href="$structtip_1_1db_1_1pg_1_1io_1_1detail_1_1binary__data__parser_3_01T_00_01INTEGRAL_01_4.html" title="Specification of a binary parser for integral values. " alt="" coords="241,5,389,61"/>
+<area shape="rect" id="node3" href="$structtip_1_1db_1_1pg_1_1io_1_1protocol__parser_3_01T_00_01TEXT__DATA__FORMAT_01_4.html" title="tip::db::pg::io::protocol\l_parser\&lt; T, TEXT_DATA_FORMAT \&gt;" alt="" coords="192,85,437,126"/>
+</map>

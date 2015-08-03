@@ -1,0 +1,9 @@
+<map id="tip/db/pg/query.hpp" name="tip/db/pg/query.hpp">
+<area shape="rect" id="node2" href="$common_8hpp.html" title="tip/db/pg/common.hpp" alt="" coords="441,269,591,296"/>
+<area shape="rect" id="node14" href="$query_8inl.html" title="tip/db/pg/query.inl" alt="" coords="764,88,889,115"/>
+<area shape="rect" id="node12" href="$pg__types_8hpp.html" title="tip/db/pg/pg_types.hpp" alt="" coords="553,360,707,387"/>
+<area shape="rect" id="node16" href="$protocol__io__traits_8hpp.html" title="tip/db/pg/protocol\l_io_traits.hpp" alt="" coords="821,171,944,213"/>
+<area shape="rect" id="node21" href="$protocol__io__traits_8inl.html" title="tip/db/pg/protocol\l_io_traits.inl" alt="" coords="1155,262,1277,303"/>
+<area shape="rect" id="node29" href="$datatype__mapping_8hpp.html" title="tip/db/pg/datatype\l_mapping.hpp" alt="" coords="667,262,793,303"/>
+<area shape="rect" id="node22" href="$protocol__parsers_8hpp.html" title="tip/db/pg/detail/protocol\l_parsers.hpp" alt="" coords="1132,353,1289,394"/>
+</map>

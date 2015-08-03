@@ -1,0 +1,13 @@
+<map id="tip/db/pg/pg_types.hpp" name="tip/db/pg/pg_types.hpp">
+<area shape="rect" id="node2" href="$common_8hpp.html" title="tip/db/pg/common.hpp" alt="" coords="397,80,547,107"/>
+<area shape="rect" id="node5" href="$protocol__io__traits_8hpp.html" title="tip/db/pg/protocol\l_io_traits.hpp" alt="" coords="192,155,315,197"/>
+<area shape="rect" id="node3" href="$database_8hpp.html" title="tip/db/pg/database.hpp" alt="" coords="729,336,883,363"/>
+<area shape="rect" id="node9" href="$query_8hpp.html" title="tip/db/pg/query.hpp" alt="" coords="300,336,433,363"/>
+<area shape="rect" id="node10" href="$resultset_8hpp.html" title="tip/db/pg/resultset.hpp" alt="" coords="503,253,653,280"/>
+<area shape="rect" id="node12" href="$transaction_8hpp.html" title="tip/db/pg/transaction.hpp" alt="" coords="572,163,736,189"/>
+<area shape="rect" id="node4" href="$pg_8hpp.html" title="tip/db/pg.hpp" alt="" coords="533,411,629,437"/>
+<area shape="rect" id="node6" href="$datatype__mapping_8hpp.html" title="tip/db/pg/datatype\l_mapping.hpp" alt="" coords="5,246,131,287"/>
+<area shape="rect" id="node7" href="$protocol__io__traits_8inl.html" title="tip/db/pg/protocol\l_io_traits.inl" alt="" coords="156,246,279,287"/>
+<area shape="rect" id="node8" href="$query_8inl.html" title="tip/db/pg/query.inl" alt="" coords="303,253,428,280"/>
+<area shape="rect" id="node11" href="$resultset_8inl.html" title="tip/db/pg/resultset.inl" alt="" coords="509,336,651,363"/>
+</map>

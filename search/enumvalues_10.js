@@ -1,0 +1,24 @@
+var searchData=
+[
+  ['raise_5fexception',['raise_exception',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad224a9fc94a4ffe2d92b0d6bb5232606',1,'tip::db::pg::sqlstate']]],
+  ['range',['range',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__class.html#a5f1f72db629431a926da1034d3015b01a2b4a9cf3f3087985e19af28103dee603',1,'tip::db::pg::oids::type_class']]],
+  ['range_5fcategory',['range_category',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__category.html#ac27caab84b1b9ca2db889191e8e3740ea9bb9fc16c2a6d6abf3b9afb07a2d46c5',1,'tip::db::pg::oids::type_category']]],
+  ['read_5fonly_5fsql_5ftransaction',['read_only_sql_transaction',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74baea737b7a785f00265c92cba131f5aa90',1,'tip::db::pg::sqlstate']]],
+  ['reading_5fsql_5fdata_5fnot_5fpermitted',['reading_sql_data_not_permitted',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba9434fe83a20636549dc902ea504d340e',1,'tip::db::pg::sqlstate']]],
+  ['record',['record',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5ac895e7b0781f8fbb7566f2b6eb4c6919',1,'tip::db::pg::oids::type']]],
+  ['record_5farray',['record_array',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5adf3ce68c5aa8fab3c2b5eb03203b93ec',1,'tip::db::pg::oids::type']]],
+  ['refcursor',['refcursor',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5aa88058dc0bd297b08f65065c9c89dcb4',1,'tip::db::pg::oids::type']]],
+  ['regclass',['regclass',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a593804ea8c2fc5719509a20f50d79bf6',1,'tip::db::pg::oids::type']]],
+  ['regconfig',['regconfig',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a4bafb833564c96fb439380bfa8b84d83',1,'tip::db::pg::oids::type']]],
+  ['regdictionary',['regdictionary',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a9996c94f3044d317d36b4a9a609af5fd',1,'tip::db::pg::oids::type']]],
+  ['regoper',['regoper',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5ad299f04eb0bb8dd22aa93e44be837f9e',1,'tip::db::pg::oids::type']]],
+  ['regoperator',['regoperator',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5ae1ff860b1db472b79394bd678da85f4f',1,'tip::db::pg::oids::type']]],
+  ['regproc',['regproc',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a725ac6158fd8d0575fd677fa9e3df84c',1,'tip::db::pg::oids::type']]],
+  ['regprocedure',['regprocedure',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a45a93135beb9144fec0a05be96992941',1,'tip::db::pg::oids::type']]],
+  ['regrole',['regrole',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5af9f42b5a4bcbfec9f889b94692d69ed5',1,'tip::db::pg::oids::type']]],
+  ['regtype',['regtype',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5ae01214cfb1feb8c44754199d425618d8',1,'tip::db::pg::oids::type']]],
+  ['regtypearray',['regtypearray',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a599a83cbb7d0083afadceb186ee3c61d',1,'tip::db::pg::oids::type']]],
+  ['reltime',['reltime',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a21a75baafb6d8a4512fb3c6c2e797db9',1,'tip::db::pg::oids::type']]],
+  ['reserved_5fname',['reserved_name',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74baf8950bfafbc6b19f26316ff0b669ffb6',1,'tip::db::pg::sqlstate']]],
+  ['restrict_5fviolation',['restrict_violation',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba72cbd30eab24a4735bf05c7176e34285',1,'tip::db::pg::sqlstate']]]
+];

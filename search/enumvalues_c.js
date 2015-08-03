@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['name',['name',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a4ff4f67014a79cf8ae759648418086ba',1,'tip::db::pg::oids::type']]],
+  ['name_5ftoo_5flong',['name_too_long',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bae0c8686b571ec8046d427c29821dfe64',1,'tip::db::pg::sqlstate']]],
+  ['network',['network',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__category.html#ac27caab84b1b9ca2db889191e8e3740eae805dd01b133987b15093b9f1d1cf906',1,'tip::db::pg::oids::type_category']]],
+  ['no_5factive_5fsql_5ftransaction',['no_active_sql_transaction',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba927f43ec10c73cceb495edf2e1e020ad',1,'tip::db::pg::sqlstate']]],
+  ['no_5factive_5fsql_5ftransaction_5ffor_5fbranch_5ftransaction',['no_active_sql_transaction_for_branch_transaction',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba67647cd536ef27e8b9a5bfda27cd1ab8',1,'tip::db::pg::sqlstate']]],
+  ['no_5fadditional_5fdynamic_5fresult_5fsets_5freturned',['no_additional_dynamic_result_sets_returned',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74baeaef49939ef54ec5de9e2a10e75c75e6',1,'tip::db::pg::sqlstate']]],
+  ['no_5fdata',['no_data',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad4d41332235afba1bbf38150ee1b0672',1,'tip::db::pg::sqlstate']]],
+  ['no_5fdata_5ffound',['no_data_found',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba7807ff6dfe135b1cd43c16477a5b5427',1,'tip::db::pg::sqlstate']]],
+  ['nonstandard_5fuse_5fof_5fescape_5fcharacter',['nonstandard_use_of_escape_character',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bafcfc20f168332772e531f0f5c5de1cff',1,'tip::db::pg::sqlstate']]],
+  ['not_5fan_5fxml_5fdocument',['not_an_xml_document',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bac435d8e8442bbc0596db123c4b9a9641',1,'tip::db::pg::sqlstate']]],
+  ['not_5fnull_5fviolation',['not_null_violation',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad01951d84e14cdc3431e7d3c862b03ae',1,'tip::db::pg::sqlstate']]],
+  ['null_5fvalue_5feliminated_5fin_5fset_5ffunction',['null_value_eliminated_in_set_function',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74baef70426a82cba78c05221baee7d184cd',1,'tip::db::pg::sqlstate']]],
+  ['null_5fvalue_5fno_5findicator_5fparameter',['null_value_no_indicator_parameter',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba74e83e538da39daf4cab267c6d406c3d',1,'tip::db::pg::sqlstate']]],
+  ['null_5fvalue_5fnot_5fallowed',['null_value_not_allowed',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bab1e426435e164bfab56205d5d6bee0e0',1,'tip::db::pg::sqlstate']]],
+  ['numeric',['numeric',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a95f0d9e747f91d3ebdb1685ce4415b27',1,'tip::db::pg::oids::type::numeric()'],['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__category.html#ac27caab84b1b9ca2db889191e8e3740ea1ac280f8a5b93fc802f99cf3a53a1083',1,'tip::db::pg::oids::type_category::numeric()']]],
+  ['numeric_5fvalue_5fout_5fof_5frange',['numeric_value_out_of_range',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba621edbe4cd76ef28956fc638a7b6bfb3',1,'tip::db::pg::sqlstate']]]
+];

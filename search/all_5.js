@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['element_5fparser',['element_parser',['../structtip_1_1db_1_1pg_1_1io_1_1protocol__parser_3_01boost_1_1optional_3_01T_01_4_00_01BINARY__DATA__FORMAT_01_4.html#a7e145a4b0aa68549a5f49447e9282c05',1,'tip::db::pg::io::protocol_parser&lt; boost::optional&lt; T &gt;, BINARY_DATA_FORMAT &gt;']]],
+  ['element_5ftype',['element_type',['../structtip_1_1db_1_1pg_1_1io_1_1protocol__parser_3_01boost_1_1optional_3_01T_01_4_00_01TEXT__DATA__FORMAT_01_4.html#a93016a246ac27e541e13a0c309ecbd70',1,'tip::db::pg::io::protocol_parser&lt; boost::optional&lt; T &gt;, TEXT_DATA_FORMAT &gt;::element_type()'],['../structtip_1_1db_1_1pg_1_1io_1_1protocol__parser_3_01boost_1_1optional_3_01T_01_4_00_01BINARY__DATA__FORMAT_01_4.html#a676dc07c2a02477e04df1754fe0cf9f7',1,'tip::db::pg::io::protocol_parser&lt; boost::optional&lt; T &gt;, BINARY_DATA_FORMAT &gt;::element_type()']]],
+  ['empty',['empty',['../classtip_1_1db_1_1pg_1_1resultset.html#a6c5db38d3bd6b86d5d220f87e57da3f6',1,'tip::db::pg::resultset::empty()'],['../classtip_1_1db_1_1pg_1_1resultset_1_1row.html#a4df55298a2a29175cfb3d90365beab23',1,'tip::db::pg::resultset::row::empty()'],['../classtip_1_1db_1_1pg_1_1resultset_1_1field.html#a8b880715c984a081e1b8ea6329ec7218',1,'tip::db::pg::resultset::field::empty()']]],
+  ['end',['end',['../classtip_1_1db_1_1pg_1_1resultset.html#a99e21cb4f45d27378369448bcd1ea5bb',1,'tip::db::pg::resultset::end()'],['../classtip_1_1db_1_1pg_1_1resultset_1_1row.html#a3a46dc035d38910dfedffd7c6b890be0',1,'tip::db::pg::resultset::row::end()']]],
+  ['enumerated',['enumerated',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__class.html#a5f1f72db629431a926da1034d3015b01af0e1a4d81a54eace71f3d6e652c6c21b',1,'tip::db::pg::oids::type_class']]],
+  ['enumeration',['enumeration',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type__category.html#ac27caab84b1b9ca2db889191e8e3740ea81cbb80a2a7d74e7c85249cf5f304d85',1,'tip::db::pg::oids::type_category']]],
+  ['error_2ehpp',['error.hpp',['../error_8hpp.html',1,'']]],
+  ['error_5fcallback',['error_callback',['../namespacetip_1_1db_1_1pg.html#a42be3b921333d386436f9dc55e034a0b',1,'tip::db::pg']]],
+  ['error_5fcode',['error_code',['../classtip_1_1db_1_1pg_1_1db__service.html#a11caf334822ed07f6c49cc69740f93c6',1,'tip::db::pg::db_service']]],
+  ['error_5fin_5fassignment',['error_in_assignment',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba7ed5ce52cbb9b205b5a187a31a3493ef',1,'tip::db::pg::sqlstate']]],
+  ['errors_20and_20exceptions',['Errors and exceptions',['../errors.html',1,'']]],
+  ['escape_5fcharacter_5fconflict',['escape_character_conflict',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74badaefda865a7a8dbd21c2e75ac7697f32',1,'tip::db::pg::sqlstate']]],
+  ['evttrigger',['evttrigger',['../namespacetip_1_1db_1_1pg_1_1oids_1_1type.html#aaf87c8940daa3074f460e823a1fc5ce5a27b209567637ecbfae7e8299b22f4e0b',1,'tip::db::pg::oids::type']]],
+  ['exclusion_5fviolation',['exclusion_violation',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba6e09cec1974bc87017622607d4fd1066',1,'tip::db::pg::sqlstate']]],
+  ['execute',['execute',['../classtip_1_1db_1_1pg_1_1transaction.html#a4f25f818ee0ecf5d9621b8eb054ecc5e',1,'tip::db::pg::transaction::execute(std::string const &amp;query, query_result_callback, query_error_callback)'],['../classtip_1_1db_1_1pg_1_1transaction.html#a599b42277c10e976a376077bafd23d4a',1,'tip::db::pg::transaction::execute(std::string const &amp;query, type_oid_sequence const &amp;param_types, std::vector&lt; byte &gt; params_buffer, query_result_callback, query_error_callback)']]],
+  ['external_5froutine_5fexception',['external_routine_exception',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74ba71da3b3fafb5705a6c7535d2d646b8ff',1,'tip::db::pg::sqlstate']]],
+  ['external_5froutine_5finvocation_5fexception',['external_routine_invocation_exception',['../namespacetip_1_1db_1_1pg_1_1sqlstate.html#a636037394ce7f26b5c3e9163ae91e74bad6b04bce93a9ca63af68c47eebce441e',1,'tip::db::pg::sqlstate']]]
+];

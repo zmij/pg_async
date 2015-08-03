@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structtip_1_1db_1_1pg_1_1io_1_1detail_1_1parser__base.html" title="tip::db::pg::io::detail\l::parser_base\&lt; bool \&gt;" alt="" coords="5,53,155,94"/>
+<area shape="rect" id="node2" href="$structtip_1_1db_1_1pg_1_1io_1_1protocol__parser_3_01bool_00_01BINARY__DATA__FORMAT_01_4.html" title="Protocol parser specialization for bool, binary data format. " alt="" coords="203,5,405,61"/>
+<area shape="rect" id="node3" href="$structtip_1_1db_1_1pg_1_1io_1_1protocol__parser_3_01bool_00_01TEXT__DATA__FORMAT_01_4.html" title="Protocol parser specialization for bool, text data format. " alt="" coords="211,85,397,141"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="tip::db::pg::io::detail::formatter_base&lt; T &gt;" name="tip::db::pg::io::detail::formatter_base&lt; T &gt;">
+<area shape="rect" id="node2" href="$structtip_1_1db_1_1pg_1_1io_1_1detail_1_1binary__data__formatter_3_01T_00_01INTEGRAL_01_4.html" title="Specification of a binary formatter for integral values. " alt="" coords="218,5,374,61"/>
+<area shape="rect" id="node3" href="$structtip_1_1db_1_1pg_1_1io_1_1protocol__formatter_3_01T_00_01TEXT__DATA__FORMAT_01_4.html" title="Generic implementation of a formatter for text data format. " alt="" coords="203,85,389,141"/>
+</map>
