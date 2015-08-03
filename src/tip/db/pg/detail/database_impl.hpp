@@ -37,9 +37,7 @@ public:
 	add_connection(std::string const& connection_string,
 			db_service::optional_size pool_size = db_service::optional_size(),
 			client_options_type const& params = client_options_type());
-	void
-	get_connection(std::string const& connection_string,
-			transaction_callback const&, error_callback const&);
+
 	void
 	get_connection(dbalias const&, transaction_callback const&,
 			error_callback const&);

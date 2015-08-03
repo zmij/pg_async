@@ -42,15 +42,11 @@ TEST_P(BoolParseTest, Parses)
 {
 	typedef tip::util::input_iterator_buffer buffer_type;
 	test_pair curr = GetParam();
-	std::istringstream is(curr.first);
 
 	bool val;
-	EXPECT_TRUE(io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
-	EXPECT_EQ(curr.second, val);
-
-	std::vector<char> data(curr.first.begin(), curr.first.end());
-	buffer_type buffer(data.begin(), data.end());
-	EXPECT_TRUE(io::protocol_read< TEXT_DATA_FORMAT >(val)(buffer));
+	EXPECT_NE( curr.first.begin(),
+		io::protocol_read< TEXT_DATA_FORMAT >(curr.first.begin(),
+			curr.first.end(), val));
 	EXPECT_EQ(curr.second, val);
 }
 
@@ -58,16 +54,12 @@ TEST_P(InvalidBoolParseTest, DoesntParse)
 {
 	typedef tip::util::input_iterator_buffer buffer_type;
 	std::string curr = GetParam();
-	std::istringstream is(curr);
 
 	bool val = true;
-	EXPECT_TRUE(!io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_EQ( curr.begin(),
+		io::protocol_read< TEXT_DATA_FORMAT >(curr.begin(), curr.end(), val));
 	EXPECT_TRUE(val);
 
-	std::vector<char> data(curr.begin(), curr.end());
-	buffer_type buffer(data.begin(), data.end());
-	EXPECT_TRUE(!io::protocol_read< TEXT_DATA_FORMAT >(val)(buffer));
-	EXPECT_TRUE(val);
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -109,21 +101,23 @@ class InvalieByteaTextParseTest :
 TEST_P(ByteaTextParseTest, Parses)
 {
 	test_pair curr = GetParam();
-	std::istringstream is(curr.first);
 	bytea val;
 
-	EXPECT_TRUE(io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_NE(
+			curr.first.begin(),
+			io::protocol_read< TEXT_DATA_FORMAT >(curr.first.begin(),
+					curr.first.end(), val));
 	EXPECT_EQ(curr.second, val.data.size());
 }
 
 TEST_P(InvalieByteaTextParseTest, DoesntParse)
 {
 	std::string curr = GetParam();
-
-	std::istringstream is(curr);
 	bytea val { {1, 2, 3, 4} };
 
-	EXPECT_TRUE(!io::protocol_read< TEXT_DATA_FORMAT >(val)(is));
+	EXPECT_EQ(
+			curr.begin(),
+			io::protocol_read< TEXT_DATA_FORMAT >(curr.begin(), curr.end(), val));
 	EXPECT_EQ(4, val.data.size()); // Not modified
 }
 

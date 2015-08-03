@@ -17,6 +17,15 @@ namespace db {
 namespace pg {
 class basic_connection;
 
+/**
+ *  @brief RAII transaction object.
+ *
+ *  It is created by the library internally when a transaction is started. It
+ *  will rollback the transaction if it wasn't explicitly committed.
+ *
+ * 	@warning A tip::db::pg::transaction object shoudn't be stored and accessed
+ * 	concurrently.
+ */
 class transaction : public std::enable_shared_from_this< transaction > {
 public:
 	typedef std::shared_ptr<basic_connection> connection_ptr;
@@ -57,6 +66,9 @@ public:
 		return connection_.get();
 	}
 	//@}
+
+	dbalias const&
+	alias() const;
 
 	bool
 	in_transaction() const;

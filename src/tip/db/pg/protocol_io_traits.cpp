@@ -39,31 +39,6 @@ has_binary_parser(oids::type::oid_type oid)
 
 }  // namespace traits
 
-bool
-protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
-{
-	in.unsetf(std::ios::skipws);
-	std::istream_iterator<char> i(in);
-	std::istream_iterator<char> e;
-	if (i == e) {
-		in.setstate(std::ios_base::failbit);
-		return false;
-	}
-	std::string tmp(i, e);
-	tmp.swap(value);
-	return true;
-}
-
-bool
-protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
-{
-	if (buffer.empty())
-		return false;
-	std::string tmp(buffer.begin(), buffer.end());
-	tmp.swap(value);
-	return true;
-}
-
 namespace {
 
 const std::set< std::string > TRUE_LITERALS {
@@ -89,37 +64,18 @@ const std::set< std::string > FALSE_LITERALS {
 }  // namespace
 
 bool
-protocol_parser< bool, TEXT_DATA_FORMAT >::operator ()(std::istream& in)
+protocol_parser< bool, TEXT_DATA_FORMAT >::use_literal(std::string const& l)
 {
-	std::string literal;
-	if (protocol_read< TEXT_DATA_FORMAT >(literal)(in)) {
-		if (TRUE_LITERALS.count(literal)) {
-			value = true;
-			return true;
-		} else if (FALSE_LITERALS.count(literal)) {
-			value = false;
-			return true;
-		}
-		in.setstate(std::ios_base::failbit);
+	if (TRUE_LITERALS.count(l)) {
+		base_type::value = true;
+		return true;
+	} else if (FALSE_LITERALS.count(l)) {
+		base_type::value = false;
+		return true;
 	}
 	return false;
 }
 
-bool
-protocol_parser< bool, TEXT_DATA_FORMAT >::operator ()(buffer_type& buffer)
-{
-	std::string literal;
-	if (protocol_read<TEXT_DATA_FORMAT>(literal)(buffer)) {
-		if (TRUE_LITERALS.count(literal)) {
-			value = true;
-			return true;
-		} else if (FALSE_LITERALS.count(literal)) {
-			value = false;
-			return true;
-		}
-	}
-	return false;
-}
 
 bool
 protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(std::istream& in)
@@ -130,7 +86,7 @@ protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(std::istream& in)
 
 	auto result = detail::bytea_parser().parse(b, e, std::back_inserter(data));
 	if (result.first) {
-		value.data.swap(data);
+		base_type::value.data.swap(data);
 		return true;
 	}
 	return false;
@@ -143,7 +99,7 @@ protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(buffer_type& buffer)
 	auto result = detail::bytea_parser().parse(buffer.begin(), buffer.end(),
 			std::back_inserter(data));
 	if (result.first) {
-		value.data.swap(data);
+		base_type::value.data.swap(data);
 		return true;
 	}
 	return false;

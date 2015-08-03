@@ -6,6 +6,7 @@
  */
 
 #include <tip/db/pg/detail/transport.hpp>
+#include <tip/db/pg/error.hpp>
 
 #include <tip/db/pg/log.hpp>
 
@@ -42,10 +43,10 @@ void
 tcp_transport::connect_async(connection_options const& conn, connect_callback cb)
 {
 	if (conn.uri.empty()) {
-		throw std::runtime_error("No connection uri!");
+		throw error::connection_error("No connection uri!");
 	}
 	if (conn.schema != "tcp") {
-		throw std::runtime_error("Wrong connection schema for TCP transport");
+		throw error::connection_error("Wrong connection schema for TCP transport");
 	}
 	connect_ = cb;
 	std::string host = conn.uri;
@@ -112,7 +113,7 @@ socket_transport::connect_async(connection_options const& conn,
 {
 	using boost::asio::local::stream_protocol;
 	if (conn.schema != "socket") {
-		throw std::runtime_error("Wrong connection schema for TCP transport");
+		throw error::connection_error("Wrong connection schema for TCP transport");
 	}
 	connect_ = cb;
 	std::string uri = conn.uri;

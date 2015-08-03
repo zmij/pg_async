@@ -482,8 +482,8 @@ TEST(DatabaseTest, Service)
 			{"client_encoding", "UTF8"},
 			{"application_name", "test-pg-async"}
 		});
-
-		db_service::begin(test::environment::test_database,
+		connection_options opts = connection_options::parse(test::environment::test_database);
+		db_service::begin(opts.alias,
 		[&](transaction_ptr c){
             timer.cancel();
 			db_service::stop();

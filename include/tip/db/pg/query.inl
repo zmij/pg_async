@@ -302,19 +302,41 @@ write_params(std::vector< oids::type::oid_type >& param_types,
 }  // namespace detail
 
 template < typename ... T >
-query::query(dbalias const& alias, std::string const& expression, T const& ... params)
+query::query(dbalias const& alias, std::string const& expression,
+		T const& ... params)
+	: pimpl_(create_impl(alias, expression, params ...))
 {
-	create_impl(alias, expression);
-	bind_params(params ...);
 }
 
 template < typename ... T >
 query::query(transaction_ptr t, std::string const& expression,
 		T const& ... params)
+	: pimpl_(create_impl(t, expression, params ... ))
 {
-	create_impl(t, expression);
-	bind(params ...);
 }
+
+template < typename ... T >
+query::pimpl
+query::create_impl(dbalias const& alias, std::string const& expression,
+		T const& ... params)
+{
+	type_oid_sequence ptypes;
+	params_buffer buf;
+	detail::write_params(ptypes, buf, params ...);
+	return create_impl(alias, expression, std::move(ptypes), std::move(buf));
+}
+
+template < typename ... T >
+query::pimpl
+query::create_impl(transaction_ptr tran, std::string const& expression,
+		T const& ... params)
+{
+	type_oid_sequence ptypes;
+	params_buffer buf;
+	detail::write_params(ptypes, buf, params ...);
+	return create_impl(tran, expression, std::move(ptypes), std::move(buf));
+}
+
 
 template < typename ... T >
 query&
@@ -328,7 +350,11 @@ query::bind(T const& ... params)
 	// 2. Params
 	//  - write the number of params
 	//  - write each param preceded by it's length
-	detail::write_params(param_types(), buffer(), params ...);
+	type_oid_sequence& ptypes = param_types();
+	ptypes.clear();
+	params_buffer& buf = buffer();
+	buf.clear();
+	detail::write_params(ptypes, buf, params ...);
 	return *this;
 }
 

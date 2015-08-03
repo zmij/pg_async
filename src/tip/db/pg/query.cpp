@@ -48,7 +48,27 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	impl(transaction_ptr tran, std::string const& expression)
-		: alias_{}, tran_(tran), expression_(expression)
+		: alias_(tran->alias()), tran_(tran), expression_(expression)
+	{
+	}
+
+	impl(dbalias const& alias, std::string const& expression,
+			type_oid_sequence&& param_types, params_buffer&& params)
+		: alias_(alias), tran_(), expression_(expression),
+		  param_types_(std::move(param_types)), params_(std::move(params))
+	{
+	}
+
+	impl(transaction_ptr tran, std::string const& expression,
+			type_oid_sequence&& param_types, params_buffer&& params)
+		: alias_(tran->alias()), tran_(tran), expression_(expression),
+		  param_types_(std::move(param_types)), params_(std::move(params))
+	{
+	}
+
+	impl(impl const& rhs)
+		: alias_(rhs.alias_), tran_(), expression_(rhs.expression_),
+		  param_types_(rhs.param_types_), params_(rhs.params_)
 	{
 	}
 
@@ -126,33 +146,31 @@ query::bind()
 }
 
 void
-query::run_async(query_result_callback const& res, error_callback const& err)
+query::run_async(query_result_callback const& res, error_callback const& err) const
 {
 	pimpl_->run_async(res, err);
+	pimpl_.reset(new impl(*pimpl_.get()));
 }
 
 void
-query::operator ()(query_result_callback const& res, error_callback const& err)
+query::operator ()(query_result_callback const& res, error_callback const& err) const
 {
 	run_async(res, err);
 }
 
-transaction_ptr
-query::connection()
+query::pimpl
+query::create_impl(dbalias const& alias, std::string const& expression,
+		type_oid_sequence&& param_types, params_buffer&& params)
 {
-	return pimpl_->tran_;
+	return pimpl(new impl(alias, expression,
+			std::move(param_types), std::move(params)));
 }
 
-void
-query::create_impl(dbalias const& alias, std::string const& expression)
+query::pimpl
+query::create_impl(transaction_ptr t, std::string const& expression,
+		type_oid_sequence&& param_types, params_buffer&& params)
 {
-	pimpl_.reset(new impl(alias, expression));
-}
-
-void
-query::create_impl(transaction_ptr c, std::string const& expression)
-{
-	pimpl_.reset(new impl(c, expression));
+	return pimpl(new impl(t, expression));
 }
 
 query::params_buffer&

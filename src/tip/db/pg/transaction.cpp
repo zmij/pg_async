@@ -45,6 +45,12 @@ transaction::~transaction()
 	}
 }
 
+dbalias const&
+transaction::alias() const
+{
+	return connection_->alias();
+}
+
 bool
 transaction::in_transaction() const
 {

@@ -20,6 +20,7 @@
  *  * Database aliases
  *  * Standard container-compliant resultset interface
  *  * Execution of prepared statements
+ *  * Query queuing
  *  * Multiple result sets for simple query mode
  *  * Data row extraction to tuples
  *  * Flexible datatype conversion
@@ -29,6 +30,9 @@
  *
  *	### Short usage overview
  *
+ *	All classes are located in namespace @ref tip::db::pg, if not specified
+ *	other way.
+ *
  *	#### Registering a connection
  *
  *	@code
@@ -37,6 +41,8 @@
  *	using namespace tip::db::pg;
  *	db_service::add_connection("main=tcp://user:pass@the-database-server:5432[databasename]");
  *	db_service::add_connection("logs=tcp://user:pass@the-database-server:5432[logs_db]");
+ *
+ *	db_service::run();
  *	@endcode
  *
  *  @see @ref connstring
@@ -64,6 +70,7 @@
  *
  *	@see @ref transactions
  *  @see @ref connstring
+ *  @see @ref threads
  *	@see tip::db::pg::transaction for reference
  *
  *	#### Querying
@@ -81,6 +88,9 @@
  *  @endcode
  *
  *  @see @ref querying for more information
+ *  @see @ref errors
+ *  @see @ref callbacks
+ *	@see @ref valueio
  *  @see tip::db::pg::query for reference
  *
  *  #### Processing query results
@@ -97,6 +107,7 @@
  *	@endcode
  *
  *  @see @ref results for more information
+ *	@see @ref valueio
  *	@see tip::db::pg::resultset for reference
  *	@see tip::db::pg::resultset::row for reference
  *	@see tip::db::pg::resultset::field for reference
@@ -320,6 +331,7 @@
  *  @endcode
  *
  *	@see tip::db::pg::query
+ *	@see @ref valueio
  *	@see @ref transactions
  *	@see @ref results
  *	@see @ref errors
@@ -421,12 +433,30 @@
  *
  *	@see @ref valueio
  *
- *	@todo document row tie variadic interface
- *	@todo document access by index and by name to fields in a row
- *	@todo document field buffer conversion to other datatypes
+ *	#### Using tuples to extract row data
  *
- *	@todo references to data parsers. documentation on data parsing and adding
- *		datatype support.
+ *	A std::tuple can be used to extract data from row fields
+ *
+ *	@code
+ *
+ *	struct data {
+ *		int id;
+ *		std::string name;
+ *	};
+ *
+ *	query(alias, "select id, name from some_table")
+ *	([](transaction_ptr t, resultset res, bool complete) {
+ *		for (auto row : res) {
+ *			data d;
+ *			row.to(std::tie(d.id, d.name));
+ *		}
+ *	},
+ *	[](error::db_error const&) {
+ *	});
+ *
+ *	@endcode
+ *
+ *	@see @ref valueio
  *
  *	@todo concept of an interface for a datatype that can be stored/retrieved
  *		from the database. Template functions enabled for such an interface.
@@ -439,19 +469,282 @@
  */
 
 /**
- * @page callbacks Callback types
+ * 	@page callbacks Callback types
+ *
+ *	There are transaction-level callbacks and query-level callbacks.
+ *
+ *	### Transaction Callbacks
+ *
+ *	Transaction callbacks are passed to tip::db::pg::db_service::begin function.
+ *
+ *	* tip::db::pg::transaction_callback is called when a connection
+ *		becomes available in the connection pool and a transaction starts.
+ *	* tip::db::pg::error_callback is called when a transaction
+ *		cannot start for some reason or an exception happens inside the
+ *		transaction. Also called if a transaction is rolled back.
+ *
+ *	@see @ref errors
+ *
+ *	@todo Commit callback
+ *
+ *	### Query callbacks
+ *
+ *	Query callbacks are passed to the tip::db::pg::query::run_async function
+ *	( or it's shortcut variant - tip::db::pg::query::operator() ).
+ *
+ *	* tip::db::pg::query_result_callback is called when query result data
+ *			becomes available. It can be called multiple times for a single
+ *			resultset if the data volume is big. When the query completes,
+ *			the complete flag passed is true.
+ *			If an exception is thrown in the callback, all the queries that
+ *			are queued after the one running are cancelled and the transaction
+ *			is rolled back.
+ *	* tip::db::pg::error_callback is called when PostgreSQL server sends an
+ *			error in responce to a query.
+ *
+ *	@see @ref errors
  */
 
 /**
- * @page errors Errors and exceptions
+ *	@page errors Errors and exceptions
+ *
+ *	Due to asynchronous nature of the library, there are few places where an
+ *	exception can be thrown. Most of error are passed to callbacks.
+ *
+ *	Places where an exception can be thrown:
+ *	* tip::db::pg::db_service::add_connection - tip::db::pg::error::connection_error,
+ *		when the connection string is invalid or lacks some information
+ *	* tip::db::pg::db_service::begin - tip::db::pg::error::connection_error, when
+ *		the database alias is not configured.
+ *	* when trying to extract a value from a null field -
+ *		tip::db::pg::error::value_is_null
+ *
+ *	The rest of errors are passed via callbacks. If an error occurs inside
+ *	a transaction, it is rolled back. If the error is an error sent by the server,
+ *	it is passed to the query error callback. If an exception is thrown by
+ *	any callback, it is passed to the transaction error callback. If the
+ *	transaction error callback throws an error, it is silently caught and
+ *	suppressed.
  */
 
 /**
- * @page threads Threads and thread safety
+ *	@page threads Threads and thread safety
+ *
+ * 	pg_async runs all the requests to the database servers in the threads that
+ * 	call db_service::run. db_service static methods are thread safe and can be
+ * 	called from any thread. All requests and their callbacks in a single
+ * 	transaction are guaranteed to run in a single thread.
+ *
+ * 	@warning A tip::db::pg::transaction object shoudn't be stored and accessed
+ * 	concurrently.
  */
 
 /**
- * @page valueio Values input/output
+ *	@page valueio Values input/output
+ *
+ *	There are two types of formats for data on-the-wire with PostgreSQL:
+ *	text and binary. The text format is more universal, but the binary format
+ *	is more compact and sometimes closer to the native client data formats.
+ *
+ *	### Value Input (read query results)
+ *
+ *	Query results in simple query mode are always in text format.
+ *
+ *	In extended query mode the resultset can contain fields in text and in
+ *	binary formats. When a request is prepared pg_async specifies data formats
+ *	for each of the fields. A PostgreSQL type oid is determined by a
+ *	@ref tip::db::pg::io::traits::cpppg_data_mapping specialization for a type.
+ *	A binary format for a field will be requested if the presence of a binary
+ *	parser was explicitly specified.
+ *	(@ref tip::db::pg::io::traits::register_binary_parser )
+ *
+ *	#### `protocol_parser` Concept
+ *
+ *	A protocol parser is a functor that gets an lvalue reference to a value
+ *	in constructor and defines a template operator() that takes two iterators
+ *	to a char buffer (begin and end iterators) and uses that data range to
+ *	parse the value. If the parse was a success return the new position of
+ *	input iterator. If it fails, returns the starting position of the input
+ *	iterator. It must define a value_type.
+ *
+ *	Protocol parsers are used by the result set to extract values from data
+ *	row buffers.
+ *
+ *	#### Adding Support for a Data Type Input
+ *
+ *	To support parsing of a data type from input buffer a structure conforming
+ *	to `protocol_parser` concept must be implemented. It can be either a
+ *	specialization of @ref tip::db::pg::io::protocol_parser or any other
+ *	structure. In the latter case tip::db::pg::io::protocol_io_traits must be
+ *	specialized for the type using the parser class as a typedef for
+ *	`parser_type`.
+ *
+ *	A text parser for a data type is mandatory, binary parser is optional. To
+ *	make pg_async request the data type in a binary format, the PostgreSQL type
+ *	oid must be registered as having a binary parser.
+ *
+ *	Adding text data format parser:
+ *
+ *	* Implement a parser
+ *
+ *	Adding a binary data parser:
+ *
+ *	* Implement a parser
+ *	* Specialize tip::db::pg::io::traits::has_parser for the type, to enable
+ *		field reader implementation that uses the binary parser.
+ *	* Call tip::db::pg::io::traits::register_binary_parser for pg_async runtime
+ *		to request fields with the type oid in binary format.
+ *
+ *	@code
+ *	// Example specialization of a parser for boolean type
+ *	namespace tip { namespace db { namespace pg { namespace io {
+ *
+ *	template < >
+ *	struct protocol_parser < bool, BINARY_DATA_FORMAT > {
+ *		typedef bool value_type;
+ *
+ *		value_type& value;
+ *		protocol_parser(value_type& value) : value(value) {}
+ *
+ *		template < typename InputIterator >
+ *		InputIterator
+ *		operator()(InputIterator begin, InputIterator end)
+ *		{
+ *			// input, parse, assign to the value
+ *		}
+ *	};
+ *	}}}} // namespace tip::db::pg::io
+ *
+ *	// Example separate structure
+ *	struct bool_parser {
+ *		typedef bool value_type;
+ *		value_type& value;
+ *
+ *		bool_parser(value_type& value) : value(value) {}
+ *
+ *		template < typename InputIterator >
+ *		InputIterator
+ *		operator()(InputIterator begin, InputIterator end)
+ *		{
+ *			// input, parse, assign to the value
+ *		}
+ *	};
+ *
+ *	namespace tip { namespace db { namespace pg { namespace io {
+ *	// Specialization of protocol_io_traits
+ *	template <>
+ *	struct protocol_io_traits < bool, BINARY_DATA_FORMAT > {
+ *		// ...
+ *		typedef bool_parser parser_type;
+ *		// ...
+ *	};
+ *
+ *	namespace traits {
+ *		// Enable binary parser for the type
+ *		template <> struct has_parser<bool, BINARY_DATA_FORMAT > : std::true_type {};
+ *	} // namespace traits
+ *	}}}} // namespace tip::db::pg::io
+ *
+ *	// Somewhere in initialization code
+ *	using namespace tip::db::pg;
+ *	io::traits::register_binary_parser( oids::type::boolean );
+ *
+ *	@endcode
+ *
+ *	@see tip::db::pg::io::protocol_read
+ *	@see tip::db::pg::io::protocol_io_traits
+ *	@see tip::db::pg::io::protocol_parser
+ *
+ *	### Value Output (write query parameters)
+ *
+ *	When there is no specialization of a protocol_formatter for a type,
+ *	default implementation based on standard C++ iostreams is used. Protocol
+ *	data format is text in this case.
+ *
+ *	#### `protocol_formatter` Concept
+ *
+ *	A `protocol_fomatter` is a functor that gets an rvalue reference to data
+ *	that needs to be output and defines an operator() that takes a reference to
+ *	a data buffer (`std::vector<byte>`) for output.
+ *
+ *	Protocol formatters are used by query to write parameters sent to PostgreSQL
+ *	server.
+ *
+ *	#### Adding Support for a Data Type Output
+ *
+ *	To support formatting of a data type to send data to PostgreSQL server a
+ *	structure conforming to `protocol_formatter` concept must be implemented.
+ *	It can be either a specialization of @ref tip::db::pg::io::protocol_formatter
+ *	or any other structure. In the latter case tip::db::pg::io::protocol_io_traits
+ *	must be specialized for the type using the formatter class as a typedef
+ *	for `formatter_type`.
+ *
+ *	A text formatter for a data type is mandatory, binary formaater is optional.
+ *
+ *	Adding text data format parser:
+ *
+ *	* Implement a formatter
+ *
+ *	Adding a binary data parser:
+ *
+ *	* Implement a formatter
+ *	* Specialize tip::db::pg::io::traits::has_formatter for the type, to enable
+ *		parameter writer to use it.
+ *
+ *	@code
+ *	// Example specialization of a formatter for boolean type
+ *	namespace tip { namespace db { namespace pg { namespace io {
+ *
+ *	template < >
+ *	struct protocol_formatter < bool, BINARY_DATA_FORMAT > {
+ *		typedef bool value_type;
+ *
+ *		value_type const& value;
+ *		protocol_formatter(value_type const& value) : value(value) {}
+ *
+ *		bool
+ *		operator()(std::vector<byte>& buffer)
+ *		{
+ *			buffer.push_back(value ? 1 : 0);
+ *			return true;
+ *		}
+ *	};
+ *	}}}} // namespace tip::db::pg::io
+ *
+ *	// Example separate structure
+ *	struct bool_formatter {
+ *		typedef bool value_type;
+ *		value_type const& value;
+ *
+ *		bool_formatter(value_type const& value) : value(value) {}
+ *
+ *		bool
+ *		operator()(std::vector<byte>& buffer)
+ *		{
+ *			buffer.push_back(value ? 1 : 0);
+ *			return true;
+ *		}
+ *	};
+ *
+ *	namespace tip { namespace db { namespace pg { namespace io {
+ *	// Specialization of protocol_io_traits
+ *	template <>
+ *	struct protocol_io_traits < bool, BINARY_DATA_FORMAT > {
+ *		// ...
+ *		typedef bool_formatter formatter_type;
+ *		// ...
+ *	};
+ *
+ *	namespace traits {
+ *		// Enable binary formatter for the type
+ *		template <> struct has_formatter<bool, BINARY_DATA_FORMAT > : std::true_type {};
+ *	} // namespace traits
+ *	}}}} // namespace tip::db::pg::io
+ *	@endcode
+ *
+ *	@see tip::db::pg::io::protocol_write
+ *	@see tip::db::pg::io::protocol_io_traits
+ *	@see tip::db::pg::io::protocol_formatter
  */
 
 #ifndef TIP_DB_PG_HPP_

@@ -7,6 +7,7 @@
 
 #include <tip/db/pg/detail/database_impl.hpp>
 #include <tip/db/pg/detail/connection_pool.hpp>
+#include <tip/db/pg/error.hpp>
 #include <stdexcept>
 
 #ifdef WITH_TIP_LOG
@@ -67,13 +68,13 @@ database_impl::add_connection(std::string const& connection_string,
 {
 	connection_options co = connection_options::parse(connection_string);
 	if (co.uri.empty())
-		throw std::runtime_error("No URI in database connection string");
+		throw error::connection_error("No URI in database connection string");
 
 	if (co.database.empty())
-		throw std::runtime_error("No database name in database connection string");
+		throw error::connection_error("No database name in database connection string");
 
 	if (co.user.empty())
-		throw std::runtime_error("No user name in database connection string");
+		throw error::connection_error("No user name in database connection string");
 
 	if (co.alias.value.empty()) {
 		co.generate_alias();
@@ -112,35 +113,12 @@ database_impl::add_pool(connection_options const& co,
 }
 
 void
-database_impl::get_connection(std::string const& connection_string,
-		transaction_callback const& cb,
-		error_callback const& err)
-{
-	connection_options co = connection_options::parse(connection_string);
-	if (co.uri.empty())
-		throw std::runtime_error("No URI in database connection string");
-
-	if (co.database.empty())
-		throw std::runtime_error("No database name in database connection string");
-
-	if (co.user.empty())
-		throw std::runtime_error("No user name in database connection string");
-
-	if (co.alias.value.empty()) {
-		co.generate_alias();
-	}
-	connection_pool_ptr pool = add_pool(co);
-	pool->get_connection(cb, err);
-}
-
-void
 database_impl::get_connection(dbalias const& alias,
 		transaction_callback const& cb,
 		error_callback const& err)
 {
 	if (!connections_.count(alias)) {
-		// FIXME Create a specific exception
-		throw std::runtime_error("Database alias is not registered");
+		throw error::connection_error("Database alias is not registered");
 	}
 	connection_pool_ptr pool = connections_[alias];
 	pool->get_connection(cb, err);

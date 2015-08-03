@@ -81,6 +81,12 @@ basic_connection::connect(connection_options const& opts)
 	do_connect(opts);
 }
 
+dbalias const&
+basic_connection::alias() const
+{
+	return get_alias();
+}
+
 void
 basic_connection::begin(events::begin const& evt)
 {

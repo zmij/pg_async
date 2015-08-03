@@ -1415,7 +1415,6 @@ private:
 	friend class transaction_;
 	transport_type transport_;
 
-	connection_options conn_opts_;
 	client_options_type client_opts_;
 
 	boost::asio::io_service::strand strand_;
@@ -1429,6 +1428,8 @@ private:
 	prepared_statements_map prepared_;
 
 	bool in_transaction_;
+protected:
+	connection_options conn_opts_;
 };
 
 template < typename TransportType >
@@ -1489,6 +1490,12 @@ private:
 	do_connect(connection_options const& co)
 	{
 		fsm_type::process_event(co);
+	}
+
+	virtual dbalias const&
+	get_alias() const
+	{
+		return fsm_type::conn_opts_.alias;
 	}
 
 	virtual bool

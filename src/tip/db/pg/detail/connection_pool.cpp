@@ -46,16 +46,16 @@ connection_pool::connection_pool(io_service& service,
 	  co_(co), params_(params), closed_(false)
 {
 	if (pool_size_ == 0)
-		throw std::runtime_error("Database connection pool size cannot be zero");
+		throw error::connection_error("Database connection pool size cannot be zero");
 
 	if (co_.uri.empty())
-		throw std::runtime_error("No URI in database connection string");
+		throw error::connection_error("No URI in database connection string");
 
 	if (co_.database.empty())
-		throw std::runtime_error("No database name in database connection string");
+		throw error::connection_error("No database name in database connection string");
 
 	if (co_.user.empty())
-		throw std::runtime_error("No user name in database connection string");
+		throw error::connection_error("No user name in database connection string");
 	local_log() << "Connection pool max size " << pool_size;
 }
 

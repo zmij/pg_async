@@ -78,6 +78,9 @@ public:
 	void
 	connect(connection_options const&);
 
+	dbalias const&
+	alias() const;
+
 	void
 	begin(events::begin const&);
 	void
@@ -101,6 +104,9 @@ protected:
 private:
 	virtual void
 	do_connect(connection_options const& ) = 0;
+
+	virtual dbalias const&
+	get_alias() const = 0;
 
 	virtual bool
 	is_in_transaction() const = 0;

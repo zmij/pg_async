@@ -139,6 +139,7 @@
 #include <memory>
 #include <map>
 #include <boost/integer.hpp>
+#include <boost/optional.hpp>
 
 #include <tip/util/streambuf.hpp>
 #include <tip/db/pg/pg_types.hpp>
@@ -181,6 +182,13 @@ const integer PROTOCOL_VERSION = (3 << 16); // 3.0
  * @brief 1-byte char or byte type.
  */
 typedef char byte;
+
+/**
+ * @brief Nullable data type
+ * @see [Boost::Optional documentation](http://www.boost.org/doc/libs/1_58_0/libs/optional/doc/html/index.html)
+ */
+template < typename T >
+using nullable = boost::optional<T>;
 
 /**
  * @brief Binary data, matches PostgreSQL `bytea` type
@@ -333,24 +341,20 @@ typedef std::shared_ptr<transaction> transaction_ptr;
 typedef std::shared_ptr<basic_connection> connection_ptr;
 //@}
 
+/** @brief  */
 typedef std::map< std::string, std::string > client_options_type;
 typedef std::vector< oids::type::oid_type > type_oid_sequence;
 
 typedef std::function< void () > simple_callback;
-/** Callback for error handling */
+/** @brief Callback for error handling */
 typedef std::function< void (error::db_error const&) > error_callback;
-/** Callback for connection acquiring */
+/** @brief Callback for starting a transaction */
 typedef std::function< void (transaction_ptr) > transaction_callback;
 
-/** Callback for query results */
+/** @brief Callback for query results */
 typedef std::function< void (transaction_ptr, resultset, bool) > query_result_callback;
+/** @brief Callback for a query error */
 typedef std::function< void (error::query_error const&) > query_error_callback;
-
-namespace detail {
-/** Callback for internal results passing */
-typedef std::function< void (resultset, bool) > internal_result_callback;
-
-}  // namespace detail
 
 namespace options {
 
