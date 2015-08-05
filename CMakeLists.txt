@@ -30,7 +30,7 @@ include_directories(
 option(USE_TIP_LOG "Use tip::log logger library" OFF)
 option(BUILD_TESTS "Build tests for the library" OFF)
 
-if (${USE_TIP_LOG})
+if (USE_TIP_LOG)
     add_definitions(-DWITH_TIP_LOG)
 endif()
 
