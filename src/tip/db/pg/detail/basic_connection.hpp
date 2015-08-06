@@ -10,6 +10,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <tip/db/pg/asio_config.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
 
 namespace boost {
@@ -67,7 +68,7 @@ struct execute_prepared {
 
 class basic_connection : public boost::noncopyable {
 public:
-	typedef boost::asio::io_service io_service;
+	typedef asio_config::io_service io_service;
 public:
 	static basic_connection_ptr
 	create(io_service& svc, connection_options const&,

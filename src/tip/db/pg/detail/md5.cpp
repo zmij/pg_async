@@ -110,19 +110,19 @@ md5::md5(const void* a_data, uint32_t a_data_size)
     update(a_data, a_data_size);
 }
 
-md5::md5(boost::filesystem::path const& a_path) {
-    std::ifstream s;
-    
-    s.open(a_path.string().c_str(), std::ios_base::in);
-            
-    assert(s.good());
-
-    init();
-
-    update(s);
-
-    s.close();
-}
+//md5::md5(boost::filesystem::path const& a_path) {
+//    std::ifstream s;
+//
+//    s.open(a_path.string().c_str(), std::ios_base::in);
+//
+//    assert(s.good());
+//
+//    init();
+//
+//    update(s);
+//
+//    s.close();
+//}
 
 md5::md5(std::istream& a_istream)
 {

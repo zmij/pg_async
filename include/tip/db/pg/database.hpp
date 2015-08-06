@@ -12,10 +12,9 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include <boost/asio.hpp>
-#include <boost/system/error_code.hpp>
 #include <boost/optional.hpp>
 
+#include <tip/db/pg/asio_config.hpp>
 #include <tip/db/pg/common.hpp>
 
 namespace tip {
@@ -37,7 +36,7 @@ struct database_impl;
  * 		[](database::connection_ptr c) {
  * 			// run queries here
  * 		},
- * 		[](boost::system::error_code) {
+ * 		[](error_code const&) {
  * 			// handle the connection error here
  * 		}
  * );
@@ -47,7 +46,7 @@ struct database_impl;
  * 		[](database::connection_ptr c) {
  * 			// run queries here
  * 		},
- * 		[](boost::system::error_code) {
+ * 		[](error_code const&) {
  * 			// handle the connection error here
  * 		}
  * );
@@ -56,9 +55,6 @@ struct database_impl;
  */
 class db_service {
 public:
-	/** Opaque connection pointer. */
-	typedef boost::system::error_code error_code;
-
 	typedef std::map< std::string, std::string > connection_params;
 	typedef boost::optional<size_t> optional_size;
 public:
@@ -115,7 +111,7 @@ public:
 	static void
 	stop();
 
-	static boost::asio::io_service&
+	static asio_config::io_service&
 	io_service();
 private:
 	// No instances

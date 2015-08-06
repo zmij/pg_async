@@ -27,9 +27,7 @@
 */
 
 #include <cstring>  // memset, memcpy, memcmp
-#include <iosfwd>  // std::istream and std::ostream
-
-#include <boost/filesystem/path.hpp>
+#include <iostream>  // std::istream and std::ostream
 
 namespace boost {
 
@@ -54,7 +52,7 @@ public:
     // Constructs a digest for given message data.
     md5(const char* a_str);
     md5(const void* a_data, uint32_t a_data_size);
-    md5(boost::filesystem::path const& a_path);
+    //md5(boost::filesystem::path const& a_path);
     md5(std::istream& a_istream);
     md5(std::istream& a_istream, uint32_t a_size);
 
@@ -162,7 +160,6 @@ inline std::ostream&
 operator<<(std::ostream& s, const md5::digest_type& a)
 {
   s << std::string(a.hex_str_value());
-
   return (s);
 }
 

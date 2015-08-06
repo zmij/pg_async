@@ -9,7 +9,6 @@
 #define LIB_PG_ASYNC_SRC_TIP_DB_PG_DETAIL_BASIC_CONNECTION_NEW_HPP_
 
 #include <boost/noncopyable.hpp>
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <map>
 #include <stack>
@@ -21,6 +20,7 @@
 #include <boost/msm/front/functor_row.hpp>
 #include <boost/msm/front/euml/operator.hpp>
 
+#include <tip/db/pg/asio_config.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/error.hpp>
 #include <tip/db/pg/transaction.hpp>
@@ -1028,12 +1028,12 @@ struct connection_fsm_ :
 	}
 
 	//@{
-	typedef boost::asio::io_service io_service;
+	typedef asio_config::io_service io_service;
 	typedef std::map< std::string, std::string > client_options_type;
 	typedef connection_fsm_< transport_type, shared_type > this_type;
 	typedef std::enable_shared_from_this< shared_type > shared_base;
 
-	typedef std::function< void (boost::system::error_code const& error,
+	typedef std::function< void (asio_config::error_code const& error,
 			size_t bytes_transferred) > asio_io_handler;
 	//@}
 
@@ -1062,7 +1062,8 @@ struct connection_fsm_ :
 		conn_opts_ = opts;
 		transport_.connect_async(conn_opts_,
             boost::bind(&connection_fsm_::handle_connect,
-                shared_base::shared_from_this(), boost::asio::placeholders::error));
+                shared_base::shared_from_this(),
+				_1));
 	}
 	void
 	close_transport()
@@ -1076,8 +1077,7 @@ struct connection_fsm_ :
 		transport_.async_read(incoming_,
 			strand_.wrap( boost::bind(
 				&connection_fsm_::handle_read, shared_base::shared_from_this(),
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::bytes_transferred )
+				_1, _2 )
 		));
 	}
 
@@ -1117,11 +1117,10 @@ struct connection_fsm_ :
 			if (!handler) {
 				handler = boost::bind(
 						&this_type::handle_write, shared_base::shared_from_this(),
-						boost::asio::placeholders::error,
-						boost::asio::placeholders::bytes_transferred );
+						_1, _2 );
 			}
 			transport_.async_write(
-				boost::asio::buffer(&*data_range.first,
+				ASIO_NAMESPACE::buffer(&*data_range.first,
 						data_range.second - data_range.first),
 				strand_.wrap(handler)
 			);
@@ -1192,7 +1191,7 @@ private:
 	}
 
     void
-    handle_connect(boost::system::error_code const& ec)
+    handle_connect(asio_config::error_code const& ec)
     {
         if (!ec) {
             fsm().process_event(complete());
@@ -1201,7 +1200,7 @@ private:
         }
     }
 	void
-	handle_read(boost::system::error_code const& ec, size_t bytes_transferred)
+	handle_read(asio_config::error_code const& ec, size_t bytes_transferred)
 	{
 		if (!ec) {
 			// read message
@@ -1215,7 +1214,7 @@ private:
 		}
 	}
 	void
-	handle_write(boost::system::error_code const& ec, size_t bytes_transferred)
+	handle_write(asio_config::error_code const& ec, size_t bytes_transferred)
 	{
 		if (ec) {
 			// Socket error - force termination
@@ -1417,8 +1416,8 @@ private:
 
 	client_options_type client_opts_;
 
-	boost::asio::io_service::strand strand_;
-	boost::asio::streambuf incoming_;
+	asio_config::io_service::strand strand_;
+	ASIO_NAMESPACE::streambuf incoming_;
 
 	message_ptr message_;
 

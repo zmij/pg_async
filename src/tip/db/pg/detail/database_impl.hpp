@@ -10,9 +10,9 @@
 
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/database.hpp>
+#include <tip/db/pg/asio_config.hpp>
 
 #include <boost/noncopyable.hpp>
-#include <boost/asio/io_service.hpp>
 
 #include <map>
 
@@ -48,7 +48,7 @@ public:
 	void
 	stop();
 
-	boost::asio::io_service&
+	asio_config::io_service&
 	io_service()
 	{
 		return service_;
@@ -59,7 +59,7 @@ private:
 			db_service::optional_size = db_service::optional_size(),
 			client_options_type const& = {});
 
-	boost::asio::io_service		service_;
+	asio_config::io_service		service_;
 	size_t						pool_size_;
 
 	connections_map				connections_;

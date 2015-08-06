@@ -100,7 +100,7 @@ db_service::stop()
 	pimpl_.reset();
 }
 
-boost::asio::io_service&
+asio_config::io_service&
 db_service::io_service()
 {
 	return impl()->io_service();

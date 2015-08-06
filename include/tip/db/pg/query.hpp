@@ -12,7 +12,6 @@
 
 #include <memory>
 #include <functional>
-#include <boost/system/error_code.hpp>
 
 namespace tip {
 namespace db {
@@ -29,7 +28,7 @@ namespace pg {
  * 	{
  * 		// process the query results
  * 	},
- * 	[](boost::system::error_code ec)
+ * 	[](error_code const& ec)
  * 	{
  * 		// handle the error here
  * 	});
@@ -39,7 +38,7 @@ namespace pg {
  * 	{
  * 		// process the query results
  * 	},
- * 	[](boost::system::error_code ec)
+ * 	[](error_code const& ec)
  * 	{
  * 		// handle the error here
  * 	});

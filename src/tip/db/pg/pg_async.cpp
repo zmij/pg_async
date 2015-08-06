@@ -7,9 +7,8 @@
 
 #include <iostream>
 #include <memory>
-#include <boost/asio.hpp>
-#include <tip/db/pg/connection.hpp>
 
+#include <tip/db/pg/asio_config.hpp>
 #include <tip/db/pg/detail/basic_connection.hpp>
 #include <tip/db/pg/resultset.hpp>
 

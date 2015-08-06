@@ -11,7 +11,7 @@
 #include <memory>
 
 #include <boost/noncopyable.hpp>
-#include <boost/asio.hpp>
+#include <tip/db/pg/asio_config.hpp>
 
 #include <tip/db/pg/database.hpp>
 
@@ -31,7 +31,7 @@ namespace detail {
 class connection_pool : public std::enable_shared_from_this<connection_pool>,
 		private boost::noncopyable {
 public:
-	typedef boost::asio::io_service io_service;
+	typedef ASIO_NAMESPACE::io_service io_service;
 
 	typedef std::vector<connection_ptr> connections_container;
 	typedef std::queue<connection_ptr> connections_queue;

@@ -39,7 +39,7 @@ using tip::log::logger;
 
 template < typename TransportType >
 std::shared_ptr< detail::concrete_connection< TransportType > >
-create_connection(boost::asio::io_service& svc,
+create_connection(asio_config::io_service& svc,
 		connection_options const& opts,
 		client_options_type const& co,
 		connection_callbacks const& callbacks)

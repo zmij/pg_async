@@ -59,10 +59,7 @@ tcp_transport::connect_async(connection_options const& conn, connect_callback cb
 
 	tcp::resolver::query query (host, svc);
 	resolver_.async_resolve(query, boost::bind(&tcp_transport::handle_resolve,
-				this,
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::iterator
-			));
+				this, _1, _2 ));
 
 }
 
@@ -71,10 +68,9 @@ tcp_transport::handle_resolve(error_code const& ec,
                  	  			tcp::resolver::iterator endpoint_iterator)
 {
 	if (!ec) {
-		boost::asio::async_connect(socket, endpoint_iterator,
+		ASIO_NAMESPACE::async_connect(socket, endpoint_iterator,
 				boost::bind( &tcp_transport::handle_connect,
-						this,
-						boost::asio::placeholders::error));
+						this, _1));
 	} else {
 		connect_(ec);
 	}
@@ -111,7 +107,7 @@ void
 socket_transport::connect_async(connection_options const& conn,
 		connect_callback cb)
 {
-	using boost::asio::local::stream_protocol;
+	using asio_config::stream_protocol;
 	if (conn.schema != "socket") {
 		throw error::connection_error("Wrong connection schema for TCP transport");
 	}

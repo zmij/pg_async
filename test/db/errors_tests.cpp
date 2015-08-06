@@ -4,7 +4,6 @@
  *  Created on: Aug 2, 2015
  *      Author: zmij
  */
-
 #include <tip/db/pg.hpp>
 
 #include <tip/db/pg/log.hpp>
@@ -216,9 +215,9 @@ TEST(ErrorTest, BreakQueryQueue)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 
-		boost::asio::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
-		timer.async_wait([&](boost::system::error_code const& ec){
+		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Run query test timer expired";

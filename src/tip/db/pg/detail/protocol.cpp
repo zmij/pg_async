@@ -8,10 +8,11 @@
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/protocol_io_traits.hpp>
+//#include <tip/db/pg/asio_config.hpp>
 
 #include <tip/db/pg/log.hpp>
 
-#include <boost/asio/buffer.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>

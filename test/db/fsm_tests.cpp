@@ -10,8 +10,6 @@
 #include <tip/db/pg/detail/transport.hpp>
 #include <tip/db/pg/query.hpp>
 
-#include <boost/system/error_code.hpp>
-
 #include <tip/db/pg/log.hpp>
 #include "db/config.hpp"
 #include "test-environment.hpp"
@@ -39,15 +37,15 @@ namespace pg {
 namespace detail {
 
 struct dummy_transport {
-	typedef boost::asio::io_service io_service;
-	typedef std::function< void (boost::system::error_code const&) > connect_callback;
+	typedef asio_config::io_service io_service;
+	typedef std::function< void (asio_config::error_code const&) > connect_callback;
 
 	dummy_transport(io_service& svc) {}
 
 	void
 	connect_async(connection_options const&, connect_callback cb)
 	{
-		boost::system::error_code ec;
+		asio_config::error_code ec;
 		cb(ec);
 	}
 
@@ -97,7 +95,7 @@ tip::db::pg::client_options_type client_options {
 
 TEST(DummyFSM, NormalFlow)
 {
-	boost::asio::io_service svc;
+	tip::db::pg::asio_config::io_service svc;
 	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
@@ -128,7 +126,7 @@ TEST(DummyFSM, NormalFlow)
 
 TEST(DummyFSM, TerminateTran)
 {
-	boost::asio::io_service svc;
+	tip::db::pg::asio_config::io_service svc;
 	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
@@ -147,7 +145,7 @@ TEST(DummyFSM, TerminateTran)
 
 TEST(DummyFSM, SimpleQueryMode)
 {
-	boost::asio::io_service svc;
+	tip::db::pg::asio_config::io_service svc;
 	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
@@ -178,7 +176,7 @@ TEST(DummyFSM, SimpleQueryMode)
 
 TEST(DummyFSM, ExtendedQueryMode)
 {
-	boost::asio::io_service svc;
+	tip::db::pg::asio_config::io_service svc;
 	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
 	c->start();
 	//	Connection
@@ -203,7 +201,7 @@ test_normal_flow(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
-	boost::asio::io_service svc;
+	asio_config::io_service svc;
 	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
@@ -239,7 +237,7 @@ test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
-	boost::asio::io_service svc;
+	asio_config::io_service svc;
 	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
@@ -273,7 +271,7 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
-	boost::asio::io_service svc;
+	asio_config::io_service svc;
 	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();
@@ -309,7 +307,7 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 	typedef std::vector< char > buffer_type;
 
-	boost::asio::io_service svc;
+	asio_config::io_service svc;
 	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
 
 	c->start();

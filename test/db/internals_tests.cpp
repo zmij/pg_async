@@ -5,9 +5,6 @@
  * @author: zmij
  */
 
-
-//#define BOOST_TEST_MODULE PostgreSQLTest
-
 #include <tip/db/pg/resultset.hpp>
 #include <tip/db/pg/resultset.inl>
 #include <tip/db/pg/database.hpp>
@@ -32,6 +29,12 @@
 #include <fstream>
 #include <sstream>
 #include <atomic>
+
+#include <tip/db/pg/asio_config.hpp>
+
+#ifndef WITH_BOOST_ASIO
+#include <asio/deadline_timer.hpp>
+#endif
 
 #include "db/config.hpp"
 #include "test-environment.hpp"
@@ -103,7 +106,7 @@ TEST( ConnectionTest, Connect)
 	if (! test::environment::test_database.empty() ) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 		connection_ptr conn_ptr;
 		connection_ptr conn(basic_connection::create(
 		io_service, opts, {
@@ -132,7 +135,7 @@ TEST( ConnectionTest, ConnectionPool )
 	if (!test::environment::test_database.empty()) {
 
 		connection_options opts = connection_options::parse(test::environment::test_database);
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 		size_t pool_size = test::environment::connection_pool;
 		int req_count = test::environment::num_requests;
 		int thread_count = test::environment::num_threads;
@@ -149,9 +152,9 @@ TEST( ConnectionTest, ConnectionPool )
 		std::atomic<int> res_count(0);
 		std::atomic<int> fail_count(0);
 
-		boost::asio::deadline_timer timer(io_service,
+		ASIO_NAMESPACE::deadline_timer timer(io_service,
 				boost::posix_time::seconds(test::environment::deadline));
-		timer.async_wait([&](boost::system::error_code const& ec){
+		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				local_log(logger::WARNING) << "Connection pool test timer expired";
 				pool->close();
@@ -227,7 +230,7 @@ TEST( ConnectionTest, ExecutePrepared )
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 		int queries = 0;
 
 		std::vector< oids::type::oid_type > param_types;
@@ -278,7 +281,7 @@ TEST( TransactionTest, CleanExit )
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
 		local_log(logger::INFO) << "Transactions clean exit test";
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 		int transactions = 0;
 		bool transaction_error = false;
 		connection_ptr conn(basic_connection::create(
@@ -318,10 +321,8 @@ TEST(TransactionTest, DirtyTerminate)
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions dirty terminate exit test";
-		#endif
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 		int transaction_error = 0;
 		int transactions = 0;
 		connection_ptr conn(basic_connection::create(io_service,  opts,
@@ -359,12 +360,10 @@ TEST(TransactionTest, DirtyUnlock)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
-		#ifdef WITH_TIP_LOG
 		local_log(logger::INFO) << "Transactions dirty unlock exit test";
-		#endif
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 
-		boost::asio::deadline_timer timer(io_service, boost::posix_time::milliseconds(100));
+		ASIO_NAMESPACE::deadline_timer timer(io_service, boost::posix_time::milliseconds(100));
 
 		int transaction_error = false;
 		int transactions = 0;
@@ -380,7 +379,7 @@ TEST(TransactionTest, DirtyUnlock)
 					local_log() << "Transaction begin callback";
 					EXPECT_TRUE(tran.get());
 					EXPECT_TRUE(tran->in_transaction());
-					timer.async_wait([&](boost::system::error_code const& ec){
+					timer.async_wait([&](asio_config::error_code const& ec){
 						if (!ec) {
 							local_log(logger::WARNING) << "Transaction dirty unlock test timer expired";
 							conn->terminate();
@@ -409,7 +408,7 @@ TEST(TransactionTest, Query)
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 		local_log(logger::INFO) << "Transaction query test";
-		boost::asio::io_service io_service;
+		asio_config::io_service io_service;
 		int transaction_error = 0;
 		int transactions = 0;
 		int result_count = 0;
@@ -467,9 +466,9 @@ TEST(DatabaseTest, Service)
 
 		size_t pool_size = test::environment::connection_pool;
 
-		boost::asio::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
-		timer.async_wait([&](boost::system::error_code const& ec){
+		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Database service test timer expired";

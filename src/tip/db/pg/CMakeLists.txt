@@ -33,9 +33,7 @@ set_target_properties(
 )
 
 set(pgsql_lib_LIBRARIES
-    ${Boost_SYSTEM_LIBRARIES}
-    ${Boost_THREAD_LIBRARIES}
-    ${Boost_REGEX_LIBRARIES}
+    ${ASIO_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
     ${TIP_LOG_LIBRARY}
 )

@@ -5,7 +5,6 @@
  *      Author: zmij
  */
 
-
 #include <tip/db/pg.hpp>
 
 #include <tip/db/pg/log.hpp>
@@ -40,9 +39,9 @@ TEST(QueryTest, QueryInlay)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 
-		boost::asio::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
-		timer.async_wait([&](boost::system::error_code const& ec){
+		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Run query test timer expired";
@@ -101,9 +100,9 @@ TEST(QueryTest, QueryQueue)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 
-		boost::asio::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
-		timer.async_wait([&](boost::system::error_code const& ec){
+		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				#ifdef WITH_TIP_LOG
 				local_log(logger::WARNING) << "Run query test timer expired";
@@ -178,9 +177,9 @@ TEST(QueryTest, BasicResultParsing)
 		std::ifstream script(script_name);
 		local_log() << "Script file name " << script_name;
 		if (script) {
-			boost::asio::deadline_timer timer(db_service::io_service(),
+			ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
 					boost::posix_time::seconds(test::environment::deadline));
-			timer.async_wait([&](boost::system::error_code const& ec){
+			timer.async_wait([&](asio_config::error_code const& ec){
                 timer.cancel();
 				if (!ec) {
 					local_log(logger::WARNING) << "Parse result set test timer expired";
