@@ -107,18 +107,18 @@ TEST_P(ByteaTextParseTest, Parses)
 			curr.first.begin(),
 			io::protocol_read< TEXT_DATA_FORMAT >(curr.first.begin(),
 					curr.first.end(), val));
-	EXPECT_EQ(curr.second, val.data.size());
+	EXPECT_EQ(curr.second, val.size());
 }
 
 TEST_P(InvalieByteaTextParseTest, DoesntParse)
 {
 	std::string curr = GetParam();
-	bytea val { {1, 2, 3, 4} };
+	bytea val { 1, 2, 3, 4 };
 
 	EXPECT_EQ(
 			curr.begin(),
 			io::protocol_read< TEXT_DATA_FORMAT >(curr.begin(), curr.end(), val));
-	EXPECT_EQ(4, val.data.size()); // Not modified
+	EXPECT_EQ(4, val.size()); // Not modified
 }
 
 INSTANTIATE_TEST_CASE_P(IOTest,

@@ -147,43 +147,6 @@ protocol_parser< bool, BINARY_DATA_FORMAT >::operator()
 	return begin;
 }
 
-template < typename InputIterator >
-InputIterator
-protocol_parser< bytea, TEXT_DATA_FORMAT >::operator ()
-	(InputIterator begin, InputIterator end)
-{
-	typedef InputIterator iterator_type;
-	typedef std::iterator_traits< iterator_type > iter_traits;
-	typedef typename iter_traits::value_type iter_value_type;
-	static_assert(std::is_same< iter_value_type, byte >::type::value,
-			"Input iterator must be over a char container");
-	std::vector<byte> data;
-
-	auto result = detail::bytea_parser().parse(begin, end, std::back_inserter(data));
-	if (result.first) {
-		base_type::value.data.swap(data);
-		return result.second;
-	}
-	return begin;
-}
-
-template < typename InputIterator >
-InputIterator
-protocol_parser< bytea, BINARY_DATA_FORMAT >::operator ()
-	(InputIterator begin, InputIterator end)
-{
-	typedef InputIterator iterator_type;
-	typedef std::iterator_traits< iterator_type > iter_traits;
-	typedef typename iter_traits::value_type iter_value_type;
-	static_assert(std::is_same< iter_value_type, byte >::type::value,
-			"Input iterator must be over a char container");
-
-	bytea::container_type tmp(begin, end);
-	std::swap(base_type::value.data, tmp);
-
-	return end;
-}
-
 }  // namespace io
 }  // namespace pg
 }  // namespace db

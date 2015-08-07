@@ -193,9 +193,27 @@ using nullable = boost::optional<T>;
 /**
  * @brief Binary data, matches PostgreSQL `bytea` type
  */
-struct bytea {
-	typedef std::vector<byte> container_type;	/**< Container typedef */
-	container_type data;	/**< Binary data */
+struct bytea : std::vector<byte> {
+	typedef std::vector<byte> base_type;
+
+	bytea() : base_type() {}
+
+	bytea(std::initializer_list<byte> args)
+		: base_type( args )
+	{
+	}
+
+	void
+	swap(bytea& rhs)
+	{
+		base_type::swap(rhs);
+	}
+
+	void
+	swap(base_type& rhs)
+	{
+		base_type::swap(rhs);
+	}
 };
 
 typedef tip::util::input_iterator_buffer field_buffer;

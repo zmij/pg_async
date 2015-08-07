@@ -613,7 +613,7 @@ struct protocol_formatter< std::string, TEXT_DATA_FORMAT > :
         return out.good();
     }
     bool
-    operator()(std::vector<char>& buffer)
+    operator()(std::vector<byte>& buffer)
     {
     	auto iter = std::copy(base_type::value.begin(), base_type::value.end(),
     			std::back_inserter(buffer));
@@ -770,60 +770,14 @@ struct protocol_parser< boost::optional< T >, BINARY_DATA_FORMAT > :
 	}
 };
 
-/**
- * @brief Protocol parser specialization for bytea (binary string), text data format
- */
-template <>
-struct protocol_parser< bytea, TEXT_DATA_FORMAT > :
-		detail::parser_base< bytea > {
-	typedef detail::parser_base< bytea > base_type;
-	typedef base_type::value_type value_type;
-	typedef tip::util::input_iterator_buffer buffer_type;
-
-	protocol_parser(value_type& v) : base_type(v) {}
-
-	size_t
-	size() const
-	{
-		return base_type::value.data.size();
-	}
-	bool
-	operator() (std::istream& in);
-
-	bool
-	operator() (buffer_type& buffer);
-
-	template < typename InputIterator >
-	InputIterator
-	operator()( InputIterator begin, InputIterator end );
-};
-
-/**
- * @brief Protocol parser specialization for bytea (binary string), binary data format
- */
-template <>
-struct protocol_parser< bytea, BINARY_DATA_FORMAT > :
-		detail::parser_base< bytea > {
-	typedef detail::parser_base< bytea > base_type;
-	typedef base_type::value_type value_type;
-
-	protocol_parser(value_type& val) : base_type(val) {}
-	size_t
-	size() const
-	{
-		return base_type::value.data.size();
-	}
-	template < typename InputIterator >
-	InputIterator
-	operator()( InputIterator begin, InputIterator end );
-};
-
 }  // namespace io
 }  // namespace pg
 }  // namespace db
 }  // namespace tip
 
 #include <tip/db/pg/protocol_io_traits.inl>
+// Common datatypes implementation includes
+#include <tip/db/pg/io/bytea.hpp>
 #include <tip/db/pg/datatype_mapping.hpp>
 
 #endif /* TIP_DB_PG_PROTOCOL_IO_TRAITS_HPP_ */

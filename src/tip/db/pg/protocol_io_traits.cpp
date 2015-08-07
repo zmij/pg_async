@@ -86,7 +86,7 @@ protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(std::istream& in)
 
 	auto result = detail::bytea_parser().parse(b, e, std::back_inserter(data));
 	if (result.first) {
-		base_type::value.data.swap(data);
+		base_type::value.swap(data);
 		return true;
 	}
 	return false;
@@ -99,7 +99,7 @@ protocol_parser< bytea, TEXT_DATA_FORMAT >::operator()(buffer_type& buffer)
 	auto result = detail::bytea_parser().parse(buffer.begin(), buffer.end(),
 			std::back_inserter(data));
 	if (result.first) {
-		base_type::value.data.swap(data);
+		base_type::value.swap(data);
 		return true;
 	}
 	return false;
