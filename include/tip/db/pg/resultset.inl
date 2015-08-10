@@ -34,10 +34,10 @@ struct nth_field {
 		return row[index].template as<T>();
 	}
 
-	void
+	bool
 	to(T& val)
 	{
-		row[index].to(val);
+		return row[index].to(val);
 	}
 
 	resultset::row row;
@@ -93,7 +93,7 @@ template < typename ... T >
 void
 resultset::row::to(T& ... val) const
 {
-	detail::row_data_extractor< T ... >::get_values(val ...);
+	detail::row_data_extractor< T ... >::get_values(*this, val ...);
 }
 
 }  // namespace pg
