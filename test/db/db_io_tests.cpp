@@ -102,7 +102,8 @@ TEST_P(ByteaTextParseTest, Parses)
 {
 	test_pair curr = GetParam();
 	bytea val;
-
+	static_assert(io::traits::has_parser<bytea, TEXT_DATA_FORMAT>::value,
+			"Bytea has a text parser" );
 	EXPECT_NE(
 			curr.first.begin(),
 			io::protocol_read< TEXT_DATA_FORMAT >(curr.first.begin(),

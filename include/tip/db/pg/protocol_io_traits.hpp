@@ -73,6 +73,15 @@ template <> struct protocol_binary_selector<double> : floating_point_binary_type
 
 }  // namespace detail
 
+namespace traits {
+
+template < typename T, protocol_data_format format >
+struct has_parser : std::false_type {};
+template < typename T, protocol_data_format format >
+struct has_formatter : std::false_type {};
+
+}  // namespace traits
+
 template < typename T, protocol_data_format >
 struct protocol_parser;
 
@@ -126,6 +135,8 @@ template < protocol_data_format F, typename T, typename InputIterator >
 InputIterator
 protocol_read(InputIterator begin, InputIterator end, T& value)
 {
+	static_assert(traits::has_parser<T, F>::value == true,
+			"Type doesn't have an appropriate parser");
 	return typename protocol_io_traits< T, F >::parser_type(value)(begin, end);
 }
 
@@ -161,6 +172,8 @@ template < protocol_data_format F, typename T >
 bool
 protocol_write(std::vector<byte>& buffer, T const& value)
 {
+	static_assert(traits::has_formatter<T, F>::value == true,
+			"Type doesn't have an appropriate formatter");
 	return protocol_writer<F>(value)(buffer);
 }
 
@@ -178,6 +191,8 @@ template < protocol_data_format F, typename T, typename OutputIterator >
 bool
 protocol_write(OutputIterator out, T const& value)
 {
+	static_assert(traits::has_formatter<T, F>::value == true,
+			"Type doesn't have an appropriate formatter");
 	return protocol_writer<F>(value)(out);
 }
 
@@ -368,8 +383,6 @@ public:
 			decltype( test( os << val) ), std::true_type >::type::value;
 };
 
-template < typename T, protocol_data_format format >
-struct has_parser : std::false_type {};
 template < typename T >
 struct has_parser< T, TEXT_DATA_FORMAT >
 	: std::integral_constant< bool, has_input_operator< T >::value > {};
@@ -377,8 +390,6 @@ template < > struct has_parser< smallint, BINARY_DATA_FORMAT > : std::true_type 
 template < > struct has_parser< integer, BINARY_DATA_FORMAT > : std::true_type {};
 template < > struct has_parser< bigint, BINARY_DATA_FORMAT > : std::true_type {};
 
-template < typename T, protocol_data_format format >
-struct has_formatter : std::false_type {};
 template < typename T >
 struct has_formatter< T, TEXT_DATA_FORMAT >
 	: std::integral_constant< bool, has_output_operator< T >::value > {};

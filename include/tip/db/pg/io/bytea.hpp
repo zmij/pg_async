@@ -91,6 +91,7 @@ struct protocol_formatter< bytea, BINARY_DATA_FORMAT > :
 
 namespace traits {
 
+template <> struct has_parser< bytea, TEXT_DATA_FORMAT > : std::true_type {};
 template <> struct has_parser< bytea, BINARY_DATA_FORMAT > : std::true_type {};
 template <> struct has_formatter < bytea, BINARY_DATA_FORMAT > : std::true_type {};
 
