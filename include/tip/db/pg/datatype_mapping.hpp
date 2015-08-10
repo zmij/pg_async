@@ -28,13 +28,6 @@ struct cpppg_data_mapping < bool > : detail::data_mapping_base< oids::type::bool
 //@}
 
 //@{
-template < >
-struct pgcpp_data_mapping < oids::type::bytea > : detail::data_mapping_base< oids::type::bytea, bytea > {};
-template < >
-struct cpppg_data_mapping < bytea > : detail::data_mapping_base< oids::type::bytea, bytea > {};
-//@}
-
-//@{
 /** @name Integral types */
 template < >
 struct pgcpp_data_mapping < oids::type::int2 > : detail::data_mapping_base< oids::type::int2, smallint > {};

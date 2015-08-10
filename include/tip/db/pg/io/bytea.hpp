@@ -95,6 +95,15 @@ template <> struct has_parser< bytea, TEXT_DATA_FORMAT > : std::true_type {};
 template <> struct has_parser< bytea, BINARY_DATA_FORMAT > : std::true_type {};
 template <> struct has_formatter < bytea, BINARY_DATA_FORMAT > : std::true_type {};
 
+//@{
+template < >
+struct pgcpp_data_mapping < oids::type::bytea > :
+		detail::data_mapping_base< oids::type::bytea, bytea > {};
+template < >
+struct cpppg_data_mapping < bytea > :
+		detail::data_mapping_base< oids::type::bytea, bytea > {};
+//@}
+
 static_assert(has_parser<bytea, BINARY_DATA_FORMAT>::value,
                   "Binary data parser for bool");
 static_assert(best_parser<bytea>::value == BINARY_DATA_FORMAT,
