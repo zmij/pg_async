@@ -333,30 +333,39 @@ struct cpppg_data_mapping : detail::data_mapping_base < oids::type::unknown, T >
 
 //@{
 /** @name parser and formatter traits */
+struct __io_meta_function_helper {
+	template <typename T> __io_meta_function_helper(T const&);
+};
+
+std::false_type
+operator << (std::ostream const&, __io_meta_function_helper const&);
+std::false_type
+operator >> (std::istream const&, __io_meta_function_helper const&);
+
 template <typename T>
 struct has_input_operator {
 private:
-	static void test(...);
-	template < typename U > static bool test(U&);
+	static std::false_type test(std::false_type);
+	static std::true_type test(std::istream&);
+
 	static std::istream& is;
 	static T& val;
 public:
 	static constexpr bool value = std::is_same<
-			decltype( test( std::declval< std::istream& >() >> std::declval< T& >()) ),
-			bool
-		>::type::value;
+			decltype( test( is >> val ) ), std::true_type >::type::value;
 };
 
 template <typename T>
 struct has_output_operator {
 private:
-	static void test(...);
-	template < typename U > static bool test(U&);
+	static std::false_type test(std::false_type);
+	static std::true_type test(std::ostream&);
+
+	static std::ostream& os;
+	static T const& val;
 public:
 	static constexpr bool value = std::is_same<
-			decltype( test( std::declval< std::ostream& >() << std::declval< T >() ) ),
-			bool
-		>::type::value;
+			decltype( test( os << val) ), std::true_type >::type::value;
 };
 
 template < typename T, protocol_data_format format >
@@ -379,7 +388,18 @@ template < > struct has_formatter< bigint, BINARY_DATA_FORMAT > : std::true_type
 //@}
 
 //@{
+/** @name IO metafunctions tests */
 struct ___no_inout_test {};
+
+static_assert(has_input_operator<___no_inout_test>::value == false,
+		"Input operator test OK");
+static_assert(has_output_operator<___no_inout_test>::value == false,
+		"Output operator test OK");
+
+static_assert(has_parser<___no_inout_test, TEXT_DATA_FORMAT>::value == false,
+		"Text parser test is OK");
+static_assert(has_formatter<___no_inout_test, TEXT_DATA_FORMAT>::value == false,
+		"Text formatter test is OK");
 //@}
 
 /**
@@ -390,7 +410,8 @@ struct best_parser {
 private:
 	static constexpr bool has_binary_parser = has_parser<T, BINARY_DATA_FORMAT>::value;
 public:
-	static constexpr protocol_data_format value = has_binary_parser ? BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
+	static constexpr protocol_data_format value = has_binary_parser ?
+			BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
 	typedef protocol_parser< T, value > type;
 };
 
