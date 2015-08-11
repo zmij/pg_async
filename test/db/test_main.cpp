@@ -48,7 +48,7 @@ main( int argc, char* argv[] )
 	po::options_description desc("Test options");
 
 	desc.add_options()
-			("database,b", po::value<std::string>(&test::environment::test_database),
+			("database,d", po::value<std::string>(&test::environment::test_database),
 					"database connection string")
 			("pool-size,s", po::value<int>(&test::environment::connection_pool)->default_value(4),
 					"connection pool size")
@@ -72,6 +72,7 @@ main( int argc, char* argv[] )
 
 	if (vm.count("help")) {
 		std::cout << desc << "\n";
+		return 0;
 	}
 
 	if (test::environment::num_requests < 1) test::environment::num_requests = 1;
