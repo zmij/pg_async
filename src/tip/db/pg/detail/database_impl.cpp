@@ -70,7 +70,7 @@ database_impl::add_connection(std::string const& connection_string,
 	if (co.user.empty())
 		throw error::connection_error("No user name in database connection string");
 
-	if (co.alias.value.empty()) {
+	if (co.alias.empty()) {
 		co.generate_alias();
 	}
 
@@ -86,7 +86,7 @@ database_impl::add_pool(connection_options const& co,
 		if (!pool_size.is_initialized()) {
 			pool_size = pool_size_;
 		}
-		local_log(logger::INFO) << "Create a new connection pool " << co.alias.value;
+		local_log(logger::INFO) << "Create a new connection pool " << co.alias;
 		client_options_type parms(params);
 		for (auto p : defaults_) {
 			if (!parms.count(p.first)) {

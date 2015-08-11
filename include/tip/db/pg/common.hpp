@@ -224,43 +224,35 @@ typedef tip::util::input_iterator_buffer field_buffer;
  * @see @ref connstring
  * @see tip::db::pg::db_service
  */
-struct dbalias {
-	std::string value;
+struct dbalias : std::string {
+	typedef std::string base_type;
 
+	dbalias() : base_type() {}
+	explicit
+	dbalias(std::string const& rhs) :
+		base_type(rhs)
+	{
+	}
+
+	void
+	swap(dbalias& rhs) /* no_throw */
+	{
+		base_type::swap(rhs);
+	}
 	void
 	swap(std::string& rhs) /* no_throw */
 	{
-		value.swap(rhs);
+		base_type::swap(rhs);
 	}
 
-	operator std::string () { return value; }
-
-	bool
-	operator == (dbalias const& rhs) const
+	dbalias&
+	operator = (std::string const& rhs)
 	{
-		return value == rhs.value;
-	}
-	bool
-	operator != (dbalias const& rhs) const
-	{
-		return !(*this == rhs);
-	}
-
-	bool
-	operator < (dbalias const& rhs) const
-	{
-		return value < rhs.value;
+		dbalias tmp(rhs);
+		swap(tmp);
+		return *this;
 	}
 };
-
-inline bool
-operator == (dbalias const& lhs, std::string const& rhs)
-{
-	return lhs.value == rhs;
-}
-
-std::ostream&
-operator << (std::ostream& out, dbalias const&);
 
 /**
  * @brief Postgre connection options

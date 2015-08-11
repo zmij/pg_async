@@ -68,7 +68,7 @@ TEST( LiteralsTest, ConnectionString )
 	using namespace tip::db::pg;
 	connection_options opts = "main=tcp://user:password@localhost:5432[db]"_pg;
 
-	EXPECT_EQ("main", opts.alias.value);
+	EXPECT_EQ("main", opts.alias);
 	EXPECT_EQ("tcp", opts.schema);
 	EXPECT_EQ("localhost:5432", opts.uri);
 	EXPECT_EQ("db", opts.database);
@@ -76,7 +76,7 @@ TEST( LiteralsTest, ConnectionString )
 	EXPECT_EQ("password", opts.password);
 
 	opts = "ssl://localhost[db]"_pg;
-	EXPECT_EQ("", opts.alias.value);
+	EXPECT_EQ("", opts.alias);
 	EXPECT_EQ("ssl", opts.schema);
 	EXPECT_EQ("localhost", opts.uri);
 	EXPECT_EQ("db", opts.database);
@@ -84,7 +84,7 @@ TEST( LiteralsTest, ConnectionString )
 	EXPECT_EQ("", opts.password);
 
 	opts = "ssl://localhost:5432[db]"_pg;
-	EXPECT_EQ("", opts.alias.value);
+	EXPECT_EQ("", opts.alias);
 	EXPECT_EQ("ssl", opts.schema);
 	EXPECT_EQ("localhost:5432", opts.uri);
 	EXPECT_EQ("db", opts.database);
@@ -92,7 +92,7 @@ TEST( LiteralsTest, ConnectionString )
 	EXPECT_EQ("", opts.password);
 
 	opts = "log=socket:///tmp/.s.PGSQL.5432[db]"_pg;
-	EXPECT_EQ("log", opts.alias.value);
+	EXPECT_EQ("log", opts.alias);
 	EXPECT_EQ("socket", opts.schema);
 	EXPECT_EQ("/tmp/.s.PGSQL.5432", opts.uri);
 	EXPECT_EQ("db", opts.database);

@@ -15,16 +15,6 @@ namespace tip {
 namespace db {
 namespace pg {
 
-std::ostream&
-operator << (std::ostream& out, dbalias const& val)
-{
-	std::ostream::sentry s(out);
-	if (s) {
-		out << val.value;
-	}
-	return out;
-}
-
 struct connect_string_parser {
 	enum state_type {
 		alias,
@@ -138,7 +128,7 @@ connection_options::generate_alias()
 {
 	std::ostringstream al;
 	al << user << "@" << uri << "[" << database << "]";
-	alias.value = al.str();
+	alias = al.str();
 }
 
 connection_options

@@ -84,7 +84,7 @@ connection_pool::create_new_connection()
 		auto local = local_log(logger::INFO);
 		local << "Create new "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " connection";
 	}
@@ -99,7 +99,7 @@ connection_pool::create_new_connection()
 		auto local = local_log();
 		local
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
-			<< alias().value
+			<< alias()
 			<< logger::severity_color()
 			<< " pool size " << connections_.size();
 	}
@@ -112,7 +112,7 @@ connection_pool::connection_ready(connection_ptr c)
 		auto local = local_log();
 		local << "Connection "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " ready";
 	}
@@ -123,14 +123,14 @@ connection_pool::connection_ready(connection_ptr c)
 		waiting_.pop();
 		local_log()
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " queue size " << waiting_.size() << " (dequeue)";
 		c->begin({req.first, req.second});
 	} else {
 		local_log()
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " queue size " << waiting_.size();
 		ready_connections_.push(c);
@@ -144,7 +144,7 @@ connection_pool::connection_terminated(connection_ptr c)
 		auto local = local_log(logger::INFO);
 		local << "Connection "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " gracefully terminated";
 	}
@@ -158,7 +158,7 @@ connection_pool::connection_terminated(connection_ptr c)
 		auto local = local_log();
 		local
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
-			<< alias().value
+			<< alias()
 			<< logger::severity_color()
 			<< " pool size " << connections_.size();
 	}
@@ -167,7 +167,7 @@ connection_pool::connection_terminated(connection_ptr c)
 void
 connection_pool::connection_error(connection_ptr c, error::connection_error const& ec)
 {
-	local_log(logger::ERROR) << "Connection " << alias().value << " error: "
+	local_log(logger::ERROR) << "Connection " << alias() << " error: "
 			<< ec.what();
 	lock_type lock(mutex_);
 	local_log() << "Erase connection from the connection pool";
@@ -191,7 +191,7 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 	if (!ready_connections_.empty()) {
 		local_log() << "Connection to "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " is ready";
 		connection_ptr conn = ready_connections_.front();
@@ -200,7 +200,7 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 	} else {
 		local_log()
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
-				<< alias().value
+				<< alias()
 				<< logger::severity_color()
 				<< " queue size " << waiting_.size() + 1  << " (enqueue)";;
 		if (connections_.size() < pool_size_) {
@@ -218,7 +218,7 @@ connection_pool::close()
 
 	local_log() << "Close connection pool "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
-			<< alias().value
+			<< alias()
 			<< logger::severity_color();
 	connections_container copy = connections_;
 	for (auto c : copy) {
