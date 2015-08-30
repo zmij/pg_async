@@ -76,6 +76,12 @@ db_service::add_connection(std::string const& connection_string, optional_size p
 }
 
 void
+db_service::add_connection(connection_options const& co, optional_size pool_size)
+{
+	impl()->add_connection(co, pool_size);
+}
+
+void
 db_service::begin(dbalias const& alias,
 		transaction_callback const& result,
 		error_callback const& error)

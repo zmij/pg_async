@@ -25,7 +25,7 @@ namespace {
 using namespace tip::log;
 
 const std::string LOG_CATEGORY = "PGDB";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
+logger::event_severity DEFAULT_SEVERITY = logger::OFF;
 local
 local_log(logger::event_severity s = DEFAULT_SEVERITY)
 {
@@ -61,6 +61,14 @@ database_impl::add_connection(std::string const& connection_string,
 		client_options_type const& params)
 {
 	connection_options co = connection_options::parse(connection_string);
+	add_connection(co, pool_size, params);
+}
+
+void
+database_impl::add_connection(connection_options co,
+		db_service::optional_size pool_size,
+		client_options_type const& params)
+{
 	if (co.uri.empty())
 		throw error::connection_error("No URI in database connection string");
 

@@ -83,6 +83,9 @@ public:
 	add_connection(std::string const& connection_string,
 			optional_size pool_size = optional_size());
 
+	static void
+	add_connection(connection_options const& co,
+			optional_size pool_size = optional_size());
 	/**
 	 * 	@brief Create a connection or retrieve a connection from the connection pool
 	 * 		and start a transaction.
