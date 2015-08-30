@@ -38,7 +38,7 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 // For more convenient changing severity, eg local_log(logger::WARNING)
 using tip::log::logger;
 
-connection_pool::connection_pool(io_service& service,
+connection_pool::connection_pool(io_service_ptr service,
 		size_t pool_size,
 		connection_options const& co,
 		client_options_type const& params)
@@ -65,7 +65,7 @@ connection_pool::~connection_pool()
 }
 
 connection_pool::connection_pool_ptr
-connection_pool::create(io_service& service,
+connection_pool::create(io_service_ptr service,
 		size_t pool_size,
 		connection_options const& co,
 		client_options_type const& params)

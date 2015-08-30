@@ -37,7 +37,8 @@ local_log(logger::event_severity s = DEFAULT_SEVERITY)
 using tip::log::logger;
 
 database_impl::database_impl(size_t pool_size, client_options_type const& defaults)
-	: pool_size_(pool_size), defaults_(defaults)
+	: service_( std::make_shared<asio_config::io_service>() ),
+	  pool_size_(pool_size), defaults_(defaults)
 {
 	local_log() << "Initializing postgre db service";
 }
@@ -125,7 +126,7 @@ database_impl::get_connection(dbalias const& alias,
 void
 database_impl::run()
 {
-	service_.run();
+	service_->run();
 }
 
 void
@@ -136,7 +137,7 @@ database_impl::stop()
 		c.second->close();
 	}
 	connections_.clear();
-	service_.stop();
+	service_->stop();
 }
 
 } /* namespace detail */

@@ -17,13 +17,13 @@ namespace pg {
 namespace detail {
 
 struct tcp_transport {
-	typedef asio_config::io_service io_service;
+	typedef asio_config::io_service_ptr io_service_ptr;
 	typedef asio_config::tcp tcp;
 	typedef asio_config::error_code error_code;
 	typedef std::function< void (error_code const&) > connect_callback;
 	typedef tcp::socket socket_type;
 
-	tcp_transport(io_service&);
+	tcp_transport(io_service_ptr);
 
 	void
 	connect_async(connection_options const&, connect_callback);
@@ -62,12 +62,12 @@ private:
 };
 
 struct socket_transport {
-	typedef asio_config::io_service io_service;
+	typedef asio_config::io_service_ptr io_service_ptr;
 	typedef asio_config::stream_protocol::socket socket_type;
 	typedef asio_config::error_code error_code;
 	typedef std::function< void (error_code const&) > connect_callback;
 
-	socket_transport(io_service&);
+	socket_transport(io_service_ptr);
 
 	void
 	connect_async(connection_options const&, connect_callback);

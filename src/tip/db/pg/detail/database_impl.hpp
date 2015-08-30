@@ -52,7 +52,7 @@ public:
 	void
 	stop();
 
-	asio_config::io_service&
+	asio_config::io_service_ptr
 	io_service()
 	{
 		return service_;
@@ -63,7 +63,7 @@ private:
 			db_service::optional_size = db_service::optional_size(),
 			client_options_type const& = {});
 
-	asio_config::io_service		service_;
+	asio_config::io_service_ptr	service_;
 	size_t						pool_size_;
 
 	connections_map				connections_;

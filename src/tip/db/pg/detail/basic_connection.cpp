@@ -39,7 +39,7 @@ using tip::log::logger;
 
 template < typename TransportType >
 std::shared_ptr< detail::concrete_connection< TransportType > >
-create_connection(asio_config::io_service& svc,
+create_connection(asio_config::io_service_ptr svc,
 		connection_options const& opts,
 		client_options_type const& co,
 		connection_callbacks const& callbacks)
@@ -53,7 +53,7 @@ create_connection(asio_config::io_service& svc,
 }
 
 basic_connection_ptr
-basic_connection::create(io_service& svc, connection_options const& opts,
+basic_connection::create(io_service_ptr svc, connection_options const& opts,
 		client_options_type const& co, connection_callbacks const& callbacks)
 {
 	if (opts.schema == "tcp") {

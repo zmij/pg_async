@@ -31,7 +31,7 @@ namespace detail {
 class connection_pool : public std::enable_shared_from_this<connection_pool>,
 		private boost::noncopyable {
 public:
-	typedef ASIO_NAMESPACE::io_service io_service;
+	typedef asio_config::io_service_ptr io_service_ptr;
 
 	typedef std::vector<connection_ptr> connections_container;
 	typedef std::queue<connection_ptr> connections_queue;
@@ -46,12 +46,12 @@ public:
 public:
 	// TODO Error handlers
 private:
-	connection_pool(io_service& service, size_t pool_size,
+	connection_pool(io_service_ptr service, size_t pool_size,
 			connection_options const& co,
 			client_options_type const&);
 public:
 	static connection_pool_ptr
-	create(io_service& service, size_t pool_size,
+	create(io_service_ptr service, size_t pool_size,
 			connection_options const& co,
 			client_options_type const& = client_options_type());
 
@@ -76,7 +76,7 @@ private:
 	void
 	connection_error(connection_ptr c, error::connection_error const& ec);
 private:
-	io_service& 			service_;
+	io_service_ptr 			service_;
 	size_t					pool_size_;
 	connection_options		co_;
 	client_options_type		params_;

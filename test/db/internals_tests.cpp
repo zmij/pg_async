@@ -106,7 +106,7 @@ TEST( ConnectionTest, Connect)
 	if (! test::environment::test_database.empty() ) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 		connection_ptr conn_ptr;
 		connection_ptr conn(basic_connection::create(
 		io_service, opts, {
@@ -122,7 +122,7 @@ TEST( ConnectionTest, Connect)
 			FAIL();
 		}}));
 
-		io_service.run();
+		io_service->run();
 		EXPECT_TRUE(conn_ptr.get());
 	}
 }
@@ -135,7 +135,7 @@ TEST( ConnectionTest, ConnectionPool )
 	if (!test::environment::test_database.empty()) {
 
 		connection_options opts = connection_options::parse(test::environment::test_database);
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 		size_t pool_size = test::environment::connection_pool;
 		int req_count = test::environment::num_requests;
 		int thread_count = test::environment::num_threads;
@@ -152,15 +152,15 @@ TEST( ConnectionTest, ConnectionPool )
 		std::atomic<int> res_count(0);
 		std::atomic<int> fail_count(0);
 
-		ASIO_NAMESPACE::deadline_timer timer(io_service,
+		ASIO_NAMESPACE::deadline_timer timer(*io_service,
 				boost::posix_time::seconds(test::environment::deadline));
 		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				local_log(logger::WARNING) << "Connection pool test timer expired";
 				pool->close();
 				timer.cancel();
-				if (!io_service.stopped())
-					io_service.stop();
+				if (!io_service->stopped())
+					io_service->stop();
 			}
 		});
 
@@ -201,7 +201,7 @@ TEST( ConnectionTest, ConnectionPool )
 						++fail_count; // transaction rolled back
 					});
 				}
-				io_service.run();
+				io_service->run();
 			}
 			)));
 		}
@@ -230,7 +230,7 @@ TEST( ConnectionTest, ExecutePrepared )
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 		int queries = 0;
 
 		std::vector< oids::type::oid_type > param_types;
@@ -270,7 +270,7 @@ TEST( ConnectionTest, ExecutePrepared )
 		}, [](connection_ptr c, error::connection_error const& ec) {
 
 		}}));
-		io_service.run();
+		io_service->run();
 	}
 }
 
@@ -281,7 +281,7 @@ TEST( TransactionTest, CleanExit )
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
 		local_log(logger::INFO) << "Transactions clean exit test";
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 		int transactions = 0;
 		bool transaction_error = false;
 		connection_ptr conn(basic_connection::create(
@@ -310,7 +310,7 @@ TEST( TransactionTest, CleanExit )
 		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
-		io_service.run();
+		io_service->run();
 		EXPECT_FALSE(transaction_error);
 	}
 }
@@ -322,7 +322,7 @@ TEST(TransactionTest, DirtyTerminate)
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
 		local_log(logger::INFO) << "Transactions dirty terminate exit test";
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 		int transaction_error = 0;
 		int transactions = 0;
 		connection_ptr conn(basic_connection::create(io_service,  opts,
@@ -350,7 +350,7 @@ TEST(TransactionTest, DirtyTerminate)
 		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
-		io_service.run();
+		io_service->run();
 		EXPECT_EQ(test::environment::num_requests, transaction_error);
 	}
 }
@@ -361,9 +361,9 @@ TEST(TransactionTest, DirtyUnlock)
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 		local_log(logger::INFO) << "Transactions dirty unlock exit test";
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 
-		ASIO_NAMESPACE::deadline_timer timer(io_service, boost::posix_time::milliseconds(100));
+		ASIO_NAMESPACE::deadline_timer timer(*io_service, boost::posix_time::milliseconds(100));
 
 		int transaction_error = false;
 		int transactions = 0;
@@ -395,7 +395,7 @@ TEST(TransactionTest, DirtyUnlock)
 		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
-		io_service.run();
+		io_service->run();
 		EXPECT_TRUE(transaction_error);
 	}
 }
@@ -408,7 +408,7 @@ TEST(TransactionTest, Query)
 	if (!test::environment::test_database.empty()) {
 		connection_options opts = connection_options::parse(test::environment::test_database);
 		local_log(logger::INFO) << "Transaction query test";
-		asio_config::io_service io_service;
+		asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
 		int transaction_error = 0;
 		int transactions = 0;
 		int result_count = 0;
@@ -443,7 +443,7 @@ TEST(TransactionTest, Query)
 		}, [](connection_ptr c, error::connection_error const& ec) {
 			FAIL();
 		}}));
-		io_service.run();
+		io_service->run();
 
 		EXPECT_EQ(test::environment::num_requests, transaction_error);
 		EXPECT_EQ(test::environment::num_requests, result_count);
@@ -466,7 +466,7 @@ TEST(DatabaseTest, Service)
 
 		size_t pool_size = test::environment::connection_pool;
 
-		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(*db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
 		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {

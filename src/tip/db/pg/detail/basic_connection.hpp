@@ -68,10 +68,10 @@ struct execute_prepared {
 
 class basic_connection : public boost::noncopyable {
 public:
-	typedef asio_config::io_service io_service;
+	typedef asio_config::io_service_ptr io_service_ptr;
 public:
 	static basic_connection_ptr
-	create(io_service& svc, connection_options const&,
+	create(io_service_ptr svc, connection_options const&,
 			client_options_type const&, connection_callbacks const&);
 public:
 	virtual ~basic_connection();

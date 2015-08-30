@@ -34,8 +34,8 @@ using tip::log::logger;
 
 //****************************************************************************
 // tcp_layer
-tcp_transport::tcp_transport(io_service& service) :
-		resolver_(service), socket(service), connect_()
+tcp_transport::tcp_transport(io_service_ptr service) :
+		resolver_(*service), socket(*service), connect_()
 {
 }
 
@@ -98,8 +98,8 @@ tcp_transport::close()
 //----------------------------------------------------------------------------
 // socket_transport implementation
 //----------------------------------------------------------------------------
-socket_transport::socket_transport(io_service& service)
-	: socket(service)
+socket_transport::socket_transport(io_service_ptr service)
+	: socket(*service)
 {
 }
 

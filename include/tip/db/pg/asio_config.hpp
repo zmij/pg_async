@@ -16,6 +16,7 @@
 #include <asio.hpp>
 #define ASIO_NAMESPACE ::asio
 #endif
+#include <memory>
 
 namespace tip {
 namespace db {
@@ -23,6 +24,7 @@ namespace pg {
 namespace asio_config {
 
 typedef ASIO_NAMESPACE::io_service io_service;
+typedef std::shared_ptr< io_service > io_service_ptr;
 typedef ASIO_NAMESPACE::ip::tcp tcp;
 typedef ASIO_NAMESPACE::local::stream_protocol stream_protocol;
 

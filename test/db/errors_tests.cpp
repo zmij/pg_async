@@ -215,7 +215,7 @@ TEST(ErrorTest, BreakQueryQueue)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 
-		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(*db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
 		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
@@ -282,7 +282,7 @@ TEST(ErrorTest, FailQueryQueue)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty()) {
 
-		ASIO_NAMESPACE::deadline_timer timer(db_service::io_service(),
+		ASIO_NAMESPACE::deadline_timer timer(*db_service::io_service(),
 				boost::posix_time::seconds(test::environment::deadline));
 		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {

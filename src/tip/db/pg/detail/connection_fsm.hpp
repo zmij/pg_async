@@ -1028,7 +1028,7 @@ struct connection_fsm_ :
 	}
 
 	//@{
-	typedef asio_config::io_service io_service;
+	typedef asio_config::io_service_ptr io_service_ptr;
 	typedef std::map< std::string, std::string > client_options_type;
 	typedef connection_fsm_< transport_type, shared_type > this_type;
 	typedef std::enable_shared_from_this< shared_type > shared_base;
@@ -1038,8 +1038,8 @@ struct connection_fsm_ :
 	//@}
 
 	//@{
-	connection_fsm_(io_service& svc, client_options_type const& co)
-		: shared_base(), transport_(svc), client_opts_(co), strand_(svc),
+	connection_fsm_(io_service_ptr svc, client_options_type const& co)
+		: shared_base(), transport_(svc), client_opts_(co), strand_(*svc),
 		  serverPid_(0), serverSecret_(0), in_transaction_(false)
 	{
 		incoming_.prepare(8192); // FIXME Magic number, move to configuration
@@ -1442,10 +1442,10 @@ private:
 	typedef boost::msm::back::state_machine< connection_fsm_< transport_type,
 			this_type > > fsm_type;
 public:
-	concrete_connection(io_service& svc,
+	concrete_connection(io_service_ptr svc,
 			client_options_type const& co,
 			connection_callbacks const& callbacks)
-		: basic_connection(), fsm_type(std::ref(svc), co),
+		: basic_connection(), fsm_type(svc, co),
 		  callbacks_(callbacks)
 	{
 		fsm_type::start();

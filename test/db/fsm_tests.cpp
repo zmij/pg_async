@@ -14,6 +14,8 @@
 #include "db/config.hpp"
 #include "test-environment.hpp"
 
+namespace asio_config = tip::db::pg::asio_config;
+
 namespace {
 /** Local logging facility */
 using namespace tip::log;
@@ -37,10 +39,10 @@ namespace pg {
 namespace detail {
 
 struct dummy_transport {
-	typedef asio_config::io_service io_service;
+	typedef asio_config::io_service_ptr io_service_ptr;
 	typedef std::function< void (asio_config::error_code const&) > connect_callback;
 
-	dummy_transport(io_service& svc) {}
+	dummy_transport(io_service_ptr svc) {}
 
 	void
 	connect_async(connection_options const&, connect_callback cb)
@@ -95,8 +97,8 @@ tip::db::pg::client_options_type client_options {
 
 TEST(DummyFSM, NormalFlow)
 {
-	tip::db::pg::asio_config::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -126,8 +128,8 @@ TEST(DummyFSM, NormalFlow)
 
 TEST(DummyFSM, TerminateTran)
 {
-	tip::db::pg::asio_config::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -145,8 +147,8 @@ TEST(DummyFSM, TerminateTran)
 
 TEST(DummyFSM, SimpleQueryMode)
 {
-	tip::db::pg::asio_config::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -176,8 +178,8 @@ TEST(DummyFSM, SimpleQueryMode)
 
 TEST(DummyFSM, ExtendedQueryMode)
 {
-	tip::db::pg::asio_config::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -201,8 +203,8 @@ test_normal_flow(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
-	asio_config::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -212,7 +214,7 @@ test_normal_flow(tip::db::pg::connection_options const& opts)
 	c->process_event(commit());
 	c->process_event(terminate());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, NormalFlow)
@@ -237,8 +239,8 @@ test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
-	asio_config::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -246,7 +248,7 @@ test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 	c->process_event(terminate());
 	c->process_event(rollback());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, PreliminaryTerminate)
@@ -271,8 +273,8 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 	typedef concrete_connection< TransportType > fsm_type;
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 
-	asio_config::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -281,7 +283,7 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 	c->process_event(execute{ "select * from _shouldnt_be_there_" });
 	c->process_event(terminate());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, ErrorInSimpleQuery)
@@ -307,8 +309,8 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	typedef std::shared_ptr< fsm_type > fsm_ptr;
 	typedef std::vector< char > buffer_type;
 
-	asio_config::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -346,7 +348,7 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	c->process_event(commit());
 	c->process_event(terminate());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, ExecPrepared)

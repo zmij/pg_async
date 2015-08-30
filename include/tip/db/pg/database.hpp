@@ -114,7 +114,7 @@ public:
 	static void
 	stop();
 
-	static asio_config::io_service&
+	static asio_config::io_service_ptr
 	io_service();
 private:
 	// No instances
