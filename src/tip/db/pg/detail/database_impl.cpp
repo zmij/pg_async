@@ -131,15 +131,12 @@ database_impl::run()
 void
 database_impl::stop()
 {
+	local_log() << "Closing connections";
 	for (auto c: connections_) {
 		c.second->close();
 	}
 	connections_.clear();
-
-	if (!service_.stopped()) {
-		service_.stop();
-		service_.reset();
-	}
+	service_.stop();
 }
 
 } /* namespace detail */
