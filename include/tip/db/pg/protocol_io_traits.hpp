@@ -345,6 +345,8 @@ struct pgcpp_data_mapping : detail::data_mapping_base< TypeOid, std::string > {}
  */
 template < typename T >
 struct cpppg_data_mapping : detail::data_mapping_base < oids::type::unknown, T > {};
+template < typename T >
+struct cpppg_data_mapping< boost::optional< T > > : cpppg_data_mapping< T > {};
 
 //@{
 /** @name parser and formatter traits */

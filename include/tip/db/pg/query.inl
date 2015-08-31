@@ -80,11 +80,18 @@ struct nth_param < Index, boost::optional< T > > {
 	static bool
 	write_value (std::vector<byte>& buffer, boost::optional<type> const& value)
 	{
-		if (value) {
+		if (value.is_initialized()) {
 			return nth_param< Index, T >::write_value( buffer, *value );
 		}
 		// NULL value
 		return io::protocol_write< BINARY_DATA_FORMAT >( buffer, (integer)-1 );
+	}
+	static integer
+	size(boost::optional<type> const& value)
+	{
+		if (value.is_initialized())
+			return io::protocol_writer< data_format >(*value).size() + sizeof(integer);
+		return sizeof(integer);
 	}
 };
 
