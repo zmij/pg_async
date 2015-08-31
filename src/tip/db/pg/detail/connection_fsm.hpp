@@ -298,6 +298,7 @@ struct connection_fsm_ :
 			fsm_log(logger::DEBUG) << "leaving: transaction";
 			tran_object_.reset();
 			connection_->in_transaction_ = false;
+			callbacks_ = events::begin{};
 		}
 		//@}
 
