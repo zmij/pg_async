@@ -613,7 +613,6 @@ struct connection_fsm_ :
 					std::copy( query_.param_types.begin(), query_.param_types.end() - 1, out );
 					os << query_.param_types.back() << "}";
 				}
-				fsm_log() << "query signature " << os.str();
 				query_name_ = "q_" +
 					std::string( boost::md5( os.str().c_str() ).digest().hex_str_value() );
 			}
@@ -667,6 +666,18 @@ struct connection_fsm_ :
 					fsm.result_.reset(new result_impl);
 					row_description row;
 					fsm.connection_->set_prepared(fsm.query_name_, row);
+				}
+			};
+			struct skip_parsing {
+				template < typename Event, typename SourceState,
+						typename TargetState>
+				void
+				operator()(Event const&, extended_query& fsm,
+						SourceState&, TargetState&)
+				{
+					fsm.result_.reset(new result_impl);
+					fsm.result_->row_description() =
+							fsm.connection_->get_prepared(fsm.query_name_).fields;
 				}
 			};
 			struct parse_data_row {
@@ -828,7 +839,7 @@ struct connection_fsm_ :
 				/*		Start			Event				Next			Action			Guard			      */
 				/*  +-----------------+-------------------+---------------+---------------+---------------------+ */
 				 Row<	prepare,		none,				parse,			none,			Not<is_prepared>	>,
-				 Row<	prepare,		none,				bind,			none,			is_prepared			>,
+				 Row<	prepare,		none,				bind,			skip_parsing,	is_prepared			>,
 				 Row<	parse,			ready_for_query,	bind,			none,			none				>,
 				 Row<	bind,			ready_for_query,	exec,			none,			none				>
 			>{};
