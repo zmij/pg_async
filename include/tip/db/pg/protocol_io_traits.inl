@@ -11,6 +11,10 @@
 #include <tip/db/pg/protocol_io_traits.hpp>
 #include <tip/db/pg/detail/protocol_parsers.hpp>
 
+#include <boost/range/iterator_range.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+
 #include <tip/util/endian.hpp>
 #include <algorithm>
 #include <cassert>
@@ -81,8 +85,7 @@ protocol_parser< T, TEXT_DATA_FORMAT >::operator()
 	typedef typename iter_traits::value_type iter_value_type;
 	static_assert(std::is_same< iter_value_type, byte >::type::value,
 			"Input iterator must be over a char container");
-
-	std::istringstream is(std::string(begin, end));
+	boost::iostreams::filtering_istream is(boost::make_iterator_range(begin, end));
 	is >> base_type::value;
 	begin += size();
 	return begin;

@@ -17,9 +17,11 @@
 #include <type_traits>
 #include <boost/optional.hpp>
 
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/pg_types.hpp>
-#include <tip/util/streambuf.hpp>
 
 namespace tip {
 namespace db {
@@ -528,6 +530,10 @@ template < typename T >
 struct protocol_formatter< T, TEXT_DATA_FORMAT > : detail::formatter_base< T > {
     typedef detail::formatter_base< T > base_type;
     typedef typename base_type::value_type value_type;
+    typedef std::vector<byte> buffer_type;
+    typedef boost::iostreams::stream_buffer<
+    		boost::iostreams::back_insert_device< buffer_type >
+    	> streambuffer_type;
     
     protocol_formatter(value_type const& val) : base_type(val) {}
     
@@ -541,10 +547,9 @@ struct protocol_formatter< T, TEXT_DATA_FORMAT > : detail::formatter_base< T > {
     bool
     operator()(std::vector<char>& buffer)
     {
-    	std::ostringstream os;
+    	streambuffer_type sbuff(buffer);
+    	std::ostream os(&sbuff);
     	os << base_type::value;
-        auto str = os.str();
-    	std::copy(str.begin(), str.end(), std::back_inserter(buffer));
     	return true;
     }
 };
