@@ -29,6 +29,7 @@ set(test_pg_SRCS
     db_io_tests.cpp
     query_tests.cpp
     errors_tests.cpp
+    array_support_test.cpp
     test_main.cpp
     test-environment.cpp
 )
