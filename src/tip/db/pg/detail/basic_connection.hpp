@@ -34,6 +34,7 @@ typedef std::shared_ptr< basic_connection > basic_connection_ptr;
 typedef std::function < void (basic_connection_ptr) > connection_event_callback;
 typedef std::function < void (basic_connection_ptr, error::connection_error) > connection_error_callback;
 typedef std::function< void (resultset, bool) > query_internal_callback;
+typedef std::function< void() > notification_callback;
 
 struct connection_callbacks {
 	connection_event_callback	idle;
@@ -48,8 +49,12 @@ struct begin {
 	error_callback			error;
 };
 
-struct commit {};
-struct rollback {};
+struct commit {
+	notification_callback	callback;
+};
+struct rollback {
+	notification_callback	callback;
+};
 
 struct execute {
 	std::string				expression;
@@ -85,9 +90,9 @@ public:
 	void
 	begin(events::begin const&);
 	void
-	commit();
+	commit(notification_callback = notification_callback());
 	void
-	rollback();
+	rollback(notification_callback = notification_callback());
 
 	bool
 	in_transaction() const;
@@ -115,9 +120,9 @@ private:
 	virtual void
 	do_begin(events::begin const&) = 0;
 	virtual void
-	do_commit() = 0;
+	do_commit(notification_callback) = 0;
 	virtual void
-	do_rollback() = 0;
+	do_rollback(notification_callback) = 0;
 
 	virtual void
 	do_execute(events::execute const&) = 0;

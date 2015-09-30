@@ -94,15 +94,15 @@ basic_connection::begin(events::begin const& evt)
 }
 
 void
-basic_connection::commit()
+basic_connection::commit(notification_callback cb)
 {
-	do_commit();
+	do_commit(cb);
 }
 
 void
-basic_connection::rollback()
+basic_connection::rollback(notification_callback cb)
 {
-	do_rollback();
+	do_rollback(cb);
 }
 
 bool

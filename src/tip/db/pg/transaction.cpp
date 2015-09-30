@@ -58,17 +58,17 @@ transaction::in_transaction() const
 }
 
 void
-transaction::commit()
+transaction::commit(notification_callback cb)
 {
 	finished_ = true;
-	connection_->commit();
+	connection_->commit(cb);
 }
 
 void
-transaction::rollback()
+transaction::rollback(notification_callback cb)
 {
 	finished_ = true;
-	connection_->rollback();
+	connection_->rollback(cb);
 }
 void
 transaction::execute(std::string const& query, query_result_callback result,

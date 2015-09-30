@@ -426,11 +426,33 @@ struct connection_fsm_ :
 			template < typename Event, typename FSM >
 			void
 			on_entry(Event const&, FSM&)
-			{ fsm_log() << "entering: exit transaction"; }
+			{
+				fsm_log() << "entering: exit transaction";
+				callback_ = notification_callback();
+			}
+			template < typename FSM >
+			void
+			on_entry(events::commit const& evt, FSM &)
+			{
+				fsm_log() << "entering: exit transaction (commit)";
+				callback_ = evt.callback;
+			}
+			template < typename FSM >
+			void
+			on_entry(events::rollback const& evt, FSM &)
+			{
+				fsm_log() << "entering: exit transaction (rollback)";
+				callback_ = evt.callback;
+			}
 			template < typename Event, typename FSM >
 			void
 			on_exit(Event const&, FSM&)
-			{ fsm_log() << "leaving: exit transaction"; }
+			{
+				fsm_log() << "leaving: exit transaction";
+				if (callback_) {
+					callback_();
+				}
+			}
 			struct internal_transition_table : boost::mpl::vector<
 			/*				Event				Action					Guard	 */
 			/*			+---------------------+-----------------------+---------+*/
@@ -438,6 +460,8 @@ struct connection_fsm_ :
 				Internal< events::commit,		none,					none	>,
 				Internal< events::rollback,		none,					none	>
 			> {};
+
+			notification_callback callback_;
 		};
 
 		struct simple_query_ : public boost::msm::front::state_machine_def<simple_query_> {
@@ -1525,23 +1549,23 @@ private:
 	}
 
 	virtual void
-	do_commit()
+	do_commit(notification_callback cb)
 	{
 		if (!fsm_type::in_transaction()) {
 			fsm_log(logger::ERROR) << "Cannot commit transaction: not in transaction";
 			throw error::db_error("Not in transaction");
 		}
-		fsm_type::process_event(events::commit{});
+		fsm_type::process_event(events::commit{cb});
 	}
 
 	virtual void
-	do_rollback()
+	do_rollback(notification_callback cb)
 	{
 		if (!fsm_type::in_transaction()) {
 			fsm_log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
 			throw error::db_error("Not in transaction");
 		}
-		fsm_type::process_event(events::rollback{});
+		fsm_type::process_event(events::rollback{cb});
 	}
 
 	virtual void
