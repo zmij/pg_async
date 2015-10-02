@@ -81,6 +81,7 @@ struct text_container_parser :
 			protocol_read< TEXT_DATA_FORMAT >(tok->begin(), tok->end(), tmp);
 			*out++ = std::move(tmp);
 		}
+		return begin;
 	}
 
 	parser_type&

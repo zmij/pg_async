@@ -56,7 +56,7 @@ struct protocol_parser< std::array< T, Sz >, TEXT_DATA_FORMAT > :
 	InputIterator
 	operator()(InputIterator begin, InputIterator end)
 	{
-		base_type::parse(begin, end, base_type::value.begin());
+		return base_type::parse(begin, end, base_type::value.begin());
 	}
 };
 
