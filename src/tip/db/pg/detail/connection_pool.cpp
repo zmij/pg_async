@@ -148,10 +148,16 @@ connection_pool::connection_terminated(connection_ptr c)
 				<< logger::severity_color()
 				<< " gracefully terminated";
 	}
-	lock_type lock(mutex_);
-	auto f = std::find(connections_.begin(), connections_.end(), c);
-	if (f != connections_.end()) {
-		connections_.erase(f);
+	{
+		lock_type lock(mutex_);
+		auto f = std::find(connections_.begin(), connections_.end(), c);
+		if (f != connections_.end()) {
+			connections_.erase(f);
+		}
+
+		if (connections_.empty() && closed_ && closed_callback_) {
+			closed_callback_();
+		}
 	}
 
 	{
@@ -186,8 +192,11 @@ void
 connection_pool::get_connection(transaction_callback const& conn_cb,
 		error_callback const& err)
 {
-	// TODO Call the error callback if the pool is closed
 	lock_type lock(mutex_);
+	if (closed_) {
+		err( error::connection_error("Connection pool is closed") );
+		return;
+	}
 	if (!ready_connections_.empty()) {
 		local_log() << "Connection to "
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
@@ -211,10 +220,12 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 }
 
 void
-connection_pool::close()
+connection_pool::close(simple_callback close_cb)
 {
+	// FIXME Save close callback and call it when all connections terminate
 	lock_type lock(mutex_);
 	closed_ = true;
+	closed_callback_ = close_cb;
 
 	local_log() << "Close connection pool "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)

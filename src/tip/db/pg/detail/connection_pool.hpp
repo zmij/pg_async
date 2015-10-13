@@ -65,7 +65,7 @@ public:
 	get_connection(transaction_callback const&, error_callback const&);
 
 	void
-	close();
+	close(simple_callback); // FIXME Add a close callback
 private:
 	void
 	create_new_connection();
@@ -89,6 +89,7 @@ private:
 	request_callbacks_queue	waiting_;
 
 	bool					closed_;
+	simple_callback			closed_callback_;
 };
 
 } /* namespace detail */

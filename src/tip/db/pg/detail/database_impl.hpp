@@ -25,7 +25,7 @@ struct connection_pool;
 
 class database_impl : private boost::noncopyable {
 	typedef std::shared_ptr<connection_pool> connection_pool_ptr;
-	typedef std::map<dbalias, connection_pool_ptr> connections_map;
+	typedef std::map<dbalias, connection_pool_ptr> pools_map;
 public:
 	database_impl(size_t pool_size, client_options_type const& defaults);
 	virtual ~database_impl();
@@ -66,8 +66,15 @@ private:
 	asio_config::io_service_ptr	service_;
 	size_t						pool_size_;
 
-	connections_map				connections_;
+	pools_map					connections_;
 	client_options_type			defaults_;
+
+	enum state_type {
+		running,
+		closing,
+		closed
+	};
+	state_type					state_;
 };
 
 } /* namespace detail */

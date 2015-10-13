@@ -157,7 +157,7 @@ TEST( ConnectionTest, ConnectionPool )
 		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				local_log(logger::WARNING) << "Connection pool test timer expired";
-				pool->close();
+				pool->close([](){});
 				timer.cancel();
 				if (!io_service->stopped())
 					io_service->stop();
@@ -192,7 +192,7 @@ TEST( ConnectionTest, ConnectionPool )
 								t1->commit();
 
 							if (res_count >= req_count * thread_count) {
-								pool->close();
+								pool->close([](){});
 								timer.cancel();
 							}
 						}, [](error::db_error const&){} );
