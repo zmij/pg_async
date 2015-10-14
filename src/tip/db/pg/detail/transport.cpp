@@ -35,7 +35,7 @@ using tip::log::logger;
 //****************************************************************************
 // tcp_layer
 tcp_transport::tcp_transport(io_service_ptr service) :
-		resolver_(*service), socket(*service), connect_()
+		resolver_(*service), socket(*service)
 {
 }
 
@@ -48,7 +48,6 @@ tcp_transport::connect_async(connection_options const& conn, connect_callback cb
 	if (conn.schema != "tcp") {
 		throw error::connection_error("Wrong connection schema for TCP transport");
 	}
-	connect_ = cb;
 	std::string host = conn.uri;
 	std::string svc = "5432";
 	std::string::size_type pos = conn.uri.find(":");
@@ -59,27 +58,27 @@ tcp_transport::connect_async(connection_options const& conn, connect_callback cb
 
 	tcp::resolver::query query (host, svc);
 	resolver_.async_resolve(query, boost::bind(&tcp_transport::handle_resolve,
-				this, _1, _2 ));
+				this, _1, _2, cb ));
 
 }
 
 void
 tcp_transport::handle_resolve(error_code const& ec,
-                 	  			tcp::resolver::iterator endpoint_iterator)
+			tcp::resolver::iterator endpoint_iterator, connect_callback cb)
 {
 	if (!ec) {
 		ASIO_NAMESPACE::async_connect(socket, endpoint_iterator,
 				boost::bind( &tcp_transport::handle_connect,
-						this, _1));
+						this, _1, cb));
 	} else {
-		connect_(ec);
+		cb(ec);
 	}
 }
 
 void
-tcp_transport::handle_connect(error_code const& ec)
+tcp_transport::handle_connect(error_code const& ec, connect_callback cb)
 {
-	connect_(ec);
+	cb(ec);
 }
 
 bool
@@ -111,7 +110,6 @@ socket_transport::connect_async(connection_options const& conn,
 	if (conn.schema != "socket") {
 		throw error::connection_error("Wrong connection schema for TCP transport");
 	}
-	connect_ = cb;
 	std::string uri = conn.uri;
 
 	if (uri.empty()) {

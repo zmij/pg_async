@@ -109,7 +109,7 @@ protocol_parser< std::string, TEXT_DATA_FORMAT >::operator ()
 	for (; begin != end && *begin; ++begin) {
 		tmp.push_back(*begin);
 	}
-	if (!*begin)
+	if (begin != end && !*begin)
 		++begin;
 	base_type::value.swap(tmp);
 	return begin;

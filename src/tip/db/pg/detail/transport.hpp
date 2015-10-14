@@ -50,15 +50,15 @@ struct tcp_transport {
 	}
 private:
 	tcp::resolver resolver_;
-	connect_callback connect_;
 	socket_type socket;
 
 
 	void
 	handle_resolve(error_code const& ec,
-					tcp::resolver::iterator endpoint_iterator);
+					tcp::resolver::iterator endpoint_iterator,
+					connect_callback);
 	void
-	handle_connect(error_code const& ec);
+	handle_connect(error_code const& ec, connect_callback);
 };
 
 struct socket_transport {
@@ -92,7 +92,6 @@ struct socket_transport {
 		ASIO_NAMESPACE::async_write(socket, buffer, handler);
 	}
 private:
-	connect_callback connect_;
 	socket_type socket;
 };
 
