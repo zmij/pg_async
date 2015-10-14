@@ -118,22 +118,26 @@ connection_pool::connection_ready(connection_ptr c)
 	}
 	lock_type lock(mutex_);
 
-	if (!waiting_.empty()) {
-		request_callbacks req = waiting_.front();
-		waiting_.pop();
+	if (!queue_.empty()) {
+		request_callbacks req = queue_.front();
+		queue_.pop();
 		local_log()
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< alias()
 				<< logger::severity_color()
-				<< " queue size " << waiting_.size() << " (dequeue)";
+				<< " queue size " << queue_.size() << " (dequeue)";
 		c->begin({req.first, req.second});
 	} else {
 		local_log()
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< alias()
 				<< logger::severity_color()
-				<< " queue size " << waiting_.size();
-		ready_connections_.push(c);
+				<< " queue size " << queue_.size();
+		if (closed_) {
+			close_connections();
+		} else {
+			ready_connections_.push(c);
+		}
 	}
 }
 
@@ -181,9 +185,9 @@ connection_pool::connection_error(connection_ptr c, error::connection_error cons
 	if (f != connections_.end()) {
 		connections_.erase(f);
 	}
-	while (!waiting_.empty()) {
-		request_callbacks req = waiting_.front();
-		waiting_.pop();
+	while (!queue_.empty()) {
+		request_callbacks req = queue_.front();
+		queue_.pop();
 		req.second(ec);
 	}
 }
@@ -211,22 +215,30 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< alias()
 				<< logger::severity_color()
-				<< " queue size " << waiting_.size() + 1  << " (enqueue)";;
-		if (connections_.size() < pool_size_) {
+				<< " queue size " << queue_.size() + 1  << " (enqueue)";;
+		if (!closed_ && connections_.size() < pool_size_) {
 			create_new_connection();
 		}
-		waiting_.push(std::make_pair(conn_cb, err));
+		queue_.emplace(conn_cb, err);
 	}
 }
 
 void
 connection_pool::close(simple_callback close_cb)
 {
-	// FIXME Save close callback and call it when all connections terminate
 	lock_type lock(mutex_);
 	closed_ = true;
 	closed_callback_ = close_cb;
 
+	if (queue_.empty()) {
+		close_connections();
+	} else {
+		local_log() << "Wait for outstanding tasks to finish";
+	}
+}
+
+void
+connection_pool::close_connections() {
 	local_log() << "Close connection pool "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
 			<< alias()

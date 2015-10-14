@@ -65,7 +65,7 @@ public:
 	get_connection(transaction_callback const&, error_callback const&);
 
 	void
-	close(simple_callback); // FIXME Add a close callback
+	close(simple_callback);
 private:
 	void
 	create_new_connection();
@@ -75,6 +75,9 @@ private:
 	connection_terminated(connection_ptr c);
 	void
 	connection_error(connection_ptr c, error::connection_error const& ec);
+
+	void
+	close_connections();
 private:
 	io_service_ptr 			service_;
 	size_t					pool_size_;
@@ -86,7 +89,7 @@ private:
 	connections_container	connections_;
 	connections_queue		ready_connections_;
 
-	request_callbacks_queue	waiting_;
+	request_callbacks_queue	queue_;
 
 	bool					closed_;
 	simple_callback			closed_callback_;
