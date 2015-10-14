@@ -46,7 +46,7 @@ namespace {
 using namespace tip::log;
 
 const std::string LOG_CATEGORY = "PGFSM";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
+logger::event_severity DEFAULT_SEVERITY = logger::OFF;
 local
 fsm_log(logger::event_severity s = DEFAULT_SEVERITY)
 {
@@ -148,7 +148,7 @@ struct connection_fsm_ :
 		void
 		on_entry(Event const&, connection& fsm)
 		{
-			fsm_log(logger::DEBUG) << "entering: terminated";
+			fsm_log() << "entering: terminated";
 			fsm.send(message(terminate_tag));
 			fsm.notify_terminated();
 		}
@@ -286,7 +286,7 @@ struct connection_fsm_ :
 		void
 		on_entry(events::begin const& evt, connection& fsm)
 		{
-			fsm_log(logger::DEBUG) << "entering: transaction";
+			fsm_log() << "entering: transaction";
 			connection_ = &fsm;
 			connection_->in_transaction_ = true;
 			callbacks_ = evt;
@@ -295,7 +295,7 @@ struct connection_fsm_ :
 		void
 		on_exit(Event const&, FSM&)
 		{
-			fsm_log(logger::DEBUG) << "leaving: transaction";
+			fsm_log() << "leaving: transaction";
 			tran_object_.reset();
 			connection_->in_transaction_ = false;
 			callbacks_ = events::begin{};
@@ -386,14 +386,14 @@ struct connection_fsm_ :
 			void
 			on_exit(error::query_error const& err, tran_fsm& tran)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA
+				fsm_log() << tip::util::MAGENTA
 						<< "leaving: idle (transaction) (query_error)";
 				tran.notify_error(err);
 			}
 			void
 			on_exit(error::client_error const& err, tran_fsm& tran)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA
+				fsm_log() << tip::util::MAGENTA
 						<< "leaving: idle (transaction) (client_error)";
 				tran.notify_error(err);
 			}
@@ -477,8 +477,8 @@ struct connection_fsm_ :
 			void
 			on_entry(events::execute const& q, tran_fsm& tran)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "entering: simple query (execute event)";
-				fsm_log(logger::DEBUG) << "Execute query: " << q.expression;
+				fsm_log() << tip::util::MAGENTA << "entering: simple query (execute event)";
+				fsm_log() << "Execute query: " << q.expression;
 				connection_ = tran.connection_;
 				tran_ = &tran;
 				query_ = q;
@@ -490,14 +490,14 @@ struct connection_fsm_ :
 			void
 			on_exit(Event const&, FSM&)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: simple query";
+				fsm_log() << tip::util::MAGENTA << "leaving: simple query";
 				query_ = events::execute();
 			}
 			template < typename FSM >
 			void
 			on_exit(error::query_error const& err, FSM&)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: simple query (query_error)";
+				fsm_log() << tip::util::MAGENTA << "leaving: simple query (query_error)";
 				tran_->notify_error(*this, err);
 				query_ = events::execute();
 			}
@@ -505,7 +505,7 @@ struct connection_fsm_ :
 			void
 			on_exit(error::client_error const& err, FSM&)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: simple query (client_error)";
+				fsm_log() << tip::util::MAGENTA << "leaving: simple query (client_error)";
 				tran_->notify_error(err);
 				query_ = events::execute();
 			}
@@ -625,7 +625,7 @@ struct connection_fsm_ :
 			void
 			on_entry(events::execute_prepared const& q, tran_fsm& tran)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "entering: extended query";
+				fsm_log() << tip::util::MAGENTA << "entering: extended query";
 				connection_ = tran.connection_;
 				tran_ = &tran;
 				query_ = q;
@@ -644,14 +644,14 @@ struct connection_fsm_ :
 			void
 			on_exit(Event const&, FSM&)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query";
+				fsm_log() << tip::util::MAGENTA << "leaving: extended query";
 				query_ = events::execute_prepared();
 			}
 			template < typename FSM >
 			void
 			on_exit(error::query_error const& err, FSM&)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query (query_error)";
+				fsm_log() << tip::util::MAGENTA << "leaving: extended query (query_error)";
 				tran_->notify_error(*this, err);
 				query_ = events::execute_prepared();
 			}
@@ -659,7 +659,7 @@ struct connection_fsm_ :
 			void
 			on_exit(error::client_error const& err, FSM&)
 			{
-				fsm_log(logger::DEBUG) << tip::util::MAGENTA << "leaving: extended query (client_error)";
+				fsm_log() << tip::util::MAGENTA << "leaving: extended query (client_error)";
 				tran_->notify_error(err);
 				query_ = events::execute_prepared();
 			}
@@ -741,7 +741,7 @@ struct connection_fsm_ :
 				on_entry(Event const&, extended_query& fsm)
 				{
 					fsm_log() << "entering: parse";
-					fsm_log(logger::DEBUG) << "Parse query " << fsm.query_.expression;
+					fsm_log() << "Parse query " << fsm.query_.expression;
 					message parse(parse_tag);
 					parse.write(fsm.query_name_);
 					parse.write(fsm.query_.expression);
@@ -821,7 +821,7 @@ struct connection_fsm_ :
 				on_entry( Event const&, extended_query& fsm )
 				{
 					fsm_log() << "entering: execute";
-					fsm_log(logger::DEBUG) << "Execute prepared query: " << fsm.query_.expression;
+					fsm_log() << "Execute prepared query: " << fsm.query_.expression;
 					message execute(execute_tag);
 					execute.write(fsm.portal_name_);
 					execute.write(fsm.row_limit_);
@@ -1006,13 +1006,13 @@ struct connection_fsm_ :
 				try {
 					state.query_.error(qe);
 				} catch (std::exception const& e) {
-					fsm_log(logger::DEBUG)
+					fsm_log()
 							<< "Query error handler throwed an exception: "
 							<< e.what();
 					notify_error(qe);
 					notify_error(error::client_error(e));
 				} catch (...) {
-					fsm_log(logger::DEBUG)
+					fsm_log()
 							<< "Query error handler throwed an unexpected exception";
 					notify_error(qe);
 					notify_error(error::client_error("Unknown exception"));
@@ -1300,10 +1300,6 @@ private:
 	            handle_message(m);
 	            message_.reset();
 	        }
-	        {
-	            fsm_log(logger::OFF) << loop_beg - max_bytes
-	            		<< " bytes consumed, " << max_bytes << " bytes left";
-	        }
 	    }
 	}
 
@@ -1435,7 +1431,7 @@ private:
 				}
 				default: {
 				    {
-				        fsm_log(logger::TRACE) << "Unhandled message "
+				        fsm_log(logger::DEBUG) << "Unhandled message "
 				        		<< (util::MAGENTA | util::BRIGHT)
 				        		<< (char)tag
 				        		<< logger::severity_color();
