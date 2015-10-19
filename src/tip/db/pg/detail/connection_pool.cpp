@@ -243,9 +243,13 @@ connection_pool::close_connections() {
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
 			<< alias()
 			<< logger::severity_color();
-	connections_container copy = connections_;
-	for (auto c : copy) {
-		c->terminate();
+	if (connections_.size() > 0) {
+		connections_container copy = connections_;
+		for ( auto c : copy ) {
+			c->terminate();
+		}
+	} else if (closed_callback_) {
+		closed_callback_();
 	}
 }
 
