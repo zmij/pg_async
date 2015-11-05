@@ -4,6 +4,21 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+# Set all log default level
+if(NOT PGASYNC_LOG_ALL)
+    set(PGASYNC_LOG_ALL OFF)
+endif()
+
+set(LOG_CATEGORIES SERVICE CONNECTION QUERY INTERNALS)
+
+foreach(category ${LOG_CATEGORIES})
+    if (NOT PGASYNC_LOG_${category})
+        set(PGASYNC_LOG_${category} ${PGASYNC_LOG_ALL})
+    endif()
+endforeach()
+
+configure_file(log_config.in.hpp log_config.hpp)
+
 set(
     pgsql_lib_SRCS
     common.cpp

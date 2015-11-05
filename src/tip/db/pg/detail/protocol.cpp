@@ -28,21 +28,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "POSTGRE";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(POSTGRE, config::INTERNALS_LOG);
 
 namespace {
 	tag_set_type FRONTEND_COMMANDS {
@@ -275,7 +261,7 @@ message::read(row_data& row)
 {
 	integer len = length();
 	assert( len == size() && "Invalid message length");
-	local_log(logger::OFF) << "Row data message size " << len;
+	local_log() << "Row data message size " << len;
 	if (len < sizeof(integer) + sizeof(smallint)) {
 		std::cerr << "Size of invalid data row message is " << len << "\n";
 		assert ( len >= sizeof(integer) + sizeof(smallint) && "Invalid data row message");

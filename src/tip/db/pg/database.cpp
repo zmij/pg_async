@@ -17,21 +17,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGSVC";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(PGSVC, config::SERVICE_LOG);
 
 typedef std::recursive_mutex mutex_type;
 typedef std::lock_guard<mutex_type> lock_type;

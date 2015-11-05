@@ -16,23 +16,8 @@
 
 namespace asio_config = tip::db::pg::asio_config;
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
+LOCAL_LOGGING_FACILITY_FUNC(PGFSM, TRACE, test_log);
 
-const std::string LOG_CATEGORY = "PGFSM";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-test_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-
-
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
 namespace tip {
 namespace db {
 namespace pg {

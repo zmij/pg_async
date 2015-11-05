@@ -17,21 +17,8 @@
 #include "db/config.hpp"
 #include "test-environment.hpp"
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
+LOCAL_LOGGING_FACILITY(PGTEST, TRACE);
 
-const std::string LOG_CATEGORY = "PGTEST";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
 using namespace tip::db::pg;
 
 TEST(QueryTest, QueryInlay)

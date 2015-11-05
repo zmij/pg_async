@@ -21,21 +21,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGCONN";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-using tip::log::logger;
-
+LOCAL_LOGGING_FACILITY_CFG(PGCONN, config::CONNECTION_LOG);
 
 template < typename TransportType >
 std::shared_ptr< detail::concrete_connection< TransportType > >

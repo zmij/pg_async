@@ -18,21 +18,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGQUERY";
-logger::event_severity DEFAULT_SEVERITY = logger::DEBUG;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(PGQUERY, config::QUERY_LOG);
 
 struct query::impl : std::enable_shared_from_this<query::impl> {
 	dbalias alias_;
@@ -57,7 +43,6 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 		: alias_(alias), tran_(), expression_(expression),
 		  param_types_(std::move(param_types)), params_(std::move(params))
 	{
-		local_log() << "Create query with " << param_types_.size() << " params";
 	}
 
 	impl(transaction_ptr tran, std::string const& expression,
@@ -65,7 +50,6 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 		: alias_(tran->alias()), tran_(tran), expression_(expression),
 		  param_types_(std::move(param_types)), params_(std::move(params))
 	{
-		local_log() << "Create query with " << param_types_.size() << " params";
 	}
 
 	impl(impl const& rhs)

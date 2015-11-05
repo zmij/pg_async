@@ -17,20 +17,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "POSTGRE";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(POSTGRE, config::CONNECTION_LOG);
 
 //****************************************************************************
 // tcp_layer

@@ -20,21 +20,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGDB";
-logger::event_severity DEFAULT_SEVERITY = logger::OFF;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(PGDB, config::SERVICE_LOG);
 
 database_impl::database_impl(size_t pool_size, client_options_type const& defaults)
 	: service_( std::make_shared<asio_config::io_service>() ),

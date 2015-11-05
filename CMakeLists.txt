@@ -41,6 +41,7 @@ include_directories(
     ${CMAKE_BINARY_DIR}/include
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
 )
 

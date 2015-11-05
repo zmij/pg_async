@@ -14,4 +14,6 @@
 #include <tip/db/pg/null_logger.hpp>
 #endif
 
+#include <tip/db/pg/log_config.hpp>
+
 #endif /* LIB_PG_ASYNC_SRC_TIP_DB_PG_LOG_HPP_ */

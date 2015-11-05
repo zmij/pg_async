@@ -22,21 +22,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGPOOL";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(PGPOOL, config::CONNECTION_LOG);
 
 connection_pool::connection_pool(io_service_ptr service,
 		size_t pool_size,

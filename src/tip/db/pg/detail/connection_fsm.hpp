@@ -41,21 +41,7 @@ class resultset;
 
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGFSM";
-logger::event_severity DEFAULT_SEVERITY = logger::OFF;
-local
-fsm_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg fsm_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG_FUNC(PGFSM, config::INTERNALS_LOG, fsm_log);
 
 struct transport_connected {};
 

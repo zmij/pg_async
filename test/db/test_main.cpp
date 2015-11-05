@@ -11,21 +11,7 @@
 
 #include "test-environment.hpp"
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGTEST";
-logger::event_severity DEFAULT_SEVERITY = logger::DEBUG;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY(PGTEST, DEBUG);
 
 namespace {
 

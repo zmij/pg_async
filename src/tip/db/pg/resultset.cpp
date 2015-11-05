@@ -18,24 +18,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
-#ifdef WITH_TIP_LOG
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGRESULT";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
-#endif
-
+LOCAL_LOGGING_FACILITY_CFG(PGRESULT, config::QUERY_LOG);
 
 const resultset::size_type resultset::npos = std::numeric_limits<resultset::size_type>::max();
 const resultset::row::size_type resultset::row::npos = std::numeric_limits<resultset::row::size_type>::max();
