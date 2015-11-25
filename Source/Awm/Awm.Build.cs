@@ -19,7 +19,7 @@ public class Awm : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[] { "AwmLoadingScreen" });
 
         // Additional plugins
-        //PrivateDependencyModuleNames.AddRange(new string[] { "VaRestPlugin" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "VaRestPlugin" });
 
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
