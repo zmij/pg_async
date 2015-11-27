@@ -22,3 +22,5 @@ DECLARE_LOG_CATEGORY_EXTERN(LogAwmVehicle, Display, All);
 * also DefaultEngine.ini [/Script/Engine.CollisionProfile] should match with this list **/
 #define COLLISION_WEAPON		ECC_GameTraceChannel1
 #define COLLISION_PROJECTILE	ECC_GameTraceChannel2
+
+#define MAX_PLAYER_NAME_LENGTH 16

@@ -8,62 +8,25 @@ AAwmSpectatorPawn::AAwmSpectatorPawn(const class FObjectInitializer& PCIP)
 
 }
 
-bool AAwmSpectatorPawn::OnTapPressed_Implementation(const FVector2D& ScreenPosition, float DownTime)
+
+//////////////////////////////////////////////////////////////////////////
+// Player Input
+
+void AAwmSpectatorPawn::SetupPlayerInputComponent(UInputComponent* InputComponent)
 {
-	return false;
-}
-
-void AAwmSpectatorPawn::OnHoldPressed_Implementation(const FVector2D& ScreenPosition, float DownTime)
-{
-
-}
-
-void AAwmSpectatorPawn::OnHoldReleased_Implementation(const FVector2D& ScreenPosition, float DownTime)
-{
-
-}
-
-bool AAwmSpectatorPawn::OnSwipeStarted_Implementation(const FVector2D& SwipePosition, float DownTime)
-{
-	return false;
-}
-
-bool AAwmSpectatorPawn::OnSwipeUpdate_Implementation(const FVector2D& SwipePosition, float DownTime)
-{
-	return false;
-}
-
-bool AAwmSpectatorPawn::OnSwipeReleased_Implementation(const FVector2D& SwipePosition, float DownTime)
-{
-	return false;
-}
-
-void AAwmSpectatorPawn::OnSwipeTwoPointsStarted_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
-{
-
-}
-
-void AAwmSpectatorPawn::OnSwipeTwoPointsUpdate_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
-{
-
-}
-
-void AAwmSpectatorPawn::OnSwipeTwoPointsReleased_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
-{
-
-}
-
-void AAwmSpectatorPawn::OnPinchStarted_Implementation(const FVector2D& AnchorPosition1, const FVector2D& AnchorPosition2, float DownTime)
-{
+	check(InputComponent);
 	
+	InputComponent->BindAxis("MoveForward", this, &ADefaultPawn::MoveForward);
+	InputComponent->BindAxis("MoveRight", this, &ADefaultPawn::MoveRight);
+	InputComponent->BindAxis("MoveUp", this, &ADefaultPawn::MoveUp_World);
+	InputComponent->BindAxis("Turn", this, &ADefaultPawn::AddControllerYawInput);
+	InputComponent->BindAxis("TurnRate", this, &ADefaultPawn::TurnAtRate);
+	InputComponent->BindAxis("LookUp", this, &ADefaultPawn::AddControllerPitchInput);
+	InputComponent->BindAxis("LookUpRate", this, &AAwmSpectatorPawn::LookUpAtRate);
 }
 
-void AAwmSpectatorPawn::OnPinchUpdate_Implementation(UAwmInput* InputHandler, const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
+void AAwmSpectatorPawn::LookUpAtRate(float Val)
 {
-
-}
-
-void AAwmSpectatorPawn::OnPinchReleased_Implementation(UAwmInput* InputHandler, const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
-{
-
+	// calculate delta for this frame from the rate information
+	AddControllerPitchInput(Val * BaseLookUpRate * GetWorld()->GetDeltaSeconds() * CustomTimeDilation);
 }

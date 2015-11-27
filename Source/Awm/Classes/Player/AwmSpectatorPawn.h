@@ -11,42 +11,15 @@ class AAwmSpectatorPawn : public ASpectatorPawn
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Player Input (from Player Controller)
+	// Player Input
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	bool OnTapPressed(const FVector2D& ScreenPosition, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnHoldPressed(const FVector2D& ScreenPosition, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnHoldReleased(const FVector2D& ScreenPosition, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	bool OnSwipeStarted(const FVector2D& SwipePosition, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	bool OnSwipeUpdate(const FVector2D& SwipePosition, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	bool OnSwipeReleased(const FVector2D& SwipePosition, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnSwipeTwoPointsStarted(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnSwipeTwoPointsUpdate(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnSwipeTwoPointsReleased(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnPinchStarted(const FVector2D& AnchorPosition1, const FVector2D& AnchorPosition2, float DownTime);
+	// Begin ASpectatorPawn overrides
+	/** Overridden to implement Key Bindings the match the player controls */
+	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
+	// End Pawn overrides
 	
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnPinchUpdate(class UAwmInput* InputHandler, const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
+	// Frame rate linked look
+	void LookUpAtRate(float Val);
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Spectator|Touch")
-	void OnPinchReleased(class UAwmInput* InputHandler, const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
 
 };
