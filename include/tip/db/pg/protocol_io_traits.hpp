@@ -746,7 +746,7 @@ struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > :
 	operator() (std::istream& in)
 	{
 		element_type tmp;
-		if (query_parse(tmp)(in)) {
+		if (protocol_reader(tmp)(in)) {
 			base_type::value = value_type(tmp);
 		} else {
 			base_type::value = value_type();
@@ -758,7 +758,7 @@ struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > :
 	operator() (buffer_type& buffer)
 	{
 		element_type tmp;
-		if (query_parse(tmp)(buffer)) {
+		if (protocol_reader(tmp)(buffer)) {
 			base_type::value = value_type(tmp);
 		} else {
 			base_type::value = value_type();
