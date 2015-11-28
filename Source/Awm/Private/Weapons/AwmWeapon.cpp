@@ -1,11 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "Weapons/AwmWeapon.h"
-#include "Particles/ParticleSystemComponent.h"
-#include "Bots/AwmAIController.h"
-#include "Online/AwmPlayerState.h"
-#include "UI/AwmHUD.h"
 
 AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -156,7 +151,7 @@ void AAwmWeapon::OnUnEquip()
 	DetermineWeaponState();
 }
 
-void AAwmWeapon::OnEnterInventory(AAwmCharacter* NewOwner)
+void AAwmWeapon::OnEnterInventory(AAwmVehicle* NewOwner)
 {
 	SetOwningPawn(NewOwner);
 }
@@ -360,7 +355,8 @@ void AAwmWeapon::GiveAmmo(int AddAmount)
 	AAwmAIController* BotAI = MyPawn ? Cast<AAwmAIController>(MyPawn->GetController()) : NULL;
 	if (BotAI)
 	{
-		BotAI->CheckAmmo(this);
+		// @optional
+		//BotAI->CheckAmmo(this);
 	}
 	
 	// start reload if clip was empty
@@ -388,7 +384,8 @@ void AAwmWeapon::UseAmmo()
 	AAwmPlayerController* PlayerController = MyPawn ? Cast<AAwmPlayerController>(MyPawn->GetController()) : NULL;
 	if (BotAI)
 	{
-		BotAI->CheckAmmo(this);
+		// @optional
+		//BotAI->CheckAmmo(this);
 	}
 	else if(PlayerController)
 	{
@@ -438,7 +435,8 @@ void AAwmWeapon::HandleFiring()
 			AAwmHUD* MyHUD = MyPC ? Cast<AAwmHUD>(MyPC->GetHUD()) : NULL;
 			if (MyHUD)
 			{
-				MyHUD->NotifyOutOfAmmo();
+				// @todo
+				//MyHUD->NotifyOutOfAmmo();
 			}
 		}
 		
@@ -615,7 +613,8 @@ float AAwmWeapon::PlayWeaponAnimation(const FWeaponAnim& Animation)
 		UAnimMontage* UseAnim = MyPawn->IsFirstPerson() ? Animation.Pawn1P : Animation.Pawn3P;
 		if (UseAnim)
 		{
-			Duration = MyPawn->PlayAnimMontage(UseAnim);
+			// @todo
+			//Duration = MyPawn->PlayAnimMontage(UseAnim);
 		}
 	}
 
@@ -629,7 +628,8 @@ void AAwmWeapon::StopWeaponAnimation(const FWeaponAnim& Animation)
 		UAnimMontage* UseAnim = MyPawn->IsFirstPerson() ? Animation.Pawn1P : Animation.Pawn3P;
 		if (UseAnim)
 		{
-			MyPawn->StopAnimMontage(UseAnim);
+			// @todo
+			//MyPawn->StopAnimMontage(UseAnim);
 		}
 	}
 }
@@ -733,7 +733,7 @@ FHitResult AAwmWeapon::WeaponTrace(const FVector& StartTrace, const FVector& End
 	return Hit;
 }
 
-void AAwmWeapon::SetOwningPawn(AAwmCharacter* NewOwner)
+void AAwmWeapon::SetOwningPawn(AAwmVehicle* NewOwner)
 {
 	if (MyPawn != NewOwner)
 	{
@@ -900,7 +900,7 @@ USkeletalMeshComponent* AAwmWeapon::GetWeaponMesh() const
 	return (MyPawn != NULL && MyPawn->IsFirstPerson()) ? Mesh1P : Mesh3P;
 }
 
-class AAwmCharacter* AAwmWeapon::GetPawnOwner() const
+class AAwmVehicle* AAwmWeapon::GetPawnOwner() const
 {
 	return MyPawn;
 }
@@ -943,13 +943,15 @@ int32 AAwmWeapon::GetMaxAmmo() const
 bool AAwmWeapon::HasInfiniteAmmo() const
 {
 	const AAwmPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AAwmPlayerController>(MyPawn->Controller) : NULL;
-	return WeaponConfig.bInfiniteAmmo || (MyPC && MyPC->HasInfiniteAmmo());
+	// @todo
+	return WeaponConfig.bInfiniteAmmo;// || (MyPC && MyPC->HasInfiniteAmmo());
 }
 
 bool AAwmWeapon::HasInfiniteClip() const
 {
 	const AAwmPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AAwmPlayerController>(MyPawn->Controller) : NULL;
-	return WeaponConfig.bInfiniteClip || (MyPC && MyPC->HasInfiniteClip());
+	// @todo
+	return WeaponConfig.bInfiniteClip;// || (MyPC && MyPC->HasInfiniteClip());
 }
 
 float AAwmWeapon::GetEquipStartedTime() const

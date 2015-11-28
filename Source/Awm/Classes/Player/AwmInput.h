@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "AwmTypes.h"
+#include "Game/AwmTypes.h"
 #include "AwmInput.generated.h"
 
 DECLARE_DELEGATE_TwoParams(FOnePointActionSignature, const FVector2D&, float);

@@ -5,42 +5,6 @@
 #include "AwmWeapon.h"
 #include "AwmWeapon_Projectile.generated.h"
 
-USTRUCT()
-struct FProjectileWeaponData
-{
-	GENERATED_USTRUCT_BODY()
-
-	/** projectile class */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
-	TSubclassOf<class AAwmProjectile> ProjectileClass;
-
-	/** life time */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
-	float ProjectileLife;
-
-	/** damage at impact point */
-	UPROPERTY(EditDefaultsOnly, Category=WeaponStat)
-	int32 ExplosionDamage;
-
-	/** radius of damage */
-	UPROPERTY(EditDefaultsOnly, Category=WeaponStat)
-	float ExplosionRadius;
-
-	/** type of damage */
-	UPROPERTY(EditDefaultsOnly, Category=WeaponStat)
-	TSubclassOf<UDamageType> DamageType;
-
-	/** defaults */
-	FProjectileWeaponData()
-	{
-		ProjectileClass = NULL;
-		ProjectileLife = 10.0f;
-		ExplosionDamage = 100;
-		ExplosionRadius = 300.0f;
-		DamageType = UDamageType::StaticClass();
-	}
-};
-
 // A weapon that fires a visible projectile
 UCLASS(Abstract)
 class AAwmWeapon_Projectile : public AAwmWeapon

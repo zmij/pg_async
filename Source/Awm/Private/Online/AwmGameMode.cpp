@@ -37,22 +37,17 @@ void AAwmGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 	Super::InitGame(MapName, Options, ErrorMessage);
 
 	const UGameInstance* GameInstance = GetGameInstance();
-	if (GameInstance && Cast<UAwmGameInstance>(GameInstance)->GetIsOnline())
+	// @todo
+	/*if (GameInstance && Cast<UAwmGameInstance>(GameInstance)->GetIsOnline())
 	{
 		bPauseable = false;
-	}
+	}*/
 }
 
 void AAwmGameMode::SetAllowBots(bool bInAllowBots, int32 InMaxBots)
 {
 	bAllowBots = bInAllowBots;
 	MaxBots = InMaxBots;
-}
-
-/** Returns game session class to use */
-TSubclassOf<AGameSession> AAwmGameMode::GetGameSessionClass() const
-{
-	return AAwmGameSession::StaticClass();
 }
 
 void AAwmGameMode::PreInitializeComponents()
@@ -100,7 +95,8 @@ void AAwmGameMode::DefaultTimer()
 						AAwmPlayerState* PlayerState = Cast<AAwmPlayerState>((*It)->PlayerState);
 						const bool bIsWinner = IsWinner(PlayerState);
 					
-						PlayerController->ClientSendRoundEndEvent(bIsWinner, MyGameState->ElapsedTime);
+						// @todo
+						// PlayerController->ClientSendRoundEndEvent(bIsWinner, MyGameState->ElapsedTime);
 					}
 				}
 			}
@@ -154,7 +150,8 @@ void AAwmGameMode::HandleMatchHasStarted()
 		AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
 		if (PC)
 		{
-			PC->ClientGameStarted();
+			// @todo
+			//PC->ClientGameStarted();
 		}
 	}
 }
@@ -193,12 +190,6 @@ void AAwmGameMode::RequestFinishAndExitToMainMenu()
 {
 	FinishMatch();
 
-	UAwmGameInstance* const GameInstance = Cast<UAwmGameInstance>(GetGameInstance());
-	if (GameInstance)
-	{
-		GameInstance->RemoveSplitScreenPlayers();
-	}
-
 	AAwmPlayerController* LocalPrimaryController = nullptr;
 	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
@@ -223,7 +214,8 @@ void AAwmGameMode::RequestFinishAndExitToMainMenu()
 	// GameInstance should be calling this from an EndState.  So call the PC function that performs cleanup, not the one that sets GI state.
 	if (LocalPrimaryController != NULL)
 	{
-		LocalPrimaryController->HandleReturnToMainMenu();
+		// @todo
+		// LocalPrimaryController->HandleReturnToMainMenu();
 	}
 }
 
@@ -261,14 +253,16 @@ void AAwmGameMode::PostLogin(APlayerController* NewPlayer)
 	AAwmPlayerController* NewPC = Cast<AAwmPlayerController>(NewPlayer);
 	if (NewPC && NewPC->GetPawn() == NULL)
 	{
-		NewPC->ClientSetSpectatorCamera(NewPC->GetSpawnLocation(), NewPC->GetControlRotation());
+		// @todo
+		//NewPC->ClientSetSpectatorCamera(NewPC->GetSpawnLocation(), NewPC->GetControlRotation());
 	}
 
 	// notify new player if match is already in progress
 	if (NewPC && IsMatchInProgress())
 	{
-		NewPC->ClientGameStarted();
-		NewPC->ClientStartOnlineGame();
+		// @todo
+		//NewPC->ClientGameStarted();
+		//NewPC->ClientStartOnlineGame();
 	}
 }
 
@@ -294,7 +288,7 @@ float AAwmGameMode::ModifyDamage(float Damage, AActor* DamagedActor, struct FDam
 {
 	float ActualDamage = Damage;
 
-	AAwmCharacter* DamagedPawn = Cast<AAwmCharacter>(DamagedActor);
+	AAwmVehicle* DamagedPawn = Cast<AAwmVehicle>(DamagedActor);
 	if (DamagedPawn && EventInstigator)
 	{
 		AAwmPlayerState* DamagedPlayerState = Cast<AAwmPlayerState>(DamagedPawn->PlayerState);
@@ -508,24 +502,3 @@ void AAwmGameMode::InitBot(AAwmAIController* AIController, int32 BotNum)
 		}		
 	}
 }
-
-void AAwmGameMode::RestartGame()
-{
-	// Hide the scoreboard too !
-	for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
-	{
-		AAwmPlayerController* PlayerController = Cast<AAwmPlayerController>(*It);
-		if (PlayerController != nullptr)
-		{
-			AAwmHUD* AwmHUD = Cast<AAwmHUD>(PlayerController->GetHUD());
-			if (AwmHUD != nullptr)
-			{
-				// Passing true to bFocus here ensures that focus is returned to the game viewport.
-				AwmHUD->ShowScoreboard(false, true);
-			}
-		}
-	}
-
-	Super::RestartGame();
-}
-

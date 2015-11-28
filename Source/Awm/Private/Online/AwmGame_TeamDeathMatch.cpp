@@ -1,10 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "AwmTeamStart.h"
-#include "Online/Awm_TeamDeathMatch.h"
-#include "Online/AwmPlayerState.h"
-#include "Bots/AwmAIController.h"
 
 AAwmGame_TeamDeathMatch::AAwmGame_TeamDeathMatch(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -26,7 +22,7 @@ void AAwmGame_TeamDeathMatch::InitGameState()
 {
 	Super::InitGameState();
 
-	AAwmState* const MyGameState = Cast<AAwmState>(GameState);
+	AAwmGameState* const MyGameState = Cast<AAwmGameState>(GameState);
 	if (MyGameState)
 	{
 		MyGameState->NumTeams = NumTeams;
@@ -80,7 +76,7 @@ int32 AAwmGame_TeamDeathMatch::ChooseTeam(AAwmPlayerState* ForPlayerState) const
 
 void AAwmGame_TeamDeathMatch::DetermineMatchWinner()
 {
-	AAwmState const* const MyGameState = Cast<AAwmState>(GameState);
+	AAwmGameState const* const MyGameState = Cast<AAwmGameState>(GameState);
 	int32 BestScore = MAX_uint32;
 	int32 BestTeam = -1;
 	int32 NumBestTeams = 1;

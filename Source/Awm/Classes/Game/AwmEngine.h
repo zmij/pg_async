@@ -5,7 +5,7 @@
 #include "AwmEngine.generated.h"
 
 UCLASS()
-class Awm_API UAwmEngine : public UGameEngine
+class AWM_API UAwmEngine : public UGameEngine
 {
 	GENERATED_UCLASS_BODY()
 

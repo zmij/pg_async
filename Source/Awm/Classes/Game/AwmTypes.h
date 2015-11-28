@@ -118,7 +118,7 @@ struct FProjectileWeaponData
 		ProjectileClass = NULL;
 		ProjectileLife = 10.0f;
 		ExplosionDamage = 100;
-		ExplosionRadius = 0.0f;
+		ExplosionRadius = 300.0f;
 		DamageType = UDamageType::StaticClass();
 	}
 };
@@ -153,9 +153,8 @@ struct FTakeHitInfo
 	UClass* DamageTypeClass;
 
 	/** Who hit us */
-	// @todo change type
 	UPROPERTY()
-	TWeakObjectPtr<class AActor> PawnInstigator;
+	TWeakObjectPtr<class AAwmVehicle> PawnInstigator;
 
 	/** Who actually caused the damage */
 	UPROPERTY()

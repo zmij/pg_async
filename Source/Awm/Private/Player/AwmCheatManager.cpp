@@ -1,9 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "Player/AwmCheatManager.h"
-#include "Online/AwmPlayerState.h"
-#include "Bots/AwmAIController.h"
 
 UAwmCheatManager::UAwmCheatManager(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -30,7 +27,7 @@ void UAwmCheatManager::ToggleMatchTimer()
 {
 	AAwmPlayerController* MyPC = GetOuterAAwmPlayerController();
 
-	/*AAwmState* const MyGameState = Cast<AAwmState>(MyPC->GetWorld()->GameState);
+	/*AAwmGameState* const MyGameState = Cast<AAwmGameState>(MyPC->GetWorld()->GameState);
 	if (MyGameState && MyGameState->Role == ROLE_Authority)
 	{
 		MyGameState->bTimerPaused = !MyGameState->bTimerPaused;
@@ -63,7 +60,8 @@ void UAwmCheatManager::ChangeTeam(int32 NewTeamNumber)
 
 void UAwmCheatManager::Cheat(const FString& Msg)
 {
-	GetOuterAAwmPlayerController()->ServerCheat(Msg.Left(128));
+	// @todo
+	//GetOuterAAwmPlayerController()->ServerCheat(Msg.Left(128));
 }
 
 void UAwmCheatManager::SpawnBot()

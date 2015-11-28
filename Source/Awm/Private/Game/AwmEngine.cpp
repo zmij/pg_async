@@ -1,12 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
-/*=============================================================================
-	AwmEngine.cpp: AwmEngine c++ code.
-=============================================================================*/
-
 #include "Awm.h"
-#include "AwmEngine.h"
-#include "AwmInstance.h"
 
 UAwmEngine::UAwmEngine(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -35,6 +29,8 @@ void UAwmEngine::HandleNetworkFailure(UWorld *World, UNetDriver *NetDriver, ENet
 			//UNetDriver * NetDriver = FindNamedNetDriver(World, NetDriverName);
 			if (NetDriver)
 			{
+				// @todo
+				/**
 				switch (FailureType)
 				{
 					case ENetworkFailure::FailureReceived:
@@ -88,6 +84,7 @@ void UAwmEngine::HandleNetworkFailure(UWorld *World, UNetDriver *NetDriver, ENet
 					default:
 						break;
 				}
+				*/
 			}
 		}
 	}

@@ -79,10 +79,11 @@ void AAwmPlayerState::UpdateTeamColors()
 	AController* OwnerController = Cast<AController>(GetOwner());
 	if (OwnerController != NULL)
 	{
-		AAwmCharacter* AwmCharacter = Cast<AAwmCharacter>(OwnerController->GetCharacter());
-		if (AwmCharacter != NULL)
+		AAwmVehicle* PlayerPawn = Cast<AAwmVehicle>(OwnerController->GetCharacter());
+		if (PlayerPawn != NULL)
 		{
-			AwmCharacter->UpdateTeamColorsAllMIDs();
+			// @todo
+			//PlayerPawn->UpdateTeamColorsAllMIDs();
 		}
 	}
 }
@@ -166,7 +167,8 @@ void AAwmPlayerState::InformAboutKill_Implementation(class AAwmPlayerState* Kill
 				TSharedPtr<const FUniqueNetId> LocalID = LocalPlayer->GetCachedUniqueNetId();
 				if (LocalID.IsValid() && *LocalPlayer->GetCachedUniqueNetId() == *KillerPlayerState->UniqueId)
 				{
-					TestPC->OnKill();
+					// @todo
+					//TestPC->OnKill();
 				}
 			}
 		}
@@ -181,7 +183,8 @@ void AAwmPlayerState::BroadcastDeath_Implementation(class AAwmPlayerState* Kille
 		AAwmPlayerController* TestPC = Cast<AAwmPlayerController>(*It);
 		if (TestPC && TestPC->IsLocalController())
 		{
-			TestPC->OnDeathMessage(KillerPlayerState, this, KillerDamageType);
+			// @todo
+			//TestPC->OnDeathMessage(KillerPlayerState, this, KillerDamageType);
 		}
 	}
 }

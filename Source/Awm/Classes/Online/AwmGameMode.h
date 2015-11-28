@@ -5,6 +5,8 @@
 #include "GameFramework/GameMode.h"
 #include "AwmGameMode.generated.h"
 
+class AAwmPlayerState;
+
 /**
  * 
  */
@@ -58,9 +60,6 @@ class AWM_API AAwmGameMode : public AGameMode
 
 	/** starts new match */
 	virtual void HandleMatchHasStarted() override;
-
-	/** hides the onscreen hud and restarts the map */
-	virtual void RestartGame() override;
 	// End AGameMode interface
 
 
@@ -135,9 +134,6 @@ protected:
 
 	/** check if player should use spawnpoint */
 	virtual bool IsSpawnpointPreferred(APlayerStart* SpawnPoint, AController* Player) const;
-
-	/** Returns game session class to use */
-	virtual TSubclassOf<AGameSession> GetGameSessionClass() const override;	
 
 public:	
 

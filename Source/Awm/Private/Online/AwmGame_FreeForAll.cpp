@@ -1,8 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "Awm_FreeForAll.h"
-#include "AwmPlayerState.h"
 
 AAwmGame_FreeForAll::AAwmGame_FreeForAll(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -11,7 +9,7 @@ AAwmGame_FreeForAll::AAwmGame_FreeForAll(const FObjectInitializer& ObjectInitial
 
 void AAwmGame_FreeForAll::DetermineMatchWinner()
 {
-	AAwmState const* const MyGameState = CastChecked<AAwmState>(GameState);
+	AAwmGameState const* const MyGameState = CastChecked<AAwmGameState>(GameState);
 	float BestScore = MAX_FLT;
 	int32 BestPlayer = -1;
 	int32 NumBestPlayers = 0;

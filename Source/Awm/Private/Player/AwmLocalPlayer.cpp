@@ -1,9 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "Player/AwmLocalPlayer.h"
-#include "OnlineSubsystemUtilsClasses.h"
-#include "AwmInstance.h"
 
 UAwmLocalPlayer::UAwmLocalPlayer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -36,11 +33,12 @@ void UAwmLocalPlayer::LoadPersistentUser()
 		// Use the platform id here to be resilient in the face of controller swapping and similar situations.
 		FPlatformUserId PlatformId = GetControllerId();
 
-		auto Identity = Online::GetIdentityInterface();
+		// @todo
+		/*auto Identity = Online::GetIdentityInterface();
 		if (Identity.IsValid() && GetPreferredUniqueNetId().IsValid())
 		{
 			PlatformId = Identity->GetPlatformUserIdFromUniqueNetId(*GetPreferredUniqueNetId());
-		}
+		}*/
 
 		PersistentUser = UAwmPersistentUser::LoadPersistentUser( GetNickname(), PlatformId );
 	}

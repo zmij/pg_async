@@ -1,5 +1,7 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
+#pragma once
+
 #include "AwmProjectile.generated.h"
 
 UCLASS(Abstract, Blueprintable, HideCategories = (Tick, Rendering, Replication, Input, Actor))

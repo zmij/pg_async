@@ -1,10 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "Player/AwmDemoSpectator.h"
-#include "UI/Menu/AwmDemoPlaybackMenu.h"
-#include "UI/Widgets/SAwmDemoHUD.h"
-#include "Engine/DemoNetDriver.h"
 
 AAwmDemoSpectator::AAwmDemoSpectator(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {

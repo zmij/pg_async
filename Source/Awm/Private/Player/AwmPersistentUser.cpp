@@ -2,7 +2,6 @@
 
 #include "Awm.h"
 #include "Player/AwmPersistentUser.h"
-#include "AwmLocalPlayer.h"
 
 UAwmPersistentUser::UAwmPersistentUser(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

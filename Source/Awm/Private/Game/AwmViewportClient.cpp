@@ -1,8 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "AwmViewportClient.h"
-#include "Player/AwmLocalPlayer.h"
 
 UAwmViewportClient::UAwmViewportClient(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

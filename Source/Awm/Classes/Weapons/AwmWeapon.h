@@ -120,7 +120,7 @@ class AAwmWeapon : public AActor
 	virtual void OnUnEquip();
 
 	/** [server] weapon was added to pawn's inventory */
-	virtual void OnEnterInventory(AAwmCharacter* NewOwner);
+	virtual void OnEnterInventory(AAwmVehicle* NewOwner);
 
 	/** [server] weapon was removed from pawn's inventory */
 	virtual void OnLeaveInventory();
@@ -188,7 +188,7 @@ class AAwmWeapon : public AActor
 
 	/** get pawn owner */
 	UFUNCTION(BlueprintCallable, Category="Game|Weapon")
-	class AAwmCharacter* GetPawnOwner() const;
+	class AAwmVehicle* GetPawnOwner() const;
 
 	/** icon displayed on the HUD when weapon is equipped as primary */
 	UPROPERTY(EditDefaultsOnly, Category=HUD)
@@ -249,7 +249,7 @@ class AAwmWeapon : public AActor
 	bool HasInfiniteClip() const;
 
 	/** set the weapon's owning pawn */
-	void SetOwningPawn(AAwmCharacter* AAwmCharacter);
+	void SetOwningPawn(AAwmVehicle* NewOwner);
 
 	/** gets last time when this weapon was switched to */
 	float GetEquipStartedTime() const;
@@ -261,7 +261,7 @@ protected:
 
 	/** pawn owner */
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_MyPawn)
-	class AAwmCharacter* MyPawn;
+	class AAwmVehicle* MyPawn;
 
 	/** weapon data */
 	UPROPERTY(EditDefaultsOnly, Category=Config)

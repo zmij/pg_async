@@ -1,7 +1,6 @@
 // Copyright 2015 Mail.Ru Group. All Rights Reserved.
 
 #include "Awm.h"
-#include "AwmUserSettings.h"
 
 UAwmUserSettings::UAwmUserSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

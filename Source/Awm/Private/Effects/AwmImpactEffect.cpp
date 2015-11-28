@@ -46,14 +46,14 @@ UParticleSystem* AAwmImpactEffect::GetImpactFX(TEnumAsByte<EPhysicalSurface> Sur
 
 	switch (SurfaceType)
 	{
-		case Awm_SURFACE_Concrete:	ImpactFX = ConcreteFX; break;
-		case Awm_SURFACE_Dirt:		ImpactFX = DirtFX; break;
-		case Awm_SURFACE_Water:		ImpactFX = WaterFX; break;
-		case Awm_SURFACE_Metal:		ImpactFX = MetalFX; break;
-		case Awm_SURFACE_Wood:		ImpactFX = WoodFX; break;
-		case Awm_SURFACE_Grass:		ImpactFX = GrassFX; break;
-		case Awm_SURFACE_Glass:		ImpactFX = GlassFX; break;
-		case Awm_SURFACE_Flesh:		ImpactFX = FleshFX; break;
+		case AWM_SURFACE_Concrete:	ImpactFX = ConcreteFX; break;
+		case AWM_SURFACE_Dirt:		ImpactFX = DirtFX; break;
+		case AWM_SURFACE_Water:		ImpactFX = WaterFX; break;
+		case AWM_SURFACE_Metal:		ImpactFX = MetalFX; break;
+		case AWM_SURFACE_Wood:		ImpactFX = WoodFX; break;
+		case AWM_SURFACE_Grass:		ImpactFX = GrassFX; break;
+		case AWM_SURFACE_Glass:		ImpactFX = GlassFX; break;
+		case AWM_SURFACE_Flesh:		ImpactFX = FleshFX; break;
 		default:						ImpactFX = DefaultFX; break;
 	}
 
@@ -66,14 +66,14 @@ USoundCue* AAwmImpactEffect::GetImpactSound(TEnumAsByte<EPhysicalSurface> Surfac
 
 	switch (SurfaceType)
 	{
-		case Awm_SURFACE_Concrete:	ImpactSound = ConcreteSound; break;
-		case Awm_SURFACE_Dirt:		ImpactSound = DirtSound; break;
-		case Awm_SURFACE_Water:		ImpactSound = WaterSound; break;
-		case Awm_SURFACE_Metal:		ImpactSound = MetalSound; break;
-		case Awm_SURFACE_Wood:		ImpactSound = WoodSound; break;
-		case Awm_SURFACE_Grass:		ImpactSound = GrassSound; break;
-		case Awm_SURFACE_Glass:		ImpactSound = GlassSound; break;
-		case Awm_SURFACE_Flesh:		ImpactSound = FleshSound; break;
+		case AWM_SURFACE_Concrete:	ImpactSound = ConcreteSound; break;
+		case AWM_SURFACE_Dirt:		ImpactSound = DirtSound; break;
+		case AWM_SURFACE_Water:		ImpactSound = WaterSound; break;
+		case AWM_SURFACE_Metal:		ImpactSound = MetalSound; break;
+		case AWM_SURFACE_Wood:		ImpactSound = WoodSound; break;
+		case AWM_SURFACE_Grass:		ImpactSound = GrassSound; break;
+		case AWM_SURFACE_Glass:		ImpactSound = GlassSound; break;
+		case AWM_SURFACE_Flesh:		ImpactSound = FleshSound; break;
 		default:						ImpactSound = DefaultSound; break;
 	}
 

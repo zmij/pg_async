@@ -34,17 +34,12 @@ void AAwmGameState::RequestFinishAndExitToMainMenu()
 	else
 	{
 		// we are client, handle our own business
-		UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(GetGameInstance());
-		if (GameInstance)
-		{
-			GameInstance->RemoveSplitScreenPlayers();
-		}
-
 		AAwmPlayerController* const PrimaryPC = Cast<AAwmPlayerController>(GetGameInstance()->GetFirstLocalPlayerController());
 		if (PrimaryPC)
 		{
 			check(PrimaryPC->GetNetMode() == ENetMode::NM_Client);
-			PrimaryPC->HandleReturnToMainMenu();
+			// @todo
+			// PrimaryPC->HandleReturnToMainMenu();
 		}
 	}
 
