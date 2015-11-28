@@ -33,15 +33,9 @@ FString AAwmGameMode::GetBotsCountOptionName()
 void AAwmGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	const int32 BotsCountOptionValue = UGameplayStatics::GetIntOption(Options, GetBotsCountOptionName(), 0);
-	SetAllowBots(BotsCountOptionValue > 0 ? true : false, BotsCountOptionValue);	
-	Super::InitGame(MapName, Options, ErrorMessage);
+	SetAllowBots(BotsCountOptionValue > 0 ? true : false, BotsCountOptionValue);
 
-	const UGameInstance* GameInstance = GetGameInstance();
-	// @todo
-	/*if (GameInstance && Cast<UAwmGameInstance>(GameInstance)->GetIsOnline())
-	{
-		bPauseable = false;
-	}*/
+	Super::InitGame(MapName, Options, ErrorMessage);
 }
 
 void AAwmGameMode::SetAllowBots(bool bInAllowBots, int32 InMaxBots)
@@ -84,21 +78,6 @@ void AAwmGameMode::DefaultTimer()
 			else if (GetMatchState() == MatchState::InProgress)
 			{
 				FinishMatch();
-
-				// Send end round events
-				for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
-				{
-					AAwmPlayerController* PlayerController = Cast<AAwmPlayerController>(*It);
-					
-					if (PlayerController && MyGameState)
-					{
-						AAwmPlayerState* PlayerState = Cast<AAwmPlayerState>((*It)->PlayerState);
-						const bool bIsWinner = IsWinner(PlayerState);
-					
-						// @todo
-						// PlayerController->ClientSendRoundEndEvent(bIsWinner, MyGameState->ElapsedTime);
-					}
-				}
 			}
 			else if (GetMatchState() == MatchState::WaitingToStart)
 			{
