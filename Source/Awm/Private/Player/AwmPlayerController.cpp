@@ -9,7 +9,7 @@ AAwmPlayerController::AAwmPlayerController(const class FObjectInitializer& PCIP)
 	bShowMouseCursor = true;
 	bIgnoreInput = false;
 
-	PlayerCameraManagerClass = AAwmPlayerCameraManager::StaticClass();
+	//PlayerCameraManagerClass = AAwmPlayerCameraManager::StaticClass();
 	CheatClass = UAwmCheatManager::StaticClass();
 	bAllowGameActions = true;
 }
