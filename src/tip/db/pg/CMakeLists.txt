@@ -18,6 +18,7 @@ foreach(category ${LOG_CATEGORIES})
 endforeach()
 
 configure_file(log_config.in.hpp log_config.hpp)
+configure_file(version.in.hpp version.hpp)
 
 set(
     pgsql_lib_SRCS
@@ -40,9 +41,11 @@ set(
     detail/connection_pool.cpp
 )
 
-add_library(tip-pgsql SHARED ${pgsql_lib_SRCS})
+set(LIBRARY_NAME ${PROJECT_PREFIX}-psql)
+
+add_library(${LIBRARY_NAME} SHARED ${pgsql_lib_SRCS})
 set_target_properties(
-    tip-pgsql PROPERTIES
+    ${LIBRARY_NAME} PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
@@ -53,10 +56,10 @@ set(pgsql_lib_LIBRARIES
     ${TIP_LOG_LIBRARY}
 )
 
-target_link_libraries(tip-pgsql ${pgsql_lib_LIBRARIES})
+target_link_libraries(${LIBRARY_NAME} ${pgsql_lib_LIBRARIES})
 
 install (
-    TARGETS tip-pgsql
+    TARGETS ${LIBRARY_NAME}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )

@@ -1,12 +1,30 @@
-#	CMakeLists.txt
+#	CMakeLists.txt for pg_async library
 #	
 #	@author zmij
 #	@date Jul 18, 2015
 
 cmake_minimum_required(VERSION 2.6)
 
-project(pg-async)
-set(PROJECT_VERSION 0.1.0)
+if (NOT PROJECT_PREFIX)
+    set(PROJECT_PREFIX tip)
+endif()
+
+if (PROJECT_VERSION)
+    # Built as a subproject
+    set(_pversion ${PROJECT_VERSION})
+else()
+    set(_pversion 0.1.0)
+endif()
+
+set(_pname ${PROJECT_PREFIX}-pg-async)
+
+if (${CMAKE_VERSION} VERSION_GREATER "3.0")
+    cmake_policy(SET CMP0048 NEW)
+    project(${_pname} VERSION ${_pversion})
+else()
+    project(${_pname})
+    set(PROJECT_VERSION ${_pversion})
+endif()
 
 option(USE_TIP_LOG "Use tip::log logger library" OFF)
 option(BUILD_TESTS "Build tests for the library" OFF)
@@ -38,10 +56,10 @@ find_package(Threads REQUIRED)
 add_definitions("-std=c++11")
 
 include_directories(
-    ${CMAKE_BINARY_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_BINARY_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
 )
 
@@ -57,5 +75,3 @@ if (BUILD_TESTS)
 enable_testing()
 add_subdirectory(test)
 endif()
-
-message(STATUS "Cmake module path ${CMAKE_MODULE_PATH}")
