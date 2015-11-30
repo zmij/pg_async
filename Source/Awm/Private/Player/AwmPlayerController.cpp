@@ -8,6 +8,10 @@ AAwmPlayerController::AAwmPlayerController(const class FObjectInitializer& PCIP)
 	PrimaryActorTick.bCanEverTick = true;
 	bShowMouseCursor = true;
 	bIgnoreInput = false;
+
+	PlayerCameraManagerClass = AAwmPlayerCameraManager::StaticClass();
+	CheatClass = UAwmCheatManager::StaticClass();
+	bAllowGameActions = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -41,6 +45,56 @@ void AAwmPlayerController::ProcessPlayerInput(const float DeltaTime, const bool 
 	}
 
 	Super::ProcessPlayerInput(DeltaTime, bGamePaused);
+}
+
+
+
+
+void AAwmPlayerController::UnFreeze()
+{
+	ServerRestartPlayer();
+}
+
+void AAwmPlayerController::FailedToSpawnPawn()
+{
+	if (StateName == NAME_Inactive)
+	{
+		BeginInactiveState();
+	}
+
+	Super::FailedToSpawnPawn();
+}
+
+
+
+
+void AAwmPlayerController::InitInputSystem()
+{
+	Super::InitInputSystem();
+
+	UAwmPersistentUser* PersistentUser = GetPersistentUser();
+	if (PersistentUser)
+	{
+		PersistentUser->TellInputAboutKeybindings();
+	}
+}
+
+
+void AAwmPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
+{
+	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
+
+	if (GetWorld() != NULL)
+	{
+		// @todo Show loading screen
+	}
+}
+
+
+UAwmPersistentUser* AAwmPlayerController::GetPersistentUser() const
+{
+	UAwmLocalPlayer* const AwmLocalPlayer = Cast<UAwmLocalPlayer>(Player);
+	return AwmLocalPlayer ? AwmLocalPlayer->GetPersistentUser() : nullptr;
 }
 
 

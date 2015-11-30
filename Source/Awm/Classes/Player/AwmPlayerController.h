@@ -20,13 +20,29 @@ class AAwmPlayerController : public APlayerController
 	// Initialization
 
 protected:
-	// Begin PlayerController interface
+	// Begin APlayerController interface
 	virtual void SetupInputComponent() override;
 	virtual void ProcessPlayerInput(const float DeltaTime, const bool bGamePaused) override;
-	// End PlayerController interface
+
+	virtual void UnFreeze() override;
+	// End APlayerController interface
 
 
+	//Begin AController interface
+	virtual void FailedToSpawnPawn() override;
+	//End AController interface
 
+
+	// Begin APlayerController interface
+	/** initialize the input system from the player settings */
+	virtual void InitInputSystem() override;
+	// End APlayerController interface
+
+
+	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+
+	/** Returns the persistent user record associated with this player, or null if there is't one. */
+	class UAwmPersistentUser* GetPersistentUser() const;
 
 
 public:
