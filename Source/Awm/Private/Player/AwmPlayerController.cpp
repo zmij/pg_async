@@ -44,6 +44,100 @@ void AAwmPlayerController::ProcessPlayerInput(const float DeltaTime, const bool 
 }
 
 
+
+
+void AAwmPlayerController::ClientGameStarted_Implementation()
+{
+	bAllowGameActions = true;
+
+	// Enable controls mode now the game has started
+	SetIgnoreMoveInput(false);
+
+	// @todo notify HUD (bp)
+}
+
+void AAwmPlayerController::HandleReturnToMainMenu()
+{
+	
+}
+
+void AAwmPlayerController::ClientSetSpectatorCamera_Implementation(FVector CameraLocation, FRotator CameraRotation)
+{
+	SetInitialLocationAndRotation(CameraLocation, CameraRotation);
+	SetViewTarget(this);
+}
+
+bool AAwmPlayerController::ServerCheat_Validate(const FString& Msg)
+{
+	return true;
+}
+
+void AAwmPlayerController::ServerCheat_Implementation(const FString& Msg)
+{
+	if (CheatManager)
+	{
+		ClientMessage(ConsoleCommand(Msg));
+	}
+}
+
+
+
+
+void AAwmPlayerController::SetInfiniteAmmo(bool bEnable)
+{
+	bInfiniteAmmo = bEnable;
+}
+
+void AAwmPlayerController::SetInfiniteClip(bool bEnable)
+{
+	bInfiniteClip = bEnable;
+}
+
+void AAwmPlayerController::SetHealthRegen(bool bEnable)
+{
+	bHealthRegen = bEnable;
+}
+
+void AAwmPlayerController::SetGodMode(bool bEnable)
+{
+	bGodMode = bEnable;
+}
+
+bool AAwmPlayerController::HasInfiniteAmmo() const
+{
+	return bInfiniteAmmo;
+}
+
+bool AAwmPlayerController::HasInfiniteClip() const
+{
+	return bInfiniteClip;
+}
+
+bool AAwmPlayerController::HasHealthRegen() const
+{
+	return bHealthRegen;
+}
+
+bool AAwmPlayerController::HasGodMode() const
+{
+	return bGodMode;
+}
+
+bool AAwmPlayerController::IsGameInputAllowed() const
+{
+	return bAllowGameActions && !bCinematicMode;
+}
+
+
+void AAwmPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AAwmPlayerController, bInfiniteAmmo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AAwmPlayerController, bInfiniteClip, COND_OwnerOnly);
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // Helpers
 

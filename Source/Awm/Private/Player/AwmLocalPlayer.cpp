@@ -33,7 +33,7 @@ void UAwmLocalPlayer::LoadPersistentUser()
 		// Use the platform id here to be resilient in the face of controller swapping and similar situations.
 		FPlatformUserId PlatformId = GetControllerId();
 
-		// @todo
+		// @optional Get net id from session
 		/*auto Identity = Online::GetIdentityInterface();
 		if (Identity.IsValid() && GetPreferredUniqueNetId().IsValid())
 		{

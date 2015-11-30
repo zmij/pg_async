@@ -48,16 +48,16 @@ void AAwmProjectile::PostInitializeComponents()
 	MovementComp->OnProjectileStop.AddDynamic(this, &AAwmProjectile::OnImpact);
 	CollisionComp->MoveIgnoreActors.Add(Instigator);
 
-	// Override config from character
-	// @todo
-	/*AAwmBattleChar* OwnerChar = Cast<AAwmBattleChar>(GetOwner());
-	if (OwnerChar) {
-		OwnerChar->ApplyWeaponConfig(WeaponConfig);
+	// Override config from weapon
+	AAwmWeapon_Projectile* OwnerWeapon = Cast<AAwmWeapon_Projectile>(GetOwner());
+	if (OwnerWeapon)
+	{
+		OwnerWeapon->ApplyWeaponConfig(WeaponConfig);
 	}
 	else {
 		// Apply defaul life span
 		SetLifeSpan(DefaultLifeSpan);
-	}*/
+	}
 	
 	MyController = GetInstigatorController();
 }

@@ -5,11 +5,7 @@
 AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnOb(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
-	DefaultPawnClass = PlayerPawnOb.Class;
-	
-	static ConstructorHelpers::FClassFinder<APawn> BotPawnOb(TEXT("/Game/Blueprints/Pawns/BotPawn"));
-	BotPawnClass = BotPawnOb.Class;
+	DefaultPawnClass = AAwmVehicle::StaticClass();
 
 	HUDClass = AAwmHUD::StaticClass();
 	PlayerControllerClass = AAwmPlayerController::StaticClass();
@@ -20,9 +16,9 @@ AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer)
 
 	MinRespawnDelay = 5.0f;
 
-	bAllowBots = true;	
+	bAllowBots = true;
 	bNeedsBotCreation = true;
-	bUseSeamlessTravel = true;	
+	bUseSeamlessTravel = true;
 }
 
 FString AAwmGameMode::GetBotsCountOptionName()
@@ -52,7 +48,7 @@ void AAwmGameMode::PreInitializeComponents()
 }
 
 void AAwmGameMode::DefaultTimer()
-{
+{                                                                                                                                                                           
 	// don't update timers for Play In Editor mode, it's not real match
 	if (GetWorld()->IsPlayInEditor())
 	{
@@ -129,8 +125,7 @@ void AAwmGameMode::HandleMatchHasStarted()
 		AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
 		if (PC)
 		{
-			// @todo
-			//PC->ClientGameStarted();
+			PC->ClientGameStarted();
 		}
 	}
 }
@@ -193,8 +188,7 @@ void AAwmGameMode::RequestFinishAndExitToMainMenu()
 	// GameInstance should be calling this from an EndState.  So call the PC function that performs cleanup, not the one that sets GI state.
 	if (LocalPrimaryController != NULL)
 	{
-		// @todo
-		// LocalPrimaryController->HandleReturnToMainMenu();
+		LocalPrimaryController->HandleReturnToMainMenu();
 	}
 }
 
@@ -232,15 +226,13 @@ void AAwmGameMode::PostLogin(APlayerController* NewPlayer)
 	AAwmPlayerController* NewPC = Cast<AAwmPlayerController>(NewPlayer);
 	if (NewPC && NewPC->GetPawn() == NULL)
 	{
-		// @todo
-		//NewPC->ClientSetSpectatorCamera(NewPC->GetSpawnLocation(), NewPC->GetControlRotation());
+		NewPC->ClientSetSpectatorCamera(NewPC->GetSpawnLocation(), NewPC->GetControlRotation());
 	}
 
 	// notify new player if match is already in progress
 	if (NewPC && IsMatchInProgress())
 	{
-		// @todo
-		//NewPC->ClientGameStarted();
+		NewPC->ClientGameStarted();
 		//NewPC->ClientStartOnlineGame();
 	}
 }

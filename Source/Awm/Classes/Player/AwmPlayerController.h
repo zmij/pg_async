@@ -26,6 +26,88 @@ protected:
 	// End PlayerController interface
 
 
+
+
+
+public:
+	/** Notify player about started match */
+	UFUNCTION(reliable, client)
+	void ClientGameStarted();
+
+
+	/** Cleans up any resources necessary to return to main menu.  Does not modify GameInstance state. */
+	virtual void HandleReturnToMainMenu();
+
+
+	/** sets spectator location and rotation */
+	UFUNCTION(reliable, client)
+	void ClientSetSpectatorCamera(FVector CameraLocation, FRotator CameraRotation);
+
+	/** Informs that player fragged someone */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Player|Notify")
+	void OnKill();
+
+	/** Notify local client about deaths */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Player|Notify")
+	void OnDeathMessage(class AAwmPlayerState* KillerPlayerState, class AAwmPlayerState* KilledPlayerState, const UDamageType* KillerDamageType);
+
+	/** sends cheat message */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerCheat(const FString& Msg);
+
+
+
+	/** Set infinite ammo cheat */
+	void SetInfiniteAmmo(bool bEnable);
+
+	/** Set infinite clip cheat */
+	void SetInfiniteClip(bool bEnable);
+
+	/** Set health regen cheat */
+	void SetHealthRegen(bool bEnable);
+
+	/** Set god mode cheat */
+	UFUNCTION(exec)
+	void SetGodMode(bool bEnable);
+
+	/** Get infinite ammo cheat */
+	bool HasInfiniteAmmo() const;
+
+	/** Get infinite clip cheat */
+	bool HasInfiniteClip() const;
+
+	/** Get health regen cheat */
+	bool HasHealthRegen() const;
+
+	/** Get gode mode cheat */
+	bool HasGodMode() const;
+
+	/** Check if gameplay related actions (movement, weapon usage, etc) are allowed right now */
+	bool IsGameInputAllowed() const;
+
+
+protected:
+	/** Infinite ammo cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bInfiniteAmmo : 1;
+
+	/** Infinite clip cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bInfiniteClip : 1;
+
+	/** Health regen cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bHealthRegen : 1;
+
+	/** God mode cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bGodMode : 1;
+
+	/** If set, gameplay related actions (movement, weapn usage, etc) are allowed */
+	uint8 bAllowGameActions : 1;
+
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Player Input
 

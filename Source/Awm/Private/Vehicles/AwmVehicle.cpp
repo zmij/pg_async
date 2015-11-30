@@ -228,14 +228,11 @@ void AAwmVehicle::KilledBy(APawn* EventInstigator)
 
 float AAwmVehicle::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
 {
-	// @todo
-	/**
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
 	if (MyPC && MyPC->HasGodMode())
 	{
 		return 0.f;
 	}
-	*/
 
 	if (Health <= 0.f)
 	{
@@ -862,8 +859,7 @@ void AAwmVehicle::LookUpAtRate(float Val)
 void AAwmVehicle::OnStartFire()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (IsRunning())
 		{
@@ -881,8 +877,7 @@ void AAwmVehicle::OnStopFire()
 void AAwmVehicle::OnStartTargeting()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (IsRunning())
 		{
@@ -900,8 +895,7 @@ void AAwmVehicle::OnStopTargeting()
 void AAwmVehicle::OnNextWeapon()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (Inventory.Num() >= 2 && (CurrentWeapon == NULL || CurrentWeapon->GetCurrentState() != EWeaponState::Equipping))
 		{
@@ -915,8 +909,7 @@ void AAwmVehicle::OnNextWeapon()
 void AAwmVehicle::OnPrevWeapon()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (Inventory.Num() >= 2 && (CurrentWeapon == NULL || CurrentWeapon->GetCurrentState() != EWeaponState::Equipping))
 		{
@@ -930,8 +923,7 @@ void AAwmVehicle::OnPrevWeapon()
 void AAwmVehicle::OnReload()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (CurrentWeapon)
 		{
@@ -943,8 +935,7 @@ void AAwmVehicle::OnReload()
 void AAwmVehicle::OnStartRunning()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (IsTargeting())
 		{
@@ -958,8 +949,7 @@ void AAwmVehicle::OnStartRunning()
 void AAwmVehicle::OnStartRunningToggle()
 {
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	if (MyPC /*&& MyPC->IsGameInputAllowed()*/)
+	if (MyPC && MyPC->IsGameInputAllowed())
 	{
 		if (IsTargeting())
 		{
@@ -995,9 +985,8 @@ void AAwmVehicle::Tick(float DeltaSeconds)
 	{
 		SetRunning(false, false);
 	}
+
 	AAwmPlayerController* MyPC = Cast<AAwmPlayerController>(Controller);
-	// @todo
-	/**
 	if (MyPC && MyPC->HasHealthRegen())
 	{
 		if (this->Health < this->GetMaxHealth())
@@ -1008,7 +997,7 @@ void AAwmVehicle::Tick(float DeltaSeconds)
 				Health = this->GetMaxHealth();
 			}
 		}
-	}*/
+	}
 
 	if (LowHealthSound && GEngine->UseSound())
 	{
@@ -1040,6 +1029,7 @@ void AAwmVehicle::OnStopJump()
 {
 	// @todo
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Replication

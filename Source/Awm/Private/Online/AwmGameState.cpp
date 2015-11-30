@@ -38,8 +38,7 @@ void AAwmGameState::RequestFinishAndExitToMainMenu()
 		if (PrimaryPC)
 		{
 			check(PrimaryPC->GetNetMode() == ENetMode::NM_Client);
-			// @todo
-			// PrimaryPC->HandleReturnToMainMenu();
+			PrimaryPC->HandleReturnToMainMenu();
 		}
 	}
 
