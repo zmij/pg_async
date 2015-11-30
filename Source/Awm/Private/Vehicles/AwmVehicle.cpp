@@ -807,6 +807,8 @@ void AAwmVehicle::SetupPlayerInputComponent(class UInputComponent* InputComponen
 
 void AAwmVehicle::MoveForward(float Val)
 {
+	GetVehicleMovementComponent()->SetThrottleInput(Val);
+
 	if (Controller && Val != 0.f)
 	{
 		// Limit pitch when walking or falling
@@ -820,6 +822,8 @@ void AAwmVehicle::MoveForward(float Val)
 
 void AAwmVehicle::MoveRight(float Val)
 {
+	GetVehicleMovementComponent()->SetSteeringInput(Val);
+
 	if (Val != 0.f)
 	{
 		const FQuat Rotation = GetActorQuat();
