@@ -21,39 +21,29 @@ class AAwmPlayerController : public APlayerController
 
 protected:
 	// Begin APlayerController interface
+	virtual void InitInputSystem() override;
 	virtual void SetupInputComponent() override;
 	virtual void ProcessPlayerInput(const float DeltaTime, const bool bGamePaused) override;
 
+	/** Show loading screen */
+	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+
+	/** Restart player */
 	virtual void UnFreeze() override;
 	// End APlayerController interface
-
 
 	//Begin AController interface
 	virtual void FailedToSpawnPawn() override;
 	//End AController interface
 
 
-	// Begin APlayerController interface
-	/** initialize the input system from the player settings */
-	virtual void InitInputSystem() override;
-	// End APlayerController interface
-
-
-	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
-
-	/** Returns the persistent user record associated with this player, or null if there is't one. */
-	class UAwmPersistentUser* GetPersistentUser() const;
-
+	//////////////////////////////////////////////////////////////////////////
+	// Game Control
 
 public:
 	/** Notify player about started match */
 	UFUNCTION(reliable, client)
 	void ClientGameStarted();
-
-
-	/** Cleans up any resources necessary to return to main menu.  Does not modify GameInstance state. */
-	virtual void HandleReturnToMainMenu();
-
 
 	/** sets spectator location and rotation */
 	UFUNCTION(reliable, client)
@@ -67,65 +57,32 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Player|Notify")
 	void OnDeathMessage(class AAwmPlayerState* KillerPlayerState, class AAwmPlayerState* KilledPlayerState, const UDamageType* KillerDamageType);
 
-	/** sends cheat message */
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerCheat(const FString& Msg);
-
-
-
-	/** Set infinite ammo cheat */
-	void SetInfiniteAmmo(bool bEnable);
-
-	/** Set infinite clip cheat */
-	void SetInfiniteClip(bool bEnable);
-
-	/** Set health regen cheat */
-	void SetHealthRegen(bool bEnable);
-
-	/** Set god mode cheat */
-	UFUNCTION(exec)
-	void SetGodMode(bool bEnable);
-
-	/** Get infinite ammo cheat */
-	bool HasInfiniteAmmo() const;
-
-	/** Get infinite clip cheat */
-	bool HasInfiniteClip() const;
-
-	/** Get health regen cheat */
-	bool HasHealthRegen() const;
-
-	/** Get gode mode cheat */
-	bool HasGodMode() const;
-
-	/** Check if gameplay related actions (movement, weapon usage, etc) are allowed right now */
-	bool IsGameInputAllowed() const;
-
-
-protected:
-	/** Infinite ammo cheat */
-	UPROPERTY(Transient, Replicated)
-	uint8 bInfiniteAmmo : 1;
-
-	/** Infinite clip cheat */
-	UPROPERTY(Transient, Replicated)
-	uint8 bInfiniteClip : 1;
-
-	/** Health regen cheat */
-	UPROPERTY(Transient, Replicated)
-	uint8 bHealthRegen : 1;
-
-	/** God mode cheat */
-	UPROPERTY(Transient, Replicated)
-	uint8 bGodMode : 1;
-
-	/** If set, gameplay related actions (movement, weapn usage, etc) are allowed */
-	uint8 bAllowGameActions : 1;
-
+	/** Cleans up any resources necessary to return to main menu. Does not modify GameInstance state. */
+	virtual void HandleReturnToMainMenu();
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Player Input
+
+public:
+	/** Helper function to toggle input detection */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Player")
+	void SetIgnoreInput(bool bIgnore);
+
+protected:
+	/** If set, input and camera updates will be ignored */
+	uint8 bIgnoreInput : 1;
+
+	/** If set, gameplay related actions (movement, weapn usage, etc) are allowed */
+	uint8 bAllowGameActions : 1;
+
+	/** Custom input handler */
+	UPROPERTY()
+	class UAwmInput* InputHandler;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Touch Input
 
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Player|Touch")
@@ -164,22 +121,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Player|Touch")
 	void OnPinchReleased(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
 
-protected:
-	/** If set, input and camera updates will be ignored */
-	uint8 bIgnoreInput : 1;
-
-	/** Custom input handler */
-	UPROPERTY()
-	class UAwmInput* InputHandler;
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helpers
 
 public:
-	/** Helper function to toggle input detection */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Player")
-	void SetIgnoreInput(bool bIgnore);
+	/** Returns the persistent user record associated with this player, or null if there is't one. */
+	class UAwmPersistentUser* GetPersistentUser() const;
 
 private:
 	/** Helper to return cast version of Spectator pawn */
@@ -191,6 +139,60 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Awm|Player", meta = (bTraceComplex = true))
 	bool GetHitResultAtScreenPositionForObjects(const FVector2D ScreenPosition, const TArray<TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, FHitResult& HitResult) const;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Cheats
+
+public:
+	/** sends cheat message */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerCheat(const FString& Msg);
+
+	/** Set infinite ammo cheat */
+	void SetInfiniteAmmo(bool bEnable);
+
+	/** Set infinite clip cheat */
+	void SetInfiniteClip(bool bEnable);
+
+	/** Set health regen cheat */
+	void SetHealthRegen(bool bEnable);
+
+	/** Set god mode cheat */
+	UFUNCTION(exec)
+	void SetGodMode(bool bEnable);
+
+	/** Get infinite ammo cheat */
+	bool HasInfiniteAmmo() const;
+
+	/** Get infinite clip cheat */
+	bool HasInfiniteClip() const;
+
+	/** Get health regen cheat */
+	bool HasHealthRegen() const;
+
+	/** Get gode mode cheat */
+	bool HasGodMode() const;
+
+	/** Check if gameplay related actions (movement, weapon usage, etc) are allowed right now */
+	bool IsGameInputAllowed() const;
+
+protected:
+	/** Infinite ammo cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bInfiniteAmmo : 1;
+
+	/** Infinite clip cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bInfiniteClip : 1;
+
+	/** Health regen cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bHealthRegen : 1;
+
+	/** God mode cheat */
+	UPROPERTY(Transient, Replicated)
+	uint8 bGodMode : 1;
 
 
 };

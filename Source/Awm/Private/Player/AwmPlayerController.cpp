@@ -14,8 +14,20 @@ AAwmPlayerController::AAwmPlayerController(const class FObjectInitializer& PCIP)
 	bAllowGameActions = true;
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 // Initialization
+
+void AAwmPlayerController::InitInputSystem()
+{
+	Super::InitInputSystem();
+
+	UAwmPersistentUser* PersistentUser = GetPersistentUser();
+	if (PersistentUser)
+	{
+		PersistentUser->TellInputAboutKeybindings();
+	}
+}
 
 void AAwmPlayerController::SetupInputComponent()
 {
@@ -47,8 +59,15 @@ void AAwmPlayerController::ProcessPlayerInput(const float DeltaTime, const bool 
 	Super::ProcessPlayerInput(DeltaTime, bGamePaused);
 }
 
+void AAwmPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
+{
+	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 
-
+	if (GetWorld() != NULL)
+	{
+		// @todo Show loading screen
+	}
+}
 
 void AAwmPlayerController::UnFreeze()
 {
@@ -66,39 +85,8 @@ void AAwmPlayerController::FailedToSpawnPawn()
 }
 
 
-
-
-void AAwmPlayerController::InitInputSystem()
-{
-	Super::InitInputSystem();
-
-	UAwmPersistentUser* PersistentUser = GetPersistentUser();
-	if (PersistentUser)
-	{
-		PersistentUser->TellInputAboutKeybindings();
-	}
-}
-
-
-void AAwmPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
-{
-	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
-
-	if (GetWorld() != NULL)
-	{
-		// @todo Show loading screen
-	}
-}
-
-
-UAwmPersistentUser* AAwmPlayerController::GetPersistentUser() const
-{
-	UAwmLocalPlayer* const AwmLocalPlayer = Cast<UAwmLocalPlayer>(Player);
-	return AwmLocalPlayer ? AwmLocalPlayer->GetPersistentUser() : nullptr;
-}
-
-
-
+//////////////////////////////////////////////////////////////////////////
+// Game Control
 
 void AAwmPlayerController::ClientGameStarted_Implementation()
 {
@@ -110,16 +98,55 @@ void AAwmPlayerController::ClientGameStarted_Implementation()
 	// @todo notify HUD (bp)
 }
 
-void AAwmPlayerController::HandleReturnToMainMenu()
-{
-	
-}
-
 void AAwmPlayerController::ClientSetSpectatorCamera_Implementation(FVector CameraLocation, FRotator CameraRotation)
 {
 	SetInitialLocationAndRotation(CameraLocation, CameraRotation);
 	SetViewTarget(this);
 }
+
+void AAwmPlayerController::HandleReturnToMainMenu()
+{
+	// @todo Go to main menu
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Player Input
+
+void AAwmPlayerController::SetIgnoreInput(bool bIgnore)
+{
+	bIgnoreInput = bIgnore;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Helpers
+
+UAwmPersistentUser* AAwmPlayerController::GetPersistentUser() const
+{
+	UAwmLocalPlayer* const AwmLocalPlayer = Cast<UAwmLocalPlayer>(Player);
+	return AwmLocalPlayer ? AwmLocalPlayer->GetPersistentUser() : nullptr;
+}
+
+AAwmSpectatorPawn* AAwmPlayerController::GetAwmSpectatorPawn() const
+{
+	return Cast<AAwmSpectatorPawn>(GetPawnOrSpectator());
+}
+
+bool AAwmPlayerController::GetHitResultAtScreenPositionByChannel(const FVector2D ScreenPosition, ETraceTypeQuery TraceChannel, bool bTraceComplex, FHitResult& HitResult) const
+{
+	return GetHitResultAtScreenPosition(ScreenPosition, TraceChannel, bTraceComplex, HitResult);
+}
+
+bool AAwmPlayerController::GetHitResultAtScreenPositionForObjects(const FVector2D ScreenPosition, 
+	const TArray<TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, FHitResult& HitResult) const
+{
+	return GetHitResultAtScreenPosition(ScreenPosition, ObjectTypes, bTraceComplex, HitResult);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Cheats
 
 bool AAwmPlayerController::ServerCheat_Validate(const FString& Msg)
 {
@@ -133,9 +160,6 @@ void AAwmPlayerController::ServerCheat_Implementation(const FString& Msg)
 		ClientMessage(ConsoleCommand(Msg));
 	}
 }
-
-
-
 
 void AAwmPlayerController::SetInfiniteAmmo(bool bEnable)
 {
@@ -183,35 +207,13 @@ bool AAwmPlayerController::IsGameInputAllowed() const
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+// Replication
+
 void AAwmPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(AAwmPlayerController, bInfiniteAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAwmPlayerController, bInfiniteClip, COND_OwnerOnly);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// Helpers
-
-void AAwmPlayerController::SetIgnoreInput(bool bIgnore)
-{
-	bIgnoreInput = bIgnore;
-}
-
-AAwmSpectatorPawn* AAwmPlayerController::GetAwmSpectatorPawn() const
-{
-	return Cast<AAwmSpectatorPawn>(GetPawnOrSpectator());
-}
-
-bool AAwmPlayerController::GetHitResultAtScreenPositionByChannel(const FVector2D ScreenPosition, ETraceTypeQuery TraceChannel, bool bTraceComplex, FHitResult& HitResult) const
-{
-	return GetHitResultAtScreenPosition(ScreenPosition, TraceChannel, bTraceComplex, HitResult);
-}
-
-bool AAwmPlayerController::GetHitResultAtScreenPositionForObjects(const FVector2D ScreenPosition, 
-	const TArray<TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, FHitResult& HitResult) const
-{
-	return GetHitResultAtScreenPosition(ScreenPosition, ObjectTypes, bTraceComplex, HitResult);
 }
