@@ -178,30 +178,11 @@ void AAwmWeapon::AttachMeshToPawn()
 
 		// For locally controller players we attach both weapons and let the bOnlyOwnerSee, bOwnerNoSee flags deal with visibility.
 		FName AttachPoint = MyPawn->GetWeaponAttachPoint();
-		if( MyPawn->IsLocallyControlled() == true )
-		{
-			USkeletalMeshComponent* PawnMesh1p = MyPawn->GetSpecifcPawnMesh(true);
-			USkeletalMeshComponent* PawnMesh3p = MyPawn->GetSpecifcPawnMesh(false);
-			Mesh1P->SetHiddenInGame( false );
-			Mesh3P->SetHiddenInGame( false );
-			Mesh1P->AttachTo(PawnMesh1p, AttachPoint);
-			Mesh3P->AttachTo(PawnMesh3p, AttachPoint);
-		}
-		else
-		{
-			USkeletalMeshComponent* UseWeaponMesh = GetWeaponMesh();
-			USkeletalMeshComponent* UsePawnMesh = MyPawn->GetPawnMesh();
-			UseWeaponMesh->AttachTo(UsePawnMesh, AttachPoint);	
-			UseWeaponMesh->SetHiddenInGame( false );
-		}
 	}
 }
 
 void AAwmWeapon::DetachMeshFromPawn()
 {
-	Mesh1P->DetachFromParent();
-	Mesh1P->SetHiddenInGame(true);
-
 	Mesh3P->DetachFromParent();
 	Mesh3P->SetHiddenInGame(true);
 }
@@ -610,12 +591,7 @@ float AAwmWeapon::PlayWeaponAnimation(const FWeaponAnim& Animation)
 	float Duration = 0.0f;
 	if (MyPawn)
 	{
-		UAnimMontage* UseAnim = MyPawn->IsFirstPerson() ? Animation.Pawn1P : Animation.Pawn3P;
-		if (UseAnim)
-		{
-			// @todo
-			//Duration = MyPawn->PlayAnimMontage(UseAnim);
-		}
+		// @todo Play weapon animation
 	}
 
 	return Duration;
@@ -625,12 +601,7 @@ void AAwmWeapon::StopWeaponAnimation(const FWeaponAnim& Animation)
 {
 	if (MyPawn)
 	{
-		UAnimMontage* UseAnim = MyPawn->IsFirstPerson() ? Animation.Pawn1P : Animation.Pawn3P;
-		if (UseAnim)
-		{
-			// @todo
-			//MyPawn->StopAnimMontage(UseAnim);
-		}
+		// @todo Stop weapon animation
 	}
 }
 
@@ -897,7 +868,7 @@ void AAwmWeapon::GetLifetimeReplicatedProps( TArray< FLifetimeProperty > & OutLi
 
 USkeletalMeshComponent* AAwmWeapon::GetWeaponMesh() const
 {
-	return (MyPawn != NULL && MyPawn->IsFirstPerson()) ? Mesh1P : Mesh3P;
+	return Mesh3P;
 }
 
 class AAwmVehicle* AAwmWeapon::GetPawnOwner() const

@@ -15,18 +15,4 @@ AAwmPlayerCameraManager::AAwmPlayerCameraManager(const FObjectInitializer& Objec
 void AAwmPlayerCameraManager::UpdateCamera(float DeltaTime)
 {
 	Super::UpdateCamera(DeltaTime);
-
-	AAwmVehicle* MyPawn = PCOwner ? Cast<AAwmVehicle>(PCOwner->GetPawn()) : NULL;
-	if (MyPawn && MyPawn->IsFirstPerson())
-	{
-		const float TargetFOV = MyPawn->IsTargeting() ? TargetingFOV : NormalFOV;
-		DefaultFOV = FMath::FInterpTo(DefaultFOV, TargetFOV, DeltaTime, 20.0f);
-	}
-
-	Super::UpdateCamera(DeltaTime);
-
-	if (MyPawn && MyPawn->IsFirstPerson())
-	{
-		MyPawn->OnCameraUpdate(GetCameraLocation(), GetCameraRotation());
-	}
 }
