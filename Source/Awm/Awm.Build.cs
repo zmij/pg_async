@@ -12,7 +12,9 @@ public class Awm : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "InputCore",
-                "AIModule"
+                "AIModule",
+                "PhysX",
+                "APEX"
            }
        );
 
@@ -21,17 +23,13 @@ public class Awm : ModuleRules
         // Additional plugins
         PrivateDependencyModuleNames.AddRange(new string[] { "VaRestPlugin" });
 
-        // Uncomment if you are using Slate UI
-        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+        // iOS requires special build process
+        if (Target.Platform == UnrealTargetPlatform.IOS)
+        {
+            PublicDependencyModuleNames.Remove("APEX");
+            PublicDependencyModuleNames.Remove("PhysX");
 
-        // Uncomment if you are using online features
-        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
-        // if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
-        // {
-        //		if (UEBuildConfiguration.bCompileSteamOSS == true)
-        //		{
-        //			DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
-        //		}
-        // }
+            SetupModulePhysXAPEXSupport(Target);
+        }
     }
 }
