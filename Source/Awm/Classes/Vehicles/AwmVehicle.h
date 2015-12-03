@@ -152,6 +152,7 @@ public:
 	 *
 	 * @param Val Movment input to apply
 	 */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void MoveForward(float Val);
 
 	/** 
@@ -159,27 +160,35 @@ public:
 	 *
 	 * @param Val Movment input to apply
 	 */	
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void MoveRight(float Val);
 
 	/** player pressed start fire action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnStartFire();
 
 	/** player released start fire action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnStopFire();
 
 	/** player pressed targeting action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnStartTargeting();
 
 	/** player released targeting action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnStopTargeting();
 
 	/** player pressed next weapon action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnNextWeapon();
 
 	/** player pressed prev weapon action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnPrevWeapon();
 
 	/** player pressed reload action */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnReload();
 
 
