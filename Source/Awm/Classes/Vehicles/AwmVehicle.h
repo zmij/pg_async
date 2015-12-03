@@ -163,6 +163,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void MoveRight(float Val);
 
+	/* Frame rate independent turn */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
+	void TurnAtRate(float Val);
+
+	/* Frame rate independent lookup */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
+	void LookUpAtRate(float Val);
+
 	/** player pressed start fire action */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle|Actions")
 	void OnStartFire();
@@ -218,6 +226,12 @@ protected:
 
 	/** current firing state */
 	uint8 bWantsToFire : 1;
+
+	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
+	float BaseTurnRate;
+
+	/** Base lookup rate, in deg/sec. Other scaling may affect final lookup rate. */
+	float BaseLookUpRate;
 
 	/** material instances for setting team color in mesh (3rd person view) */
 	UPROPERTY(Transient)

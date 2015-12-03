@@ -16,7 +16,8 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	bIsTargeting = false;
 	bWantsToFire = false;
 
-	WeaponAttachPoint = TEXT("bTurret");
+	BaseTurnRate = 45.f;
+	BaseLookUpRate = 45.f;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -452,7 +453,9 @@ void AAwmVehicle::SetupPlayerInputComponent(class UInputComponent* InputComponen
 	InputComponent->BindAxis("MoveForward", this, &AAwmVehicle::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AAwmVehicle::MoveRight);
 	InputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	InputComponent->BindAxis("TurnRate", this, &AAwmVehicle::TurnAtRate);
 	InputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	InputComponent->BindAxis("LookUpRate", this, &AAwmVehicle::LookUpAtRate);
 
 	InputComponent->BindAction("Fire", IE_Pressed, this, &AAwmVehicle::OnStartFire);
 	InputComponent->BindAction("Fire", IE_Released, this, &AAwmVehicle::OnStopFire);
@@ -474,6 +477,18 @@ void AAwmVehicle::MoveForward(float Val)
 void AAwmVehicle::MoveRight(float Val)
 {
 	GetVehicleMovementComponent()->SetSteeringInput(Val);
+}
+
+void AAwmVehicle::TurnAtRate(float Val)
+{
+	// calculate delta for this frame from the rate information
+	AddControllerYawInput(Val * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AAwmVehicle::LookUpAtRate(float Val)
+{
+	// calculate delta for this frame from the rate information
+	AddControllerPitchInput(Val * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
 void AAwmVehicle::OnStartFire()
