@@ -713,7 +713,7 @@ void AAwmVehicle::SetCurrentWeapon(AAwmWeapon* NewWeapon, AAwmWeapon* LastWeapon
 	// equip new one
 	if (NewWeapon)
 	{
-		NewWeapon->SetOwningPawn(this);	// Make sure weapon's MyPawn is pointing back to us. During replication, we can't guarantee APawn::CurrentWeapon will rep after AWeapon::MyPawn!
+		NewWeapon->SetVehicleOwner(this);	// Make sure weapon's MyPawn is pointing back to us. During replication, we can't guarantee APawn::CurrentWeapon will rep after AWeapon::MyPawn!
 
 		NewWeapon->OnEquip(LastWeapon);
 	}

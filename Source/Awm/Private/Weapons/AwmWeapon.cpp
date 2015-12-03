@@ -2,28 +2,20 @@
 
 #include "Awm.h"
 
-AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer)
 {
-	Mesh1P = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("WeaponMesh1P"));
-	Mesh1P->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
-	Mesh1P->bReceivesDecals = false;
-	Mesh1P->CastShadow = false;
-	Mesh1P->SetCollisionObjectType(ECC_WorldDynamic);
-	Mesh1P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Mesh1P->SetCollisionResponseToAllChannels(ECR_Ignore);
-	RootComponent = Mesh1P;
-
-	Mesh3P = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("WeaponMesh3P"));
-	Mesh3P->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
-	Mesh3P->bReceivesDecals = false;
-	Mesh3P->CastShadow = true;
-	Mesh3P->SetCollisionObjectType(ECC_WorldDynamic);
-	Mesh3P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Mesh3P->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Mesh3P->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Block);
-	Mesh3P->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	Mesh3P->SetCollisionResponseToChannel(COLLISION_PROJECTILE, ECR_Block);
-	Mesh3P->AttachParent = Mesh1P;
+	Mesh = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("WeaponMesh"));
+	Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
+	Mesh->bReceivesDecals = false;
+	Mesh->CastShadow = true;
+	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Mesh->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Block);
+	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	Mesh->SetCollisionResponseToChannel(COLLISION_PROJECTILE, ECR_Block);
+	RootComponent = Mesh;
 
 	bLoopedMuzzleFX = false;
 	bLoopedFireAnim = false;
@@ -46,6 +38,10 @@ AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer) : Super(Obje
 	bNetUseOwnerRelevancy = true;
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+// Initialization
+
 void AAwmWeapon::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -65,6 +61,7 @@ void AAwmWeapon::Destroyed()
 
 	StopSimulatingWeaponFire();
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Inventory
@@ -121,8 +118,6 @@ void AAwmWeapon::OnEquipFinished()
 			StartReload();
 		}
 	}
-
-	
 }
 
 void AAwmWeapon::OnUnEquip()
@@ -153,14 +148,14 @@ void AAwmWeapon::OnUnEquip()
 
 void AAwmWeapon::OnEnterInventory(AAwmVehicle* NewOwner)
 {
-	SetOwningPawn(NewOwner);
+	SetVehicleOwner(NewOwner);
 }
 
 void AAwmWeapon::OnLeaveInventory()
 {
 	if (Role == ROLE_Authority)
 	{
-		SetOwningPawn(NULL);
+		SetVehicleOwner(NULL);
 	}
 
 	if (IsAttachedToPawn())
@@ -183,8 +178,8 @@ void AAwmWeapon::AttachMeshToPawn()
 
 void AAwmWeapon::DetachMeshFromPawn()
 {
-	Mesh3P->DetachFromParent();
-	Mesh3P->SetHiddenInGame(true);
+	Mesh->DetachFromParent();
+	Mesh->SetHiddenInGame(true);
 }
 
 
@@ -305,6 +300,7 @@ void AAwmWeapon::ClientStartReload_Implementation()
 	StartReload();
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 // Control
 
@@ -325,7 +321,7 @@ bool AAwmWeapon::CanReload() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// Weapon usage
+// Ammo
 
 void AAwmWeapon::GiveAmmo(int AddAmount)
 {
@@ -361,28 +357,46 @@ void AAwmWeapon::UseAmmo()
 		CurrentAmmo--;
 	}
 
-	AAwmAIController* BotAI = MyPawn ? Cast<AAwmAIController>(MyPawn->GetController()) : NULL;	
-	AAwmPlayerController* PlayerController = MyPawn ? Cast<AAwmPlayerController>(MyPawn->GetController()) : NULL;
-	if (BotAI)
-	{
-		// @optional
-		//BotAI->CheckAmmo(this);
-	}
-	else if(PlayerController)
-	{
-		AAwmPlayerState* PlayerState = Cast<AAwmPlayerState>(PlayerController->PlayerState);
-		switch (GetAmmoType())
-		{
-			case EAmmoType::ERocket:
-				PlayerState->AddRocketsFired(1);
-				break;
-			case EAmmoType::EBullet:
-			default:
-				PlayerState->AddBulletsFired(1);
-				break;			
-		}
-	}
+	// @optional Any notifiers to bot or pawn about ammo usage
 }
+
+int32 AAwmWeapon::GetCurrentAmmo() const
+{
+	return CurrentAmmo;
+}
+
+int32 AAwmWeapon::GetCurrentAmmoInClip() const
+{
+	return CurrentAmmoInClip;
+}
+
+int32 AAwmWeapon::GetAmmoPerClip() const
+{
+	return WeaponConfig.AmmoPerClip;
+}
+
+int32 AAwmWeapon::GetMaxAmmo() const
+{
+	return WeaponConfig.MaxAmmo;
+}
+
+bool AAwmWeapon::HasInfiniteAmmo() const
+{
+	const AAwmPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AAwmPlayerController>(MyPawn->Controller) : NULL;
+	// @todo
+	return WeaponConfig.bInfiniteAmmo;// || (MyPC && MyPC->HasInfiniteAmmo());
+}
+
+bool AAwmWeapon::HasInfiniteClip() const
+{
+	const AAwmPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AAwmPlayerController>(MyPawn->Controller) : NULL;
+	// @todo
+	return WeaponConfig.bInfiniteClip;// || (MyPC && MyPC->HasInfiniteClip());
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Weapon usage
 
 void AAwmWeapon::HandleFiring()
 {
@@ -494,53 +508,6 @@ void AAwmWeapon::ReloadWeapon()
 	}
 }
 
-void AAwmWeapon::SetWeaponState(EWeaponState::Type NewState)
-{
-	const EWeaponState::Type PrevState = CurrentState;
-
-	if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing)
-	{
-		OnBurstFinished();
-	}
-
-	CurrentState = NewState;
-
-	if (PrevState != EWeaponState::Firing && NewState == EWeaponState::Firing)
-	{
-		OnBurstStarted();
-	}
-}
-
-void AAwmWeapon::DetermineWeaponState()
-{
-	EWeaponState::Type NewState = EWeaponState::Idle;
-
-	if (bIsEquipped)
-	{
-		if( bPendingReload  )
-		{
-			if( CanReload() == false )
-			{
-				NewState = CurrentState;
-			}
-			else
-			{
-				NewState = EWeaponState::Reloading;
-			}
-		}		
-		else if ( (bPendingReload == false ) && ( bWantsToFire == true ) && ( CanFire() == true ))
-		{
-			NewState = EWeaponState::Firing;
-		}
-	}
-	else if (bPendingEquip)
-	{
-		NewState = EWeaponState::Equipping;
-	}
-
-	SetWeaponState(NewState);
-}
-
 void AAwmWeapon::OnBurstStarted()
 {
 	// start firing, can be delayed to satisfy TimeBetweenShots
@@ -571,6 +538,240 @@ void AAwmWeapon::OnBurstFinished()
 	bRefiring = false;
 }
 
+void AAwmWeapon::SetWeaponState(EWeaponState::Type NewState)
+{
+	const EWeaponState::Type PrevState = CurrentState;
+
+	if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing)
+	{
+		OnBurstFinished();
+	}
+
+	CurrentState = NewState;
+
+	if (PrevState != EWeaponState::Firing && NewState == EWeaponState::Firing)
+	{
+		OnBurstStarted();
+	}
+}
+
+void AAwmWeapon::DetermineWeaponState()
+{
+	EWeaponState::Type NewState = EWeaponState::Idle;
+
+	if (bIsEquipped)
+	{
+		if (bPendingReload)
+		{
+			if (CanReload() == false)
+			{
+				NewState = CurrentState;
+			}
+			else
+			{
+				NewState = EWeaponState::Reloading;
+			}
+		}
+		else if ((bPendingReload == false) && (bWantsToFire == true) && (CanFire() == true))
+		{
+			NewState = EWeaponState::Firing;
+		}
+	}
+	else if (bPendingEquip)
+	{
+		NewState = EWeaponState::Equipping;
+	}
+
+	SetWeaponState(NewState);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Replication & effects
+
+void AAwmWeapon::OnRep_MyPawn()
+{
+	if (MyPawn)
+	{
+		OnEnterInventory(MyPawn);
+	}
+	else
+	{
+		OnLeaveInventory();
+	}
+}
+
+void AAwmWeapon::OnRep_BurstCounter()
+{
+	if (BurstCounter > 0)
+	{
+		SimulateWeaponFire();
+	}
+	else
+	{
+		StopSimulatingWeaponFire();
+	}
+}
+
+void AAwmWeapon::OnRep_Reload()
+{
+	if (bPendingReload)
+	{
+		StartReload(true);
+	}
+	else
+	{
+		StopReload();
+	}
+}
+
+void AAwmWeapon::SimulateWeaponFire()
+{
+	if (Role == ROLE_Authority && CurrentState != EWeaponState::Firing)
+	{
+		return;
+	}
+
+	if (MuzzleFX)
+	{
+		USkeletalMeshComponent* UseWeaponMesh = GetWeaponMesh();
+		if (!bLoopedMuzzleFX || MuzzlePSC == NULL)
+		{
+			// Split screen requires we create 2 effects. One that we see and one that the other player sees.
+			if ((MyPawn != NULL) && (MyPawn->IsLocallyControlled() == true))
+			{
+				AController* PlayerCon = MyPawn->GetController();
+				if (PlayerCon != NULL)
+				{
+					Mesh->GetSocketLocation(MuzzleAttachPoint);
+					MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh, MuzzleAttachPoint);
+				}
+			}
+			else
+			{
+				MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, UseWeaponMesh, MuzzleAttachPoint);
+			}
+		}
+	}
+
+	if (!bLoopedFireAnim || !bPlayingFireAnim)
+	{
+		PlayWeaponAnimation(FireAnim);
+		bPlayingFireAnim = true;
+	}
+
+	if (bLoopedFireSound)
+	{
+		if (FireAC == NULL)
+		{
+			FireAC = PlayWeaponSound(FireLoopSound);
+		}
+	}
+	else
+	{
+		PlayWeaponSound(FireSound);
+	}
+
+	AAwmPlayerController* PC = (MyPawn != NULL) ? Cast<AAwmPlayerController>(MyPawn->Controller) : NULL;
+	if (PC != NULL && PC->IsLocalController())
+	{
+		if (FireCameraShake != NULL)
+		{
+			PC->ClientPlayCameraShake(FireCameraShake, 1);
+		}
+	}
+}
+
+void AAwmWeapon::StopSimulatingWeaponFire()
+{
+	if (bLoopedMuzzleFX)
+	{
+		if (MuzzlePSC != NULL)
+		{
+			MuzzlePSC->DeactivateSystem();
+			MuzzlePSC = NULL;
+		}
+	}
+
+	if (bLoopedFireAnim && bPlayingFireAnim)
+	{
+		StopWeaponAnimation(FireAnim);
+		bPlayingFireAnim = false;
+	}
+
+	if (FireAC)
+	{
+		FireAC->FadeOut(0.1f, 0.0f);
+		FireAC = NULL;
+
+		PlayWeaponSound(FireFinishSound);
+	}
+}
+
+void AAwmWeapon::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AAwmWeapon, MyPawn);
+
+	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmoInClip, COND_OwnerOnly);
+
+	DOREPLIFETIME_CONDITION(AAwmWeapon, BurstCounter, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(AAwmWeapon, bPendingReload, COND_SkipOwner);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Reading data
+
+USkeletalMeshComponent* AAwmWeapon::GetWeaponMesh() const
+{
+	return Mesh;
+}
+
+class AAwmVehicle* AAwmWeapon::GetVehicleOwner() const
+{
+	return MyPawn;
+}
+
+void AAwmWeapon::SetVehicleOwner(AAwmVehicle* NewOwner)
+{
+	if (MyPawn != NewOwner)
+	{
+		Instigator = NewOwner;
+		MyPawn = NewOwner;
+
+		// net owner for RPC calls
+		SetOwner(NewOwner);
+	}
+}
+
+bool AAwmWeapon::IsEquipped() const
+{
+	return bIsEquipped;
+}
+
+bool AAwmWeapon::IsAttachedToPawn() const
+{
+	return bIsEquipped || bPendingEquip;
+}
+
+EWeaponState::Type AAwmWeapon::GetCurrentState() const
+{
+	return CurrentState;
+}
+
+float AAwmWeapon::GetEquipStartedTime() const
+{
+	return EquipStartedTime;
+}
+
+float AAwmWeapon::GetEquipDuration() const
+{
+	return EquipDuration;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Weapon usage helpers
@@ -586,7 +787,7 @@ UAudioComponent* AAwmWeapon::PlayWeaponSound(USoundCue* Sound)
 	return AC;
 }
 
-float AAwmWeapon::PlayWeaponAnimation(const FWeaponAnim& Animation)
+float AAwmWeapon::PlayWeaponAnimation(const UAnimMontage* Animation)
 {
 	float Duration = 0.0f;
 	if (MyPawn)
@@ -597,7 +798,7 @@ float AAwmWeapon::PlayWeaponAnimation(const FWeaponAnim& Animation)
 	return Duration;
 }
 
-void AAwmWeapon::StopWeaponAnimation(const FWeaponAnim& Animation)
+void AAwmWeapon::StopWeaponAnimation(const UAnimMontage* Animation)
 {
 	if (MyPawn)
 	{
@@ -702,235 +903,4 @@ FHitResult AAwmWeapon::WeaponTrace(const FVector& StartTrace, const FVector& End
 	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, COLLISION_WEAPON, TraceParams);
 
 	return Hit;
-}
-
-void AAwmWeapon::SetOwningPawn(AAwmVehicle* NewOwner)
-{
-	if (MyPawn != NewOwner)
-	{
-		Instigator = NewOwner;
-		MyPawn = NewOwner;
-		// net owner for RPC calls
-		SetOwner(NewOwner);
-	}	
-}
-
-//////////////////////////////////////////////////////////////////////////
-// Replication & effects
-
-void AAwmWeapon::OnRep_MyPawn()
-{
-	if (MyPawn)
-	{
-		OnEnterInventory(MyPawn);
-	}
-	else
-	{
-		OnLeaveInventory();
-	}
-}
-
-void AAwmWeapon::OnRep_BurstCounter()
-{
-	if (BurstCounter > 0)
-	{
-		SimulateWeaponFire();
-	}
-	else
-	{
-		StopSimulatingWeaponFire();
-	}
-}
-
-void AAwmWeapon::OnRep_Reload()
-{
-	if (bPendingReload)
-	{
-		StartReload(true);
-	}
-	else
-	{
-		StopReload();
-	}
-}
-
-void AAwmWeapon::SimulateWeaponFire()
-{
-	if (Role == ROLE_Authority && CurrentState != EWeaponState::Firing)
-	{
-		return;
-	}
-
-	if (MuzzleFX)
-	{
-		USkeletalMeshComponent* UseWeaponMesh = GetWeaponMesh();
-		if (!bLoopedMuzzleFX || MuzzlePSC == NULL)
-		{
-			// Split screen requires we create 2 effects. One that we see and one that the other player sees.
-			if( (MyPawn != NULL ) && ( MyPawn->IsLocallyControlled() == true ) )
-			{
-				AController* PlayerCon = MyPawn->GetController();				
-				if( PlayerCon != NULL )
-				{
-					Mesh1P->GetSocketLocation(MuzzleAttachPoint);
-					MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh1P, MuzzleAttachPoint);
-					MuzzlePSC->bOwnerNoSee = false;
-					MuzzlePSC->bOnlyOwnerSee = true;
-
-					Mesh3P->GetSocketLocation(MuzzleAttachPoint);
-					MuzzlePSCSecondary = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh3P, MuzzleAttachPoint);
-					MuzzlePSCSecondary->bOwnerNoSee = true;
-					MuzzlePSCSecondary->bOnlyOwnerSee = false;				
-				}				
-			}
-			else
-			{
-				MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, UseWeaponMesh, MuzzleAttachPoint);
-			}
-		}
-	}
-
-	if (!bLoopedFireAnim || !bPlayingFireAnim)
-	{
-		PlayWeaponAnimation(FireAnim);
-		bPlayingFireAnim = true;
-	}
-
-	if (bLoopedFireSound)
-	{
-		if (FireAC == NULL)
-		{
-			FireAC = PlayWeaponSound(FireLoopSound);
-		}
-	}
-	else
-	{
-		PlayWeaponSound(FireSound);
-	}
-
-	AAwmPlayerController* PC = (MyPawn != NULL) ? Cast<AAwmPlayerController>(MyPawn->Controller) : NULL;
-	if (PC != NULL && PC->IsLocalController())
-	{
-		if (FireCameraShake != NULL)
-		{
-			PC->ClientPlayCameraShake(FireCameraShake, 1);
-		}
-		if (FireForceFeedback != NULL)
-		{
-			PC->ClientPlayForceFeedback(FireForceFeedback, false, "Weapon");
-		}
-	}
-}
-
-void AAwmWeapon::StopSimulatingWeaponFire()
-{
-	if (bLoopedMuzzleFX )
-	{
-		if( MuzzlePSC != NULL )
-		{
-			MuzzlePSC->DeactivateSystem();
-			MuzzlePSC = NULL;
-		}
-		if( MuzzlePSCSecondary != NULL )
-		{
-			MuzzlePSCSecondary->DeactivateSystem();
-			MuzzlePSCSecondary = NULL;
-		}
-	}
-
-	if (bLoopedFireAnim && bPlayingFireAnim)
-	{
-		StopWeaponAnimation(FireAnim);
-		bPlayingFireAnim = false;
-	}
-
-	if (FireAC)
-	{
-		FireAC->FadeOut(0.1f, 0.0f);
-		FireAC = NULL;
-
-		PlayWeaponSound(FireFinishSound);
-	}
-}
-
-void AAwmWeapon::GetLifetimeReplicatedProps( TArray< FLifetimeProperty > & OutLifetimeProps ) const
-{
-	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
-
-	DOREPLIFETIME( AAwmWeapon, MyPawn );
-
-	DOREPLIFETIME_CONDITION( AAwmWeapon, CurrentAmmo,		COND_OwnerOnly );
-	DOREPLIFETIME_CONDITION( AAwmWeapon, CurrentAmmoInClip, COND_OwnerOnly );
-
-	DOREPLIFETIME_CONDITION( AAwmWeapon, BurstCounter,		COND_SkipOwner );
-	DOREPLIFETIME_CONDITION( AAwmWeapon, bPendingReload,	COND_SkipOwner );
-}
-
-USkeletalMeshComponent* AAwmWeapon::GetWeaponMesh() const
-{
-	return Mesh3P;
-}
-
-class AAwmVehicle* AAwmWeapon::GetPawnOwner() const
-{
-	return MyPawn;
-}
-
-bool AAwmWeapon::IsEquipped() const
-{
-	return bIsEquipped;
-}
-
-bool AAwmWeapon::IsAttachedToPawn() const
-{
-	return bIsEquipped || bPendingEquip;
-}
-
-EWeaponState::Type AAwmWeapon::GetCurrentState() const
-{
-	return CurrentState;
-}
-
-int32 AAwmWeapon::GetCurrentAmmo() const
-{
-	return CurrentAmmo;
-}
-
-int32 AAwmWeapon::GetCurrentAmmoInClip() const
-{
-	return CurrentAmmoInClip;
-}
-
-int32 AAwmWeapon::GetAmmoPerClip() const
-{
-	return WeaponConfig.AmmoPerClip;
-}
-
-int32 AAwmWeapon::GetMaxAmmo() const
-{
-	return WeaponConfig.MaxAmmo;
-}
-
-bool AAwmWeapon::HasInfiniteAmmo() const
-{
-	const AAwmPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AAwmPlayerController>(MyPawn->Controller) : NULL;
-	// @todo
-	return WeaponConfig.bInfiniteAmmo;// || (MyPC && MyPC->HasInfiniteAmmo());
-}
-
-bool AAwmWeapon::HasInfiniteClip() const
-{
-	const AAwmPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AAwmPlayerController>(MyPawn->Controller) : NULL;
-	// @todo
-	return WeaponConfig.bInfiniteClip;// || (MyPC && MyPC->HasInfiniteClip());
-}
-
-float AAwmWeapon::GetEquipStartedTime() const
-{
-	return EquipStartedTime;
-}
-
-float AAwmWeapon::GetEquipDuration() const
-{
-	return EquipDuration;
 }

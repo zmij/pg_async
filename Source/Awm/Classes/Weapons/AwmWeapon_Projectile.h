@@ -15,12 +15,6 @@ class AAwmWeapon_Projectile : public AAwmWeapon
 	void ApplyWeaponConfig(FProjectileWeaponData& Data);
 
 protected:
-
-	virtual EAmmoType GetAmmoType() const override
-	{
-		return EAmmoType::ERocket;
-	}
-
 	/** weapon config */
 	UPROPERTY(EditDefaultsOnly, Category=Config)
 	FProjectileWeaponData ProjectileConfig;
@@ -34,4 +28,5 @@ protected:
 	/** spawn projectile on server */
 	UFUNCTION(reliable, server, WithValidation)
 	void ServerFireProjectile(FVector Origin, FVector_NetQuantizeNormal ShootDir);
+
 };

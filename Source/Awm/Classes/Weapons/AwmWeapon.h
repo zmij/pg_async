@@ -61,51 +61,20 @@ struct FWeaponData
 	}
 };
 
-USTRUCT()
-struct FWeaponAnim
-{
-	GENERATED_USTRUCT_BODY()
-
-	/** animation played on pawn (1st person view) */
-	UPROPERTY(EditDefaultsOnly, Category=Animation)
-	UAnimMontage* Pawn1P;
-
-	/** animation played on pawn (3rd person view) */
-	UPROPERTY(EditDefaultsOnly, Category=Animation)
-	UAnimMontage* Pawn3P;
-};
-
 UCLASS(Abstract, Blueprintable)
 class AAwmWeapon : public AActor
 {
 	GENERATED_UCLASS_BODY()
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialization
 
 	/** perform initial setup */
 	virtual void PostInitializeComponents() override;
 
 	virtual void Destroyed() override;
 
-	//////////////////////////////////////////////////////////////////////////
-	// Ammo
-	
-	enum class EAmmoType
-	{
-		EBullet,
-		ERocket,
-		EMax,
-	};
-
-	/** [server] add ammo */
-	void GiveAmmo(int AddAmount);
-
-	/** consume a bullet */
-	void UseAmmo();
-
-	/** query ammo type */
-	virtual EAmmoType GetAmmoType() const
-	{
-		return EAmmoType::EBullet;
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
@@ -125,11 +94,11 @@ class AAwmWeapon : public AActor
 	/** [server] weapon was removed from pawn's inventory */
 	virtual void OnLeaveInventory();
 
-	/** check if it's currently equipped */
-	bool IsEquipped() const;
+	/** attaches weapon mesh to pawn's mesh */
+	void AttachMeshToPawn();
 
-	/** check if mesh is already attached */
-	bool IsAttachedToPawn() const;
+	/** detaches weapon mesh from pawn */
+	void DetachMeshFromPawn();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -156,6 +125,22 @@ class AAwmWeapon : public AActor
 
 
 	//////////////////////////////////////////////////////////////////////////
+	// Input [server side]
+
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerStartFire();
+
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerStopFire();
+
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerStartReload();
+
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerStopReload();
+
+
+	//////////////////////////////////////////////////////////////////////////
 	// Control
 
 	/** check if weapon can fire */
@@ -166,10 +151,14 @@ class AAwmWeapon : public AActor
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Reading data
+	// Ammo
 
-	/** get current weapon state */
-	EWeaponState::Type GetCurrentState() const;
+public:
+	/** [server] add ammo */
+	void GiveAmmo(int AddAmount);
+
+	/** consume a bullet */
+	void UseAmmo();
 
 	/** get current ammo amount (total) */
 	int32 GetCurrentAmmo() const;
@@ -183,82 +172,102 @@ class AAwmWeapon : public AActor
 	/** get max ammo amount */
 	int32 GetMaxAmmo() const;
 
-	/** get weapon mesh (needs pawn owner to determine variant) */
-	USkeletalMeshComponent* GetWeaponMesh() const;
-
-	/** get pawn owner */
-	UFUNCTION(BlueprintCallable, Category="Game|Weapon")
-	class AAwmVehicle* GetPawnOwner() const;
-
-	/** icon displayed on the HUD when weapon is equipped as primary */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	FCanvasIcon PrimaryIcon;
-
-	/** icon displayed on the HUD when weapon is secondary */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	FCanvasIcon SecondaryIcon;
-
-	/** bullet icon used to draw current clip (left side) */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	FCanvasIcon PrimaryClipIcon;
-
-	/** bullet icon used to draw secondary clip (left side) */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	FCanvasIcon SecondaryClipIcon;
-
-	/** how many icons to draw per clip */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	float AmmoIconsCount;
-
-	/** defines spacing between primary ammo icons (left side) */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	int32 PrimaryClipIconOffset;
-
-	/** defines spacing between secondary ammo icons (left side) */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	int32 SecondaryClipIconOffset;
-
-	/** crosshair parts icons (left, top, right, bottom and center) */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	FCanvasIcon Crosshair[5];
-
-	/** crosshair parts icons when targeting (left, top, right, bottom and center) */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	FCanvasIcon AimingCrosshair[5];
-
-	/** only use red colored center part of aiming crosshair */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	bool UseLaserDot;
-
-	/** false = default crosshair */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	bool UseCustomCrosshair;
-
-	/** false = use custom one if set, otherwise default crosshair */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	bool UseCustomAimingCrosshair;
-
-	/** true - crosshair will not be shown unless aiming with the weapon */
-	UPROPERTY(EditDefaultsOnly, Category=HUD)
-	bool bHideCrosshairWhileNotAiming;
-
 	/** check if weapon has infinite ammo (include owner's cheats) */
 	bool HasInfiniteAmmo() const;
 
 	/** check if weapon has infinite clip (include owner's cheats) */
 	bool HasInfiniteClip() const;
 
+protected:
+	/** current total ammo */
+	UPROPERTY(Transient, Replicated)
+	int32 CurrentAmmo;
+
+	/** current ammo - inside clip */
+	UPROPERTY(Transient, Replicated)
+	int32 CurrentAmmoInClip;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Weapon usage
+
+	/** [local] weapon specific fire implementation */
+	virtual void FireWeapon() PURE_VIRTUAL(AAwmWeapon::FireWeapon,);
+
+	/** [server] fire & update ammo */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerHandleFiring();
+
+	/** [local + server] handle weapon fire */
+	void HandleFiring();
+
+	/** [local + server] firing started */
+	virtual void OnBurstStarted();
+
+	/** [local + server] firing finished */
+	virtual void OnBurstFinished();
+
+	/** update weapon state */
+	void SetWeaponState(EWeaponState::Type NewState);
+
+	/** determine current weapon state */
+	void DetermineWeaponState();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Replication & effects
+
+	UFUNCTION()
+	void OnRep_MyPawn();
+
+	UFUNCTION()
+	void OnRep_BurstCounter();
+
+	UFUNCTION()
+	void OnRep_Reload();
+
+	/** Called in network play to do the cosmetic fx for firing */
+	virtual void SimulateWeaponFire();
+
+	/** Called in network play to stop cosmetic fx (e.g. for a looping shot). */
+	virtual void StopSimulatingWeaponFire();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Reading data
+
+public:
+	/** get weapon mesh (needs pawn owner to determine variant) */
+	USkeletalMeshComponent* GetWeaponMesh() const;
+
+	/** get pawn owner */
+	UFUNCTION(BlueprintCallable, Category="Game|Weapon")
+	class AAwmVehicle* GetVehicleOwner() const;
+
 	/** set the weapon's owning pawn */
-	void SetOwningPawn(AAwmVehicle* NewOwner);
+	void SetVehicleOwner(AAwmVehicle* NewOwner);
+
+	/** get current weapon state */
+	EWeaponState::Type GetCurrentState() const;
+
+	/** check if it's currently equipped */
+	bool IsEquipped() const;
+
+	/** check if mesh is already attached */
+	bool IsAttachedToPawn() const;
 
 	/** gets last time when this weapon was switched to */
 	float GetEquipStartedTime() const;
 
 	/** gets the duration of equipping weapon*/
 	float GetEquipDuration() const;
+	
+private:
+	/** weapon mesh: 3rd person view */
+	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
+	USkeletalMeshComponent* Mesh;
 
 protected:
-
 	/** pawn owner */
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_MyPawn)
 	class AAwmVehicle* MyPawn;
@@ -266,92 +275,6 @@ protected:
 	/** weapon data */
 	UPROPERTY(EditDefaultsOnly, Category=Config)
 	FWeaponData WeaponConfig;
-
-private:
-	/** weapon mesh: 1st person view */
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* Mesh1P;
-
-	/** weapon mesh: 3rd person view */
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* Mesh3P;
-protected:
-
-	/** firing audio (bLoopedFireSound set) */
-	UPROPERTY(Transient)
-	UAudioComponent* FireAC;
-
-	/** name of bone/socket for muzzle in weapon mesh */
-	UPROPERTY(EditDefaultsOnly, Category=Effects)
-	FName MuzzleAttachPoint;
-
-	/** FX for muzzle flash */
-	UPROPERTY(EditDefaultsOnly, Category=Effects)
-	UParticleSystem* MuzzleFX;
-
-	/** spawned component for muzzle FX */
-	UPROPERTY(Transient)
-	UParticleSystemComponent* MuzzlePSC;
-
-	/** spawned component for second muzzle FX (Needed for split screen) */
-	UPROPERTY(Transient)
-	UParticleSystemComponent* MuzzlePSCSecondary;
-
-	/** camera shake on firing */
-	UPROPERTY(EditDefaultsOnly, Category=Effects)
-	TSubclassOf<UCameraShake> FireCameraShake;
-
-	/** force feedback effect to play when the weapon is fired */
-	UPROPERTY(EditDefaultsOnly, Category=Effects)
-	UForceFeedbackEffect *FireForceFeedback;
-
-	/** single fire sound (bLoopedFireSound not set) */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	USoundCue* FireSound;
-
-	/** looped fire sound (bLoopedFireSound set) */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	USoundCue* FireLoopSound;
-
-	/** finished burst sound (bLoopedFireSound set) */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	USoundCue* FireFinishSound;
-
-	/** out of ammo sound */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	USoundCue* OutOfAmmoSound;
-
-	/** reload sound */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	USoundCue* ReloadSound;
-
-	/** reload animations */
-	UPROPERTY(EditDefaultsOnly, Category=Animation)
-	FWeaponAnim ReloadAnim;
-
-	/** equip sound */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	USoundCue* EquipSound;
-
-	/** equip animations */
-	UPROPERTY(EditDefaultsOnly, Category=Animation)
-	FWeaponAnim EquipAnim;
-
-	/** fire animations */
-	UPROPERTY(EditDefaultsOnly, Category=Animation)
-	FWeaponAnim FireAnim;
-
-	/** is muzzle FX looped? */
-	UPROPERTY(EditDefaultsOnly, Category=Effects)
-	uint32 bLoopedMuzzleFX : 1;
-
-	/** is fire sound looped? */
-	UPROPERTY(EditDefaultsOnly, Category=Sound)
-	uint32 bLoopedFireSound : 1;
-
-	/** is fire animation looped? */
-	UPROPERTY(EditDefaultsOnly, Category=Animation)
-	uint32 bLoopedFireAnim : 1;
 
 	/** is fire animation playing? */
 	uint32 bPlayingFireAnim : 1;
@@ -384,14 +307,6 @@ protected:
 	/** how much time weapon needs to be equipped */
 	float EquipDuration;
 
-	/** current total ammo */
-	UPROPERTY(Transient, Replicated)
-	int32 CurrentAmmo;
-
-	/** current ammo - inside clip */
-	UPROPERTY(Transient, Replicated)
-	int32 CurrentAmmoInClip;
-
 	/** burst counter, used for replicating fire events to remote clients */
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_BurstCounter)
 	int32 BurstCounter;
@@ -408,88 +323,92 @@ protected:
 	/** Handle for efficient management of HandleFiring timer */
 	FTimerHandle TimerHandle_HandleFiring;
 
-	//////////////////////////////////////////////////////////////////////////
-	// Input - server side
-
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerStartFire();
-
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerStopFire();
-
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerStartReload();
-
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerStopReload();
-
 
 	//////////////////////////////////////////////////////////////////////////
-	// Replication & effects
+	// Sound and effects
 
-	UFUNCTION()
-	void OnRep_MyPawn();
+protected:
+	/** firing audio (bLoopedFireSound set) */
+	UPROPERTY(Transient)
+	UAudioComponent* FireAC;
 
-	UFUNCTION()
-	void OnRep_BurstCounter();
+	/** name of bone/socket for muzzle in weapon mesh */
+	UPROPERTY(EditDefaultsOnly, Category=Effects)
+	FName MuzzleAttachPoint;
 
-	UFUNCTION()
-	void OnRep_Reload();
+	/** FX for muzzle flash */
+	UPROPERTY(EditDefaultsOnly, Category=Effects)
+	UParticleSystem* MuzzleFX;
 
-	/** Called in network play to do the cosmetic fx for firing */
-	virtual void SimulateWeaponFire();
+	/** spawned component for muzzle FX */
+	UPROPERTY(Transient)
+	UParticleSystemComponent* MuzzlePSC;
 
-	/** Called in network play to stop cosmetic fx (e.g. for a looping shot). */
-	virtual void StopSimulatingWeaponFire();
+	/** camera shake on firing */
+	UPROPERTY(EditDefaultsOnly, Category=Effects)
+	TSubclassOf<UCameraShake> FireCameraShake;
 
+	/** single fire sound (bLoopedFireSound not set) */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	USoundCue* FireSound;
 
-	//////////////////////////////////////////////////////////////////////////
-	// Weapon usage
+	/** looped fire sound (bLoopedFireSound set) */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	USoundCue* FireLoopSound;
 
-	/** [local] weapon specific fire implementation */
-	virtual void FireWeapon() PURE_VIRTUAL(AAwmWeapon::FireWeapon,);
+	/** finished burst sound (bLoopedFireSound set) */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	USoundCue* FireFinishSound;
 
-	/** [server] fire & update ammo */
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerHandleFiring();
+	/** out of ammo sound */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	USoundCue* OutOfAmmoSound;
 
-	/** [local + server] handle weapon fire */
-	void HandleFiring();
+	/** reload sound */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	USoundCue* ReloadSound;
 
-	/** [local + server] firing started */
-	virtual void OnBurstStarted();
+	/** reload animations */
+	UPROPERTY(EditDefaultsOnly, Category=Animation)
+	UAnimMontage* ReloadAnim;
 
-	/** [local + server] firing finished */
-	virtual void OnBurstFinished();
+	/** equip sound */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	USoundCue* EquipSound;
 
-	/** update weapon state */
-	void SetWeaponState(EWeaponState::Type NewState);
+	/** equip animations */
+	UPROPERTY(EditDefaultsOnly, Category=Animation)
+	UAnimMontage* EquipAnim;
 
-	/** determine current weapon state */
-	void DetermineWeaponState();
+	/** fire animations */
+	UPROPERTY(EditDefaultsOnly, Category=Animation)
+	UAnimMontage* FireAnim;
 
+	/** is muzzle FX looped? */
+	UPROPERTY(EditDefaultsOnly, Category=Effects)
+	uint32 bLoopedMuzzleFX : 1;
 
-	//////////////////////////////////////////////////////////////////////////
-	// Inventory
+	/** is fire sound looped? */
+	UPROPERTY(EditDefaultsOnly, Category=Sound)
+	uint32 bLoopedFireSound : 1;
 
-	/** attaches weapon mesh to pawn's mesh */
-	void AttachMeshToPawn();
-
-	/** detaches weapon mesh from pawn */
-	void DetachMeshFromPawn();
+	/** is fire animation looped? */
+	UPROPERTY(EditDefaultsOnly, Category=Animation)
+	uint32 bLoopedFireAnim : 1;
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Weapon usage helpers
 
+public:
 	/** play weapon sounds */
 	UAudioComponent* PlayWeaponSound(USoundCue* Sound);
 
 	/** play weapon animations */
-	float PlayWeaponAnimation(const FWeaponAnim& Animation);
+	float PlayWeaponAnimation(const UAnimMontage* Animation);
 
 	/** stop playing weapon animations */
-	void StopWeaponAnimation(const FWeaponAnim& Animation);
+	void StopWeaponAnimation(const UAnimMontage* Animation);
 
 	/** Get the aim of the weapon, allowing for adjustments to be made by the weapon */
 	virtual FVector GetAdjustedAim() const;
@@ -510,9 +429,9 @@ protected:
 	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
 
 protected:
-	/** Returns Mesh1P subobject **/
-	FORCEINLINE USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns Mesh3P subobject **/
-	FORCEINLINE USkeletalMeshComponent* GetMesh3P() const { return Mesh3P; }
+	/** Returns Mesh subobject **/
+	FORCEINLINE USkeletalMeshComponent* GetMesh() const { return Mesh; }
+
+
 };
 
