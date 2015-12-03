@@ -174,7 +174,7 @@ void AAwmWeapon::AttachMeshToPawn()
 		FName AttachPoint = MyPawn->GetWeaponAttachPoint();
 
 		USkeletalMeshComponent* UseWeaponMesh = GetWeaponMesh();
-		USkeletalMeshComponent* UsePawnMesh = MyPawn->GetVehicleMesh();
+		USkeletalMeshComponent* UsePawnMesh = MyPawn->GetMesh();
 		UseWeaponMesh->AttachTo(UsePawnMesh, AttachPoint);
 		UseWeaponMesh->SetHiddenInGame(false);
 	}
