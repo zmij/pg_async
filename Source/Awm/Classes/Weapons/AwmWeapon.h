@@ -238,6 +238,7 @@ protected:
 
 public:
 	/** get weapon mesh (needs pawn owner to determine variant) */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	USkeletalMeshComponent* GetWeaponMesh() const;
 
 	/** get pawn owner */
@@ -251,9 +252,11 @@ public:
 	EWeaponState::Type GetCurrentState() const;
 
 	/** check if it's currently equipped */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	bool IsEquipped() const;
 
 	/** check if mesh is already attached */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	bool IsAttachedToPawn() const;
 
 	/** gets last time when this weapon was switched to */

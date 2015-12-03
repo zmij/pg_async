@@ -5,8 +5,6 @@
 AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer) //.SetDefaultSubobjectClass<UAwmVehicleMovement>(ACharacter::CharacterMovementComponentName))
 {
-	GetMesh()->bOnlyOwnerSee = false;
-	GetMesh()->bOwnerNoSee = false;
 	GetMesh()->bReceivesDecals = false;
 	GetMesh()->SetCollisionObjectType(ECC_Vehicle);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
