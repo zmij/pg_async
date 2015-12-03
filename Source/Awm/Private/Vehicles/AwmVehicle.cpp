@@ -17,8 +17,9 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 
 	bIsTargeting = false;
 	bWantsToFire = false;
-}
 
+	WeaponAttachPoint = TEXT("bTurret");
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Initialization

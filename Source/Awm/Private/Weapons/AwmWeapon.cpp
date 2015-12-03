@@ -38,7 +38,6 @@ AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer)
 	bNetUseOwnerRelevancy = true;
 }
 
-
 //////////////////////////////////////////////////////////////////////////
 // Initialization
 

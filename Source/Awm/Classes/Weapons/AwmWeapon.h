@@ -241,7 +241,7 @@ public:
 	USkeletalMeshComponent* GetWeaponMesh() const;
 
 	/** get pawn owner */
-	UFUNCTION(BlueprintCallable, Category="Game|Weapon")
+	UFUNCTION(BlueprintCallable, Category="Awm|Weapon")
 	class AAwmVehicle* GetVehicleOwner() const;
 
 	/** set the weapon's owning pawn */
