@@ -305,4 +305,45 @@ protected:
 	class AAwmWeapon* CurrentWeapon;
 
 
+	//////////////////////////////////////////////////////////////////////////
+	// Player Input (from Player Controller)
+
+public:
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	bool OnTapPressed(const FVector2D& ScreenPosition, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnHoldPressed(const FVector2D& ScreenPosition, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnHoldReleased(const FVector2D& ScreenPosition, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	bool OnSwipeStarted(const FVector2D& SwipePosition, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	bool OnSwipeUpdate(const FVector2D& SwipePosition, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	bool OnSwipeReleased(const FVector2D& SwipePosition, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnSwipeTwoPointsStarted(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnSwipeTwoPointsUpdate(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnSwipeTwoPointsReleased(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnPinchStarted(const FVector2D& AnchorPosition1, const FVector2D& AnchorPosition2, float DownTime);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnPinchUpdate(class UAwmInput* InputHandler, const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Input|Vehicle|Touch")
+	void OnPinchReleased(class UAwmInput* InputHandler, const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
+
+
 };

@@ -133,6 +133,11 @@ AAwmSpectatorPawn* AAwmPlayerController::GetAwmSpectatorPawn() const
 	return Cast<AAwmSpectatorPawn>(GetPawnOrSpectator());
 }
 
+AAwmVehicle* AAwmPlayerController::GetAwmVehiclePawn() const
+{
+	return Cast<AAwmVehicle>(GetPawn());
+}
+
 bool AAwmPlayerController::GetHitResultAtScreenPositionByChannel(const FVector2D ScreenPosition, ETraceTypeQuery TraceChannel, bool bTraceComplex, FHitResult& HitResult) const
 {
 	return GetHitResultAtScreenPosition(ScreenPosition, TraceChannel, bTraceComplex, HitResult);
@@ -216,4 +221,104 @@ void AAwmPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 
 	DOREPLIFETIME_CONDITION(AAwmPlayerController, bInfiniteAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAwmPlayerController, bInfiniteClip, COND_OwnerOnly);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Player Input
+
+void AAwmPlayerController::OnTapPressed_Implementation(const FVector2D& ScreenPosition, float DownTime)
+{
+	// Pass the tap through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnTapPressed(ScreenPosition, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnHoldPressed_Implementation(const FVector2D& ScreenPosition, float DownTime)
+{
+	// Pass the hold through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnHoldPressed(ScreenPosition, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnHoldReleased_Implementation(const FVector2D& ScreenPosition, float DownTime)
+{
+	// Pass the hold through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnHoldReleased(ScreenPosition, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnSwipeStarted_Implementation(const FVector2D& AnchorPosition, float DownTime)
+{
+	// Pass the swipe through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnSwipeStarted(AnchorPosition, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnSwipeUpdate_Implementation(const FVector2D& ScreenPosition, float DownTime)
+{
+	// Pass the swipe through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnSwipeUpdate(ScreenPosition, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnSwipeReleased_Implementation(const FVector2D& ScreenPosition, float DownTime)
+{
+	// Pass the swipe through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnSwipeReleased(ScreenPosition, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnSwipeTwoPointsStarted_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
+{
+	// Pass the double swipe through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnSwipeTwoPointsStarted(ScreenPosition1, ScreenPosition2, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnSwipeTwoPointsUpdate_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
+{
+	// Pass the double swipe through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnSwipeTwoPointsUpdate(ScreenPosition1, ScreenPosition2, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnSwipeTwoPointsReleased_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
+{
+	// Pass the double swipe through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnSwipeTwoPointsReleased(ScreenPosition1, ScreenPosition2, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnPinchStarted_Implementation(const FVector2D& AnchorPosition1, const FVector2D& AnchorPosition2, float DownTime)
+{
+	// Pass the pinch through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnPinchStarted(AnchorPosition1, AnchorPosition2, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnPinchUpdate_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
+{
+	// Pass the pinch through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnPinchUpdate(InputHandler, ScreenPosition1, ScreenPosition2, DownTime);
+	}
+}
+
+void AAwmPlayerController::OnPinchReleased_Implementation(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime)
+{
+	// Pass the pinch through to the spectator pawn
+	if (GetAwmVehiclePawn() != nullptr) {
+		GetAwmVehiclePawn()->OnPinchReleased(InputHandler, ScreenPosition1, ScreenPosition2, DownTime);
+	}
 }
