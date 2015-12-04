@@ -329,6 +329,26 @@ protected:
 
 
 	//////////////////////////////////////////////////////////////////////////
+	// Camera
+
+protected:
+	/** Spring arm that will offset the camera */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* SpringArm;
+
+	/** Camera component that will be our viewpoint */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* Camera;
+
+public:
+	/** Returns SpringArm subobject **/
+	FORCEINLINE USpringArmComponent* GetSpringArm() const { return SpringArm; }
+
+	/** Returns Camera subobject **/
+	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
+
+
+	//////////////////////////////////////////////////////////////////////////
 	// Player Input (from Player Controller)
 
 public:

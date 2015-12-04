@@ -13,6 +13,23 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
 
+	// Create a spring arm component
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm0"));
+	SpringArm->TargetOffset = FVector(0.f, 0.f, 200.f);
+	SpringArm->SetRelativeRotation(FRotator(-15.f, 0.f, 0.f));
+	SpringArm->AttachTo(RootComponent);
+	SpringArm->TargetArmLength = 600.0f;
+	SpringArm->bEnableCameraRotationLag = true;
+	SpringArm->CameraRotationLagSpeed = 7.f;
+	SpringArm->bInheritPitch = false;
+	SpringArm->bInheritRoll = false;
+
+	// Create camera component 
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera0"));
+	Camera->AttachTo(SpringArm, USpringArmComponent::SocketName);
+	Camera->bUsePawnControlRotation = false;
+	Camera->FieldOfView = 90.f;
+
 	bIsTargeting = false;
 	bWantsToFire = false;
 
