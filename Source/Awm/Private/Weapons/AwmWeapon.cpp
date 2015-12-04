@@ -850,7 +850,7 @@ FVector AAwmWeapon::GetCameraAim() const
 	return FinalAim;
 }
 
-FVector AAwmWeapon::GetAdjustedAim() const
+FVector AAwmWeapon::GetAdjustedAim_Implementation()
 {
 	AAwmPlayerController* const PlayerController = Instigator ? Cast<AAwmPlayerController>(Instigator->Controller) : NULL;
 	FVector FinalAim = FVector::ZeroVector;

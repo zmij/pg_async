@@ -437,7 +437,8 @@ public:
 	void StopWeaponAnimation(const UAnimMontage* Animation);
 
 	/** Get the aim of the weapon, allowing for adjustments to be made by the weapon */
-	virtual FVector GetAdjustedAim() const;
+	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Weapon")
+	FVector GetAdjustedAim();
 
 	/** Get the aim of the camera */
 	FVector GetCameraAim() const;
