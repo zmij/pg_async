@@ -106,9 +106,11 @@ class AAwmWeapon : public AActor
 
 public:
 	/** [all] ... */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	void SetTurretYaw(float YawRotation);
 
 	/** [all] ... */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	void SetTurretPitch(float PitchRotation);
 
 protected:
