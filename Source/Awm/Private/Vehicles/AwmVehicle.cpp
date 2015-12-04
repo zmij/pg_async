@@ -15,7 +15,8 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 
 	// Create a spring arm component
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm0"));
-	SpringArm->TargetOffset = FVector(0.f, 0.f, 200.f);
+	//SpringArm->TargetOffset = FVector(0.f, 0.f, 200.f);
+	SpringArm->SetRelativeLocation(FVector(0.f, 0.f, 500.f));
 	SpringArm->SetRelativeRotation(FRotator(-15.f, 0.f, 0.f));
 	SpringArm->AttachTo(RootComponent);
 	SpringArm->TargetArmLength = 600.0f;
