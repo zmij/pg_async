@@ -35,6 +35,8 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+
+	Health = 100.f;
 }
 
 //////////////////////////////////////////////////////////////////////////
