@@ -450,8 +450,8 @@ void AAwmVehicle::ServerSetTargeting_Implementation(bool bNewTargeting)
 void AAwmVehicle::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
 	check(InputComponent);
-	InputComponent->BindAxis("MoveForward", this, &AAwmVehicle::MoveForward);
-	InputComponent->BindAxis("MoveRight", this, &AAwmVehicle::MoveRight);
+	//InputComponent->BindAxis("MoveForward", this, &AAwmVehicle::MoveForward);
+	//InputComponent->BindAxis("MoveRight", this, &AAwmVehicle::MoveRight);
 	InputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	InputComponent->BindAxis("TurnRate", this, &AAwmVehicle::TurnAtRate);
 	InputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
