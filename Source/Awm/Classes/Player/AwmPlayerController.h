@@ -77,7 +77,7 @@ protected:
 	uint8 bAllowGameActions : 1;
 
 	/** Custom input handler */
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	class UAwmInput* InputHandler;
 
 
