@@ -102,8 +102,29 @@ class AAwmWeapon : public AActor
 
 
 	//////////////////////////////////////////////////////////////////////////
+	// Targeting and rotation
+
+public:
+	/** [all] ... */
+	void SetTurretYaw(float YawRotation);
+
+	/** [all] ... */
+	void SetTurretPitch(float PitchRotation);
+
+protected:
+	/** Turret Yaw rotation */
+	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
+	float TurretYaw;
+
+	/** Turrent Pitch rotation */
+	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
+	float TurretPitch;
+
+
+	//////////////////////////////////////////////////////////////////////////
 	// Input
 
+public:
 	/** [local + server] start weapon fire */
 	virtual void StartFire();
 

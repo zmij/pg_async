@@ -188,6 +188,20 @@ void AAwmWeapon::DetachMeshFromPawn()
 
 
 //////////////////////////////////////////////////////////////////////////
+// Targeting and rotation
+
+void AAwmWeapon::SetTurretYaw(float YawRotation)
+{
+	TurretYaw = YawRotation;
+}
+
+void AAwmWeapon::SetTurretPitch(float PitchRotation)
+{
+	TurretPitch = PitchRotation;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // Input
 
 void AAwmWeapon::StartFire()
@@ -718,11 +732,17 @@ void AAwmWeapon::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLif
 
 	DOREPLIFETIME(AAwmWeapon, MyPawn);
 
+	// Only to local owner
 	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmoInClip, COND_OwnerOnly);
 
+	// Everyone except local owner: flag change is locally instigated
 	DOREPLIFETIME_CONDITION(AAwmWeapon, BurstCounter, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AAwmWeapon, bPendingReload, COND_SkipOwner);
+
+	// Everyone
+	DOREPLIFETIME(AAwmWeapon, TurretYaw);
+	DOREPLIFETIME(AAwmWeapon, TurretPitch);
 }
 
 
