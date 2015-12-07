@@ -86,22 +86,22 @@ protected:
 
 public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
-	void OnTapPressed(const FVector2D& ScreenPosition, float DownTime);
+	void OnTapPressed(const FVector2D& ScreenPosition1, float DownTime);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
-	void OnHoldPressed(const FVector2D& ScreenPosition, float DownTime);
+	void OnHoldPressed(const FVector2D& ScreenPosition1, float DownTime);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
-	void OnHoldReleased(const FVector2D& ScreenPosition, float DownTime);
+	void OnHoldReleased(const FVector2D& ScreenPosition1, float DownTime);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
-	void OnSwipeStarted(const FVector2D& AnchorPosition, float DownTime);
+	void OnSwipeStarted(const FVector2D& AnchorPosition1, float DownTime);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
-	void OnSwipeUpdate(const FVector2D& ScreenPosition, float DownTime);
+	void OnSwipeUpdate(const FVector2D& ScreenPosition1, float DownTime);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
-	void OnSwipeReleased(const FVector2D& ScreenPosition, float DownTime);
+	void OnSwipeReleased(const FVector2D& ScreenPosition1, float DownTime);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Input|Player|Touch")
 	void OnSwipeTwoPointsStarted(const FVector2D& ScreenPosition1, const FVector2D& ScreenPosition2, float DownTime);
