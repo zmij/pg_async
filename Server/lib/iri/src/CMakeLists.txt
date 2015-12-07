@@ -7,18 +7,16 @@ cmake_minimum_required(VERSION 2.6)
 set(iri_lib_SRCS
     iri.cpp)
 
-set(LIBRARY_NAME ${PROJECT_PREFIX}-iri)
-
-add_library(${LIBRARY_NAME} SHARED ${iri_lib_SRCS})
+add_library(${TIP_IRI_LIB} SHARED ${iri_lib_SRCS})
 set_target_properties(
-    ${LIBRARY_NAME} 
+    ${TIP_IRI_LIB} 
     PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 0
 )
 
 install (
-    TARGETS ${LIBRARY_NAME}
+    TARGETS ${TIP_IRI_LIB}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
