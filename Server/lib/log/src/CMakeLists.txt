@@ -9,25 +9,21 @@ set(log_lib_SRCS
     ansi_colors.cpp
 )
 
-set(
-    LIB_NAME "${PROJECT_PREFIX}-log"
-)
-
-add_library(${LIB_NAME} SHARED ${log_lib_SRCS})
-target_link_libraries(${LIB_NAME}
+add_library(${TIP_LOG_LIB} SHARED ${log_lib_SRCS})
+target_link_libraries(${TIP_LOG_LIB}
     ${Boost_SYSTEM_LIBRARIES}
     ${Boost_THREAD_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
 set_target_properties(
-    ${LIB_NAME} PROPERTIES
+    ${TIP_LOG_LIB} PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 0
 )
 
 install (
-    TARGETS ${LIB_NAME}
+    TARGETS ${TIP_LOG_LIB}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
