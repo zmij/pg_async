@@ -28,6 +28,7 @@ set_target_properties(
     SOVERSION 0
 )
 target_link_libraries(${HTTP_COMMON_LIB} ${TIP_IRI_LIB})
+add_dependencies(${HTTP_COMMON_LIB} http_enum_header)
 
 install (
     TARGETS ${HTTP_COMMON_LIB}

@@ -23,7 +23,7 @@ if (NOT TIP_IRI_INCLUDE_DIRS)
 endif()
 
 if (NOT TIP_LOG_INCLUDE_DIRS)
-    message(FATAL_ERRROR "Please set path to tip-log includes (-DTIP_LOG_INCLUDE_DIRS=)")
+    message(FATAL_ERROR "Please set path to tip-log includes (-DTIP_LOG_INCLUDE_DIRS=)")
 endif()
 
 if (NOT TIP_IRI_LIB)
