@@ -86,6 +86,10 @@ public:
 
 	/** Get touch anchor position */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Input")
+	FVector GetTouchLocation(int32 i) const;
+
+	/** Get touch anchor position */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Input")
 	FVector2D GetTouchAnchor(int32 i) const;
 
 	/** Force update touch anchor position */

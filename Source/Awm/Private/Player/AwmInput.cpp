@@ -261,6 +261,13 @@ void UAwmInput::DetectTwoPointsActions(bool bCurrentState, bool bPrevState, floa
 	}
 }
 
+FVector UAwmInput::GetTouchLocation(int32 i) const
+{
+	AAwmPlayerController* MyController = CastChecked<AAwmPlayerController>(GetOuter());
+
+	return (i >= 0 && i < EKeys::NUM_TOUCH_KEYS) ? MyController->PlayerInput->Touches[i] : FVector::ZeroVector;
+}
+
 FVector2D UAwmInput::GetTouchAnchor(int32 i) const
 {
 	return (i >= 0 && i < ARRAY_COUNT(TouchAnchors)) ? TouchAnchors[i] : FVector2D::ZeroVector;
