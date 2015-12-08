@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Components/WidgetComponent.h"
 #include "AwmVehicle.generated.h"
 
 UCLASS(config = Game, Blueprintable, BlueprintType)
@@ -340,12 +341,19 @@ protected:
 	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* Camera;
 
+	/** Component that shows health bar */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* HealthBar;
+
 public:
 	/** Returns SpringArm subobject **/
 	FORCEINLINE USpringArmComponent* GetSpringArm() const { return SpringArm; }
 
 	/** Returns Camera subobject **/
 	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
+
+	/** Returns HealthBar subobject **/
+	FORCEINLINE UWidgetComponent* GetHealthBar() const { return HealthBar; }
 
 
 	//////////////////////////////////////////////////////////////////////////

@@ -31,6 +31,14 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	Camera->bUsePawnControlRotation = false;
 	Camera->FieldOfView = 90.f;
 
+	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
+	//HealthBar->Space = EWidgetSpace::Screen;
+	HealthBar->RelativeLocation = FVector(0.f, 0.f, 450.f);
+	//HealthBar->SetDrawSize(FVector2D(200, 200));
+	//HealthBar->SetMaxInteractionDistance(0);
+	HealthBar->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HealthBar->AttachParent = RootComponent;
+
 	bIsTargeting = false;
 	bWantsToFire = false;
 

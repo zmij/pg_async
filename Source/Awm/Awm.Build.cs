@@ -14,11 +14,15 @@ public class Awm : ModuleRules
                 "InputCore",
                 "AIModule",
                 "PhysX",
-                "APEX"
+                "APEX",
+                "UMG"
            }
        );
 
         PrivateDependencyModuleNames.AddRange(new string[] { "AwmLoadingScreen" });
+
+        // Uncomment if you are using Slate UI
+        //PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
         // Additional plugins
         PrivateDependencyModuleNames.AddRange(new string[] { "VaRestPlugin" });
