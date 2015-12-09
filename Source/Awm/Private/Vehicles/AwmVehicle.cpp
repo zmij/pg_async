@@ -343,8 +343,7 @@ void AAwmVehicle::PlayHit(float DamageTaken, struct FDamageEvent const& DamageEv
 	AAwmHUD* MyHUD = MyPC ? Cast<AAwmHUD>(MyPC->GetHUD()) : NULL;
 	if (MyHUD)
 	{
-		// @todo
-		//MyHUD->NotifyWeaponHit(DamageTaken, DamageEvent, PawnInstigator);
+		MyHUD->NotifyWeaponHit(DamageTaken, DamageEvent, PawnInstigator);
 	}
 
 	if (PawnInstigator && PawnInstigator != this && PawnInstigator->IsLocallyControlled())
@@ -353,8 +352,7 @@ void AAwmVehicle::PlayHit(float DamageTaken, struct FDamageEvent const& DamageEv
 		AAwmHUD* InstigatorHUD = InstigatorPC ? Cast<AAwmHUD>(InstigatorPC->GetHUD()) : NULL;
 		if (InstigatorHUD)
 		{
-			// @todo
-			//InstigatorHUD->NotifyEnemyHit();
+			InstigatorHUD->NotifyEnemyHit();
 		}
 	}
 }
