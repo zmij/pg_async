@@ -65,7 +65,11 @@ void AAwmPlayerController::PreClientTravel(const FString& PendingURL, ETravelTyp
 
 	if (GetWorld() != NULL)
 	{
-		// @todo Show loading screen
+		AAwmHUD* MyAwmHUD = Cast<AAwmHUD>(GetHUD());
+		if (MyAwmHUD)
+		{
+			MyAwmHUD->ShowLoadingScreen(PendingURL);
+		}
 	}
 }
 
@@ -94,8 +98,11 @@ void AAwmPlayerController::ClientGameStarted_Implementation()
 
 	// Enable controls mode now the game has started
 	SetIgnoreMoveInput(false);
-
-	// @todo notify HUD (bp)
+	AAwmHUD* MyAwmHUD = Cast<AAwmHUD>(GetHUD());
+	if (MyAwmHUD)
+	{
+		MyAwmHUD->NotifyClientGameStarted();
+	}
 }
 
 void AAwmPlayerController::ClientSetSpectatorCamera_Implementation(FVector CameraLocation, FRotator CameraRotation)
@@ -106,7 +113,11 @@ void AAwmPlayerController::ClientSetSpectatorCamera_Implementation(FVector Camer
 
 void AAwmPlayerController::HandleReturnToMainMenu()
 {
-	// @todo Go to main menu
+	AAwmHUD* MyAwmHUD = Cast<AAwmHUD>(GetHUD());
+	if (MyAwmHUD)
+	{
+		MyAwmHUD->HandleReturnToMainMenu();
+	}
 }
 
 

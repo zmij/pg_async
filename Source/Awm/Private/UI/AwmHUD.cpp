@@ -19,10 +19,10 @@ void AAwmHUD::LaunchGame(FString MapName)
 {
 	FString StartStr = TEXT("/Game/Maps/") + MapName;
 	GetWorld()->ServerTravel(StartStr);
-	ShowLoadingScreen();
+	ShowLoadingScreen("AwmLoadingScreen");
 }
 
-void AAwmHUD::ShowLoadingScreen()
+void AAwmHUD::ShowLoadingScreen_Implementation(const FString& PendingURL)
 {
 	IAwmLoadingScreenModule* LoadingScreenModule = FModuleManager::LoadModulePtr<IAwmLoadingScreenModule>("AwmLoadingScreen");
 	if (LoadingScreenModule != nullptr)
