@@ -4,6 +4,10 @@
 
 #include "Engine.h"
 
+#include "PxPhysicsAPI.h"
+#include "PxAllocatorCallback.h"
+#include "PxErrorCallback.h"
+
 #include "Net/UnrealNetwork.h"
 
 #include "ParticleDefinitions.h"
@@ -24,3 +28,48 @@ DECLARE_LOG_CATEGORY_EXTERN(LogAwmVehicle, Display, All);
 #define COLLISION_PROJECTILE	ECC_GameTraceChannel2
 
 #define MAX_PLAYER_NAME_LENGTH 16
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////
+// for PhysX mem allocation hack!!
+
+void ensurePhysXFoundationSetup();
+
+class SimpleMemAllocator : public physx::PxAllocatorCallback {
+    
+public:
+    
+    SimpleMemAllocator() { }
+    
+    virtual ~SimpleMemAllocator() { }
+    
+    virtual void *allocate(size_t size, const char *typeName, const char *filename, int line) override {
+        void *ptr = FMemory::Malloc(size, 16);
+        return ptr;
+    }
+    
+    virtual void deallocate(void *ptr) override {
+        FMemory::Free(ptr);
+    }
+};
+
+class DummyErrorCallback : public physx::PxErrorCallback {
+
+public:
+
+    virtual void reportError(physx::PxErrorCode::Enum e, const char *message, const char *file, int line) override {}
+
+};
+
+//////////////////////////////////////////////////////
