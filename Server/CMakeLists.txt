@@ -22,6 +22,8 @@ include(${CMAKE_SOURCE_DIR}/cmake/scripts/argn.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/scripts/subproject.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/scripts/initializer_list.cmake)
 
+include(${CMAKE_SOURCE_DIR}/cmake/scripts/psql.cmake)
+
 # Dependencies
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules" )
 
@@ -105,3 +107,6 @@ include_directories(
 
 add_subdirectory(include/tip)
 add_subdirectory(src/awm/game)
+
+# Game databases
+add_subdirectory(sql/create)
