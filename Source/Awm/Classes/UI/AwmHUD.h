@@ -4,6 +4,8 @@
 
 #include "AwmHUD.generated.h"
 
+class APawn;
+
 UCLASS()
 class AAwmHUD : public AHUD
 {
@@ -18,8 +20,32 @@ class AAwmHUD : public AHUD
 	void LaunchGame(FString MapName);
 
 	/** Show the loading screen */
-	UFUNCTION(BlueprintCallable, Category = "Awm|HUD")
-	void ShowLoadingScreen();
+	UFUNCTION(BlueprintNativeEvent, Category = "Awm|HUD")
+	void ShowLoadingScreen(const FString& PendingURL);
+
+	/** Show the loading screen */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	void NotifyClientGameStarted();
+
+	/** Show the loading screen */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	void HandleReturnToMainMenu();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Battle
+
+	/** Called when our vehicle takes damage */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	void NotifyWeaponHit(float DamageTaken, struct FDamageEvent const& DamageEvent, APawn* PawnInstigator);
+
+	/** Called when enemy vehicle takes damage */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	void NotifyEnemyHit();
+
+	/** Called when player's weapon is out of ammo */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	void NotifyOutOfAmmo();
+
 
 
 };

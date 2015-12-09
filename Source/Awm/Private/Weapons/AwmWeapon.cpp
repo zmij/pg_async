@@ -448,8 +448,7 @@ void AAwmWeapon::HandleFiring()
 			AAwmHUD* MyHUD = MyPC ? Cast<AAwmHUD>(MyPC->GetHUD()) : NULL;
 			if (MyHUD)
 			{
-				// @todo
-				//MyHUD->NotifyOutOfAmmo();
+				MyHUD->NotifyOutOfAmmo();
 			}
 		}
 		
