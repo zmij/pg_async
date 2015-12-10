@@ -86,6 +86,12 @@ void UAwmInput::UpdateTouchCache(float DeltaTime)
 			TouchCache[i].bConsumed = false;
 		}
 	}
+
+	// Let chance to HUD to process events by itself
+	AAwmHUD* MyHUD = Cast<AAwmHUD>(MyController->GetHUD());
+	if (MyHUD) {
+		MyHUD->ProcessTouchEvents(TouchCache);
+	}
 }
 
 void UAwmInput::UpdateGameKeys(float DeltaTime)
