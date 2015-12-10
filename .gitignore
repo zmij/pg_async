@@ -11,6 +11,7 @@
 /Build/
 *.DS_Store
 /Awm.xcodeproj/
+/Awm.xcworkspace/
 /Config/
 *.mo
 *.*~
