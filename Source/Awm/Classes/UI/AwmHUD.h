@@ -31,6 +31,7 @@ class AAwmHUD : public AHUD
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
 	void HandleReturnToMainMenu();
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// Battle
 
@@ -47,5 +48,11 @@ class AAwmHUD : public AHUD
 	void NotifyOutOfAmmo();
 
 
+	//////////////////////////////////////////////////////////////////////////
+	// Touch input handler
+
+	/** Input system gives chance to override the input */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	void ProcessTouchEvents(const TArray<FFingerTouch>& TouchCache);
 
 };

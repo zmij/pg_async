@@ -6,11 +6,15 @@ UAwmInput::UAwmInput(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PrevTouchState(0)
 {
-
+	// Init default touch cache
+	for (int i = 0; i < 4; i++) {
+		TouchCache.Add(FFingerTouch());
+	}
 }
 
 void UAwmInput::UpdateDetection(float DeltaTime)
 {
+	UpdateTouchCache(DeltaTime);
 	UpdateGameKeys(DeltaTime);
 	ProcessKeyStates(DeltaTime);
 }
@@ -55,23 +59,67 @@ void UAwmInput::ProcessKeyStates(float DeltaTime)
 	}
 }
 
+void UAwmInput::UpdateTouchCache(float DeltaTime)
+{
+	AAwmPlayerController* MyController = CastChecked<AAwmPlayerController>(GetOuter());
+
+	// Cache touch input states
+	int32 TouchCount = FMath::Min(TouchCache.Num(), (int32)ARRAY_COUNT(MyController->PlayerInput->Touches));
+	for (int32 i = 0; i < TouchCount; i++)
+	{
+		// Update location
+		TouchCache[i].TouchLocation = FVector2D(MyController->PlayerInput->Touches[i]);
+
+		// Check pressed state
+		if (MyController->PlayerInput->Touches[i].Z == 0)
+		{
+			TouchCache[i].bFingerDown = false;
+		}
+		else
+		{
+			TouchCache[i].bFingerDown = true;
+		}
+
+		// Check consumation flag
+		if (TouchCache[i].bFingerDown == false)
+		{
+			TouchCache[i].bConsumed = false;
+		}
+	}
+}
+
 void UAwmInput::UpdateGameKeys(float DeltaTime)
 {
 	AAwmPlayerController* MyController = CastChecked<AAwmPlayerController>(GetOuter());
 
+	// Prepare unconsumed 
+	TArray<FFingerTouch> UnconsumedInput;
+	UnconsumedInput.SetNum(2);
+
+	// Cache touch input states
+	int32 TouchCount = FMath::Min(TouchCache.Num(), UnconsumedInput.Num());
+	for (int32 i = 0; i < TouchCount; i++)
+	{
+		// Check unconsumed fingers
+		if (!TouchCache[i].bConsumed)
+		{
+			UnconsumedInput[i] = TouchCache[i];
+		}
+	}
+
 	// Gather current states
 	uint32 CurrentTouchState = 0;
-	for (int32 i = 0; i < ARRAY_COUNT(MyController->PlayerInput->Touches); i++)
+	for (int32 i = 0; i < UnconsumedInput.Num(); i++)
 	{
-		if (MyController->PlayerInput->Touches[i].Z != 0)
+		if (UnconsumedInput[i].bFingerDown) 
 		{
 			CurrentTouchState |= (1 << i);
 		}
 	}
 
 	// Detection
-	FVector2D LocalPosition1 = FVector2D(MyController->PlayerInput->Touches[0]);
-	FVector2D LocalPosition2 = FVector2D(MyController->PlayerInput->Touches[1]);
+	FVector2D LocalPosition1 = UnconsumedInput[0].TouchLocation;
+	FVector2D LocalPosition2 = UnconsumedInput[1].TouchLocation;
 
 	DetectOnePointActions(CurrentTouchState & 1, PrevTouchState & 1, DeltaTime, LocalPosition1, TouchAnchors[0], Touch0DownTime);
 	DetectTwoPointsActions((CurrentTouchState & 1) && (CurrentTouchState & 2), (PrevTouchState & 1) && (PrevTouchState & 2), DeltaTime, LocalPosition1, LocalPosition2);
@@ -268,6 +316,22 @@ FVector UAwmInput::GetTouchLocation(int32 i) const
 	return (i >= 0 && i < EKeys::NUM_TOUCH_KEYS) ? MyController->PlayerInput->Touches[i] : FVector::ZeroVector;
 }
 
+FFingerTouch UAwmInput::GetTouchCache(int32 i) const
+{
+	return (i >= 0 && i < TouchCache.Num()) ? TouchCache[i] : FFingerTouch();
+}
+
+bool UAwmInput::ConsumeTouch(int32 i)
+{
+	if (i >= 0 && i < TouchCache.Num()) 
+	{
+		TouchCache[i].bConsumed = true;
+		return true;
+	}
+
+	return false;
+}
+
 FVector2D UAwmInput::GetTouchAnchor(int32 i) const
 {
 	return (i >= 0 && i < ARRAY_COUNT(TouchAnchors)) ? TouchAnchors[i] : FVector2D::ZeroVector;
@@ -276,7 +340,8 @@ FVector2D UAwmInput::GetTouchAnchor(int32 i) const
 bool UAwmInput::SetTouchAnchor(int32 i, FVector2D NewPosition)
 {
 	// Update desired anchor with new value
-	if (i >= 0 && i < ARRAY_COUNT(TouchAnchors)) {
+	if (i >= 0 && i < ARRAY_COUNT(TouchAnchors)) 
+	{
 		TouchAnchors[i] = NewPosition;
 		return true;
 	}

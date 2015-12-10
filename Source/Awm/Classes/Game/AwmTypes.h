@@ -247,3 +247,29 @@ public:
 		EnsureReplicationByte++;
 	}
 };
+
+USTRUCT(BlueprintType)
+struct FFingerTouch
+{
+	GENERATED_USTRUCT_BODY()
+
+	/** Screen-space touch coordinates (in pixels) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FVector2D TouchLocation;
+
+	/** States that finger is in touch state */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bFingerDown;
+
+	/** States that touch consumed by UMG-based UI */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bConsumed;
+
+	/** Defaults */
+	FFingerTouch()
+	{
+		TouchLocation = FVector2D::ZeroVector;
+		bFingerDown = false;
+		bConsumed = false;
+	}
+};

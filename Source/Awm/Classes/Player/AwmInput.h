@@ -84,9 +84,17 @@ public:
 	/** Update detection */
 	void UpdateDetection(float DeltaTime);
 
-	/** Get touch anchor position */
+	/** Get touch anchor position (original data from player controller!) */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Input")
 	FVector GetTouchLocation(int32 i) const;
+
+	/** Get touch anchor position from cache */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Input")
+	FFingerTouch GetTouchCache(int32 i) const;
+
+	/** Mark cached touch as consumed */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Input")
+	bool ConsumeTouch(int32 i);
 
 	/** Get touch anchor position */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Input")
@@ -103,6 +111,9 @@ protected:
 	/** Touch anchors */
 	FVector2D TouchAnchors[2];
 
+	/** List of cached touch positions */
+	TArray<FFingerTouch> TouchCache;
+
 	/** How long was touch 0 pressed? */
 	float Touch0DownTime;
 
@@ -117,6 +128,9 @@ protected:
 
 	/** Is two points touch active? */
 	bool bTwoPointsTouch;
+
+	/** Update fingers touch cache */
+	void UpdateTouchCache(float DeltaTime);
 
 	/** Update game key recognition */
 	void UpdateGameKeys(float DeltaTime);
