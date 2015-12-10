@@ -152,7 +152,7 @@ void UAwmTankMovementComponent::SetupVehicle() {
         return;
     }
 
-    if (WheelSetups.Num() % 2 != 0 && WheelSetups.Num() > 20) {
+    if (WheelSetups.Num() % 2 != 0) {
         PVehicle = NULL;
         PVehicleDrive = NULL;
         return;
