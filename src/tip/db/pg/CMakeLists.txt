@@ -41,11 +41,9 @@ set(
     detail/connection_pool.cpp
 )
 
-set(LIBRARY_NAME ${PROJECT_PREFIX}-psql)
-
-add_library(${LIBRARY_NAME} SHARED ${pgsql_lib_SRCS})
+add_library(${PGASYNC_LIB_NAME} SHARED ${pgsql_lib_SRCS})
 set_target_properties(
-    ${LIBRARY_NAME} PROPERTIES
+    ${PGASYNC_LIB_NAME} PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
@@ -56,10 +54,10 @@ set(pgsql_lib_LIBRARIES
     ${TIP_LOG_LIBRARY}
 )
 
-target_link_libraries(${LIBRARY_NAME} ${pgsql_lib_LIBRARIES})
+target_link_libraries(${PGASYNC_LIB_NAME} ${pgsql_lib_LIBRARIES})
 
 install (
-    TARGETS ${LIBRARY_NAME}
+    TARGETS ${PGASYNC_LIB_NAME}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )

@@ -67,6 +67,8 @@ if (USE_TIP_LOG)
     add_definitions(-DWITH_TIP_LOG)
 endif()
 
+set(PGASYNC_LIB_NAME ${PROJECT_PREFIX}-psql)
+
 add_subdirectory(src/tip/db/pg)
 add_subdirectory(include/tip/db)
 add_subdirectory(include/tip/util)
