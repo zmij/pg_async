@@ -42,7 +42,7 @@ target_link_libraries(
     ${PGTEST} 
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     ${GTEST_LIBRARIES}
-    tip-pgsql
+    ${PGASYNC_LIB_NAME}
 )
 
 if (TEST_DATABASE)
