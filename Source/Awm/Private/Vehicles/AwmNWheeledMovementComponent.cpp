@@ -258,7 +258,7 @@ void UAwmNWheeledMovementComponent::DestroyPhysicsState()
         // hack
         try
         {
-            World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
+            //World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
         }
         catch(...)
         {
