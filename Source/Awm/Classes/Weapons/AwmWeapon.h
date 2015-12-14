@@ -105,10 +105,6 @@ class AAwmWeapon : public AActor
 	// Targeting and rotation
 
 public:
-	/** [server + local] pointer to locked target*/
-	UPROPERTY(Transient, Replicated)
-	AAwmVehicle* LockedTarget;
-
 	/** [all] ... */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	void SetTurretYaw(float YawRotation);
@@ -133,6 +129,10 @@ protected:
 	/** Point at which player looks*/
 	UPROPERTY(Transient, Replicated)
 	FVector CameraViewLocation;
+
+	/** [server + local] pointer to locked target*/
+	UPROPERTY(Transient, Replicated)
+	AAwmVehicle* LockedTarget;
 
 
 	//////////////////////////////////////////////////////////////////////////
