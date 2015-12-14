@@ -411,6 +411,29 @@ bool AAwmVehicle::IsAlive() const
 	return Health > 0;
 }
 
+bool AAwmVehicle::IsEnemyFor(AController* TestPC) const
+{
+	if (TestPC == Controller || TestPC == NULL)
+	{
+		return false;
+	}
+
+	AAwmPlayerState* TestPlayerState = Cast<AAwmPlayerState>(TestPC->PlayerState);
+	AAwmPlayerState* MyPlayerState = Cast<AAwmPlayerState>(PlayerState);
+
+	bool bIsEnemy = true;
+	if (GetWorld()->GameState && GetWorld()->GameState->GameModeClass)
+	{
+		const AAwmGameMode* DefGame = GetWorld()->GameState->GameModeClass->GetDefaultObject<AAwmGameMode>();
+		if (DefGame && MyPlayerState && TestPlayerState)
+		{
+			bIsEnemy = DefGame->CanDealDamage(TestPlayerState, MyPlayerState);
+		}
+	}
+
+	return bIsEnemy;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Weapon usage

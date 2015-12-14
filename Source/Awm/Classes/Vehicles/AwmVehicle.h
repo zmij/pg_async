@@ -121,6 +121,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
 	bool IsAlive() const;
 
+	/**
+	* Check if pawn is enemy if given controller.
+	*
+	* @param	TestPC	Controller to check against.
+	*/
+	bool IsEnemyFor(AController* TestPC) const;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Weapon usage
