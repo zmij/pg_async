@@ -77,6 +77,11 @@ void UAwmInput::UpdateTouchCache(float DeltaTime)
 		}
 		else
 		{
+			// Check we've just begin a touch
+			if (TouchCache[i].bFingerDown == false) {
+				TouchCache[i].TouchOrigin = TouchCache[i].TouchLocation;
+			}
+
 			TouchCache[i].bFingerDown = true;
 		}
 

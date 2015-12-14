@@ -257,6 +257,10 @@ struct FFingerTouch
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	FVector2D TouchLocation;
 
+	/** Screen-space touch origin coordinates (in pixels) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FVector2D TouchOrigin;
+
 	/** States that finger is in touch state */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	bool bFingerDown;
@@ -269,6 +273,7 @@ struct FFingerTouch
 	FFingerTouch()
 	{
 		TouchLocation = FVector2D::ZeroVector;
+		TouchOrigin = FVector2D::ZeroVector;
 		bFingerDown = false;
 		bConsumed = false;
 	}
