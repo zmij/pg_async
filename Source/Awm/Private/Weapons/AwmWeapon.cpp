@@ -337,6 +337,25 @@ void AAwmWeapon::ClientStartReload_Implementation()
 	StartReload();
 }
 
+void AAwmWeapon::LockTarget()
+{
+	if (Role < ROLE_Authority)
+	{
+		ServerLockTarget();
+	}
+	LockedTarget = LockTargetBP();
+}
+
+void AAwmWeapon::ServerLockTarget_Implementation()
+{
+	LockTarget();
+}
+
+bool AAwmWeapon::ServerLockTarget_Validate()
+{
+	return true;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Control
@@ -753,6 +772,7 @@ void AAwmWeapon::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLif
 	// Only to local owner
 	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmoInClip, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AAwmWeapon, LockedTarget, COND_OwnerOnly);
 
 	// Everyone except local owner: flag change is locally instigated
 	DOREPLIFETIME_CONDITION(AAwmWeapon, BurstCounter, COND_SkipOwner);
@@ -807,6 +827,11 @@ EWeaponState::Type AAwmWeapon::GetCurrentState() const
 FVector AAwmWeapon::GetCameraViewLocation() const
 {
 	return CameraViewLocation;
+}
+
+AAwmVehicle* AAwmWeapon::GetLockedTarget() const
+{
+	return LockedTarget;
 }
 
 float AAwmWeapon::GetEquipStartedTime() const

@@ -105,6 +105,10 @@ class AAwmWeapon : public AActor
 	// Targeting and rotation
 
 public:
+	/** [server + local] pointer to locked target*/
+	UPROPERTY(Transient, Replicated)
+	AAwmVehicle* LockedTarget;
+
 	/** [all] ... */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	void SetTurretYaw(float YawRotation);
@@ -173,6 +177,18 @@ public:
 	/** update camera view location */
 	UFUNCTION(reliable, server, WithValidation)
 	void ServerSetCameraViewLocation(FVector ViewLocation);
+
+	/** [server + client] lock target */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void LockTarget();
+
+	/** [server] lock target */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerLockTarget();
+
+	/** [server + client] locks target (assuming further replication of LockedTarget variable from server to client) */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Weapon", meta = (DisplayName = "Lock Target"))
+	AAwmVehicle* LockTargetBP();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -297,6 +313,10 @@ public:
 	/** get current camera view location */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	FVector GetCameraViewLocation() const;
+
+	/** get current camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	AAwmVehicle* GetLockedTarget() const;
 
 	/** gets last time when this weapon was switched to */
 	float GetEquipStartedTime() const;
