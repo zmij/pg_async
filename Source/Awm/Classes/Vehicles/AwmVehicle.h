@@ -126,6 +126,7 @@ public:
 	*
 	* @param	TestPC	Controller to check against.
 	*/
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
 	bool IsEnemyFor(AController* TestPC) const;
 
 	//////////////////////////////////////////////////////////////////////////
