@@ -256,14 +256,14 @@ void UAwmNWheeledMovementComponent::DestroyPhysicsState()
         DestroyWheels();
         
         // hack
-        try
+        /*try
         {
             //World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
         }
         catch(...)
         {
             ((PxVehicleDriveNW*)PVehicle)->free();
-        }
+        }*/
         
         PVehicle = NULL;
         
