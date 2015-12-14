@@ -318,6 +318,26 @@ void AAwmWeapon::ClientStartReload_Implementation()
 	StartReload();
 }
 
+void AAwmWeapon::SetCameraViewLocation(FVector ViewLocation)
+{
+	CameraViewLocation = ViewLocation;
+
+	if (Role < ROLE_Authority)
+	{
+		ServerSetCameraViewLocation(ViewLocation);
+	}
+}
+
+bool AAwmWeapon::ServerSetCameraViewLocation_Validate(FVector ViewLocation)
+{
+	return true;
+}
+
+void AAwmWeapon::ServerSetCameraViewLocation_Implementation(FVector ViewLocation)
+{
+	SetCameraViewLocation(ViewLocation);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Control
@@ -783,6 +803,11 @@ bool AAwmWeapon::IsAttachedToPawn() const
 EWeaponState::Type AAwmWeapon::GetCurrentState() const
 {
 	return CurrentState;
+}
+
+FVector AAwmWeapon::GetCameraViewLocation() const
+{
+	return CameraViewLocation;
 }
 
 float AAwmWeapon::GetEquipStartedTime() const

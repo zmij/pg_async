@@ -118,9 +118,13 @@ protected:
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
 	float TurretYaw;
 
-	/** Turrent Pitch rotation */
+	/** Turret Pitch rotation */
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
 	float TurretPitch;
+
+	/** Point at which player looks*/
+	UPROPERTY(Transient, Replicated)
+	FVector CameraViewLocation;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -146,6 +150,10 @@ public:
 	UFUNCTION(reliable, client)
 	void ClientStartReload();
 
+	/** [server + local] change camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void SetCameraViewLocation(FVector ViewLocation);
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Input [server side]
@@ -161,6 +169,10 @@ public:
 
 	UFUNCTION(reliable, server, WithValidation)
 	void ServerStopReload();
+
+	/** update camera view location */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerSetCameraViewLocation(FVector ViewLocation);
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -281,6 +293,10 @@ public:
 	/** check if mesh is already attached */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	bool IsAttachedToPawn() const;
+
+	/** get current camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	FVector GetCameraViewLocation() const;
 
 	/** gets last time when this weapon was switched to */
 	float GetEquipStartedTime() const;
