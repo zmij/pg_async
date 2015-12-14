@@ -113,6 +113,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	void SetTurretPitch(float PitchRotation);
 
+	/** [server + local] change camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void SetCameraViewLocation(FVector ViewLocation);
+
 protected:
 	/** Turret Yaw rotation */
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
@@ -149,10 +153,6 @@ public:
 	/** trigger reload from server */
 	UFUNCTION(reliable, client)
 	void ClientStartReload();
-
-	/** [server + local] change camera view location */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
-	void SetCameraViewLocation(FVector ViewLocation);
 
 
 	//////////////////////////////////////////////////////////////////////////

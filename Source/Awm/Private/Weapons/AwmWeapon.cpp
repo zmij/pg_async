@@ -200,6 +200,25 @@ void AAwmWeapon::SetTurretPitch(float PitchRotation)
 	TurretPitch = PitchRotation;
 }
 
+void AAwmWeapon::SetCameraViewLocation(FVector ViewLocation)
+{
+	CameraViewLocation = ViewLocation;
+
+	if (Role < ROLE_Authority)
+	{
+		ServerSetCameraViewLocation(ViewLocation);
+	}
+}
+
+bool AAwmWeapon::ServerSetCameraViewLocation_Validate(FVector ViewLocation)
+{
+	return true;
+}
+
+void AAwmWeapon::ServerSetCameraViewLocation_Implementation(FVector ViewLocation)
+{
+	SetCameraViewLocation(ViewLocation);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -316,26 +335,6 @@ void AAwmWeapon::ServerStopReload_Implementation()
 void AAwmWeapon::ClientStartReload_Implementation()
 {
 	StartReload();
-}
-
-void AAwmWeapon::SetCameraViewLocation(FVector ViewLocation)
-{
-	CameraViewLocation = ViewLocation;
-
-	if (Role < ROLE_Authority)
-	{
-		ServerSetCameraViewLocation(ViewLocation);
-	}
-}
-
-bool AAwmWeapon::ServerSetCameraViewLocation_Validate(FVector ViewLocation)
-{
-	return true;
-}
-
-void AAwmWeapon::ServerSetCameraViewLocation_Implementation(FVector ViewLocation)
-{
-	SetCameraViewLocation(ViewLocation);
 }
 
 
