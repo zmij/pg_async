@@ -23,7 +23,14 @@ else()
     set(PROJECT_VERSION ${_pversion})
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(BOOST_COMPONENTS
+    system
+    thread
+)
+
+find_package(Boost 1.58 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${Boost_INCLUDE_DIR})
 add_definitions("-std=c++11")
 
 set(TIP_IRI_LIB ${PROJECT_PREFIX}-iri)
