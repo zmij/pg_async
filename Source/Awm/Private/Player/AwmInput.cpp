@@ -77,6 +77,11 @@ void UAwmInput::UpdateTouchCache(float DeltaTime)
 		}
 		else
 		{
+			// Check we've just begin a touch
+			if (TouchCache[i].bFingerDown == false) {
+				TouchCache[i].TouchOrigin = TouchCache[i].TouchLocation;
+			}
+
 			TouchCache[i].bFingerDown = true;
 		}
 
@@ -103,13 +108,15 @@ void UAwmInput::UpdateGameKeys(float DeltaTime)
 	UnconsumedInput.SetNum(2);
 
 	// Cache touch input states
+    int32 CurrentTouch = 0;
 	int32 TouchCount = FMath::Min(TouchCache.Num(), UnconsumedInput.Num());
 	for (int32 i = 0; i < TouchCount; i++)
 	{
 		// Check unconsumed fingers
 		if (!TouchCache[i].bConsumed)
 		{
-			UnconsumedInput[i] = TouchCache[i];
+			UnconsumedInput[CurrentTouch] = TouchCache[i];
+            CurrentTouch++;
 		}
 	}
 

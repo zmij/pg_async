@@ -235,6 +235,35 @@ void UAwmNWheeledMovementComponent::SetupVehicle()
     
 }
 
+/** FPhysXVehicleManager can't free PxVehicleTypes::eDRIVENW type, this is hack */
+void UAwmNWheeledMovementComponent::DestroyPhysicsState()
+{
+    //skip super invoke
+    //Super::DestroyPhysicsState();
+    
+    if ( PVehicle )
+    {
+        DestroyWheels();
+        
+        // hack
+        /*try
+        {
+            //World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
+        }
+        catch(...)
+        {
+            ((PxVehicleDriveNW*)PVehicle)->free();
+        }*/
+        
+        PVehicle = NULL;
+        
+        if ( UpdatedComponent )
+        {
+            UpdatedComponent->RecreatePhysicsState();
+        }
+    }
+}
+
 void UAwmNWheeledMovementComponent::UpdateSimulation(float DeltaTime)
 {
     if (PVehicleDrive == NULL)

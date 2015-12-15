@@ -31,6 +31,24 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	Camera->bUsePawnControlRotation = false;
 	Camera->FieldOfView = 90.f;
 
+	// Create a spring arm component
+	TargetingSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("TargetingSpringArm0"));
+	//SpringArm->TargetOffset = FVector(0.f, 0.f, 200.f);
+	TargetingSpringArm->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+	TargetingSpringArm->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
+	TargetingSpringArm->AttachTo(RootComponent);
+	TargetingSpringArm->TargetArmLength = 300.0f;
+	TargetingSpringArm->bEnableCameraRotationLag = false;
+	TargetingSpringArm->CameraRotationLagSpeed = 7.f;
+	TargetingSpringArm->bInheritPitch = false;
+	TargetingSpringArm->bInheritRoll = false;
+
+	// Create targeting camera component 
+	TargetingCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TargetingCamera0"));
+	TargetingCamera->AttachTo(TargetingSpringArm, USpringArmComponent::SocketName);
+	TargetingCamera->bUsePawnControlRotation = false;
+	TargetingCamera->FieldOfView = 30.f;
+
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
 	//HealthBar->Space = EWidgetSpace::Screen;
 	HealthBar->RelativeLocation = FVector(0.f, 0.f, 450.f);
@@ -409,6 +427,29 @@ int32 AAwmVehicle::GetMaxHealth() const
 bool AAwmVehicle::IsAlive() const
 {
 	return Health > 0;
+}
+
+bool AAwmVehicle::IsEnemyFor(AController* TestPC) const
+{
+	if (TestPC == Controller || TestPC == NULL)
+	{
+		return false;
+	}
+
+	AAwmPlayerState* TestPlayerState = Cast<AAwmPlayerState>(TestPC->PlayerState);
+	AAwmPlayerState* MyPlayerState = Cast<AAwmPlayerState>(PlayerState);
+
+	bool bIsEnemy = true;
+	if (GetWorld()->GameState && GetWorld()->GameState->GameModeClass)
+	{
+		const AAwmGameMode* DefGame = GetWorld()->GameState->GameModeClass->GetDefaultObject<AAwmGameMode>();
+		if (DefGame && MyPlayerState && TestPlayerState)
+		{
+			bIsEnemy = DefGame->CanDealDamage(TestPlayerState, MyPlayerState);
+		}
+	}
+
+	return bIsEnemy;
 }
 
 

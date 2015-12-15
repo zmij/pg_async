@@ -113,14 +113,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	void SetTurretPitch(float PitchRotation);
 
+	/** [server + local] change camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void SetCameraViewLocation(FVector ViewLocation);
+
 protected:
 	/** Turret Yaw rotation */
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
 	float TurretYaw;
 
-	/** Turrent Pitch rotation */
+	/** Turret Pitch rotation */
 	UPROPERTY(Transient, Replicated, BlueprintReadOnly)
 	float TurretPitch;
+
+	/** Point at which player looks*/
+	UPROPERTY(Transient, Replicated)
+	FVector CameraViewLocation;
+
+	/** [server + local] pointer to locked target*/
+	UPROPERTY(Transient, Replicated)
+	AAwmVehicle* LockedTarget;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -161,6 +173,22 @@ public:
 
 	UFUNCTION(reliable, server, WithValidation)
 	void ServerStopReload();
+
+	/** update camera view location */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerSetCameraViewLocation(FVector ViewLocation);
+
+	/** [server + client] lock target */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void LockTarget();
+
+	/** [server] lock target */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerLockTarget();
+
+	/** [server + client] locks target (assuming further replication of LockedTarget variable from server to client) */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Weapon", meta = (DisplayName = "Lock Target"))
+	AAwmVehicle* LockTargetBP();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -281,6 +309,14 @@ public:
 	/** check if mesh is already attached */
 	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
 	bool IsAttachedToPawn() const;
+
+	/** get current camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	FVector GetCameraViewLocation() const;
+
+	/** get current camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	AAwmVehicle* GetLockedTarget() const;
 
 	/** gets last time when this weapon was switched to */
 	float GetEquipStartedTime() const;

@@ -200,6 +200,25 @@ void AAwmWeapon::SetTurretPitch(float PitchRotation)
 	TurretPitch = PitchRotation;
 }
 
+void AAwmWeapon::SetCameraViewLocation(FVector ViewLocation)
+{
+	CameraViewLocation = ViewLocation;
+
+	if (Role < ROLE_Authority)
+	{
+		ServerSetCameraViewLocation(ViewLocation);
+	}
+}
+
+bool AAwmWeapon::ServerSetCameraViewLocation_Validate(FVector ViewLocation)
+{
+	return true;
+}
+
+void AAwmWeapon::ServerSetCameraViewLocation_Implementation(FVector ViewLocation)
+{
+	SetCameraViewLocation(ViewLocation);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -316,6 +335,25 @@ void AAwmWeapon::ServerStopReload_Implementation()
 void AAwmWeapon::ClientStartReload_Implementation()
 {
 	StartReload();
+}
+
+void AAwmWeapon::LockTarget()
+{
+	if (Role < ROLE_Authority)
+	{
+		ServerLockTarget();
+	}
+	LockedTarget = LockTargetBP();
+}
+
+void AAwmWeapon::ServerLockTarget_Implementation()
+{
+	LockTarget();
+}
+
+bool AAwmWeapon::ServerLockTarget_Validate()
+{
+	return true;
 }
 
 
@@ -734,6 +772,7 @@ void AAwmWeapon::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLif
 	// Only to local owner
 	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAwmWeapon, CurrentAmmoInClip, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AAwmWeapon, LockedTarget, COND_OwnerOnly);
 
 	// Everyone except local owner: flag change is locally instigated
 	DOREPLIFETIME_CONDITION(AAwmWeapon, BurstCounter, COND_SkipOwner);
@@ -783,6 +822,16 @@ bool AAwmWeapon::IsAttachedToPawn() const
 EWeaponState::Type AAwmWeapon::GetCurrentState() const
 {
 	return CurrentState;
+}
+
+FVector AAwmWeapon::GetCameraViewLocation() const
+{
+	return CameraViewLocation;
+}
+
+AAwmVehicle* AAwmWeapon::GetLockedTarget() const
+{
+	return LockedTarget;
 }
 
 float AAwmWeapon::GetEquipStartedTime() const
