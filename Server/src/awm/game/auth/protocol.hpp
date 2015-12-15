@@ -50,6 +50,7 @@ struct authn_response {
 	identity_type	uid;
 	std::string		name;
 	identity_type	token;
+	std::string		lobby_uri;
 
 	template < typename Archive >
 	void
@@ -58,7 +59,8 @@ struct authn_response {
 		archive(
 			CEREAL_NVP(uid),
 			CEREAL_NVP(name),
-			CEREAL_NVP(token)
+			CEREAL_NVP(token),
+			CEREAL_NVP(lobby_uri)
 		);
 	}
 };

@@ -46,6 +46,9 @@ configuration::configuration() :
 		("listen-port,p",
 			po::value<std::string>(&bind_port)->default_value("65432"),
 			"Listen to port")
+		("external-uri",
+			po::value<std::string>(&external_uri)->default_value("https://localhost/server"),
+			"External URI for client")
 		("threads,t", po::value<size_t>(&threads)->default_value(4),
 			"Server worker thread count")
 		("pid-file", po::value<std::string>(&pid_file),

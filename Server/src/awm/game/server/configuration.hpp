@@ -45,6 +45,7 @@ public:
 	/** @name Server options */
 	std::string						bind_address;
 	std::string						bind_port;
+	std::string                     external_uri;
 	size_t							threads;
 	std::string                     pid_file;
 	//@}
