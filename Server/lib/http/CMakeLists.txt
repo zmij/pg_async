@@ -56,9 +56,17 @@ add_subdirectory(data)
 
 add_subdirectory(lib/ssl)
 
+set(BOOST_COMPONENTS
+    system
+    thread
+)
+
+find_package(Boost 1.58 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+
 set(CEREAL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 
 include_directories(
+    ${Boost_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/include
