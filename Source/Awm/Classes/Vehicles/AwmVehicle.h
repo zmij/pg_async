@@ -348,6 +348,14 @@ protected:
 	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* Camera;
 
+	/** Spring arm that will offset the targeting camera */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* TargetingSpringArm;
+
+	/** Camera for tergeting view */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* TargetingCamera;
+
 	/** Component that shows health bar */
 	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* HealthBar;
@@ -358,6 +366,12 @@ public:
 
 	/** Returns Camera subobject **/
 	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
+
+	/** Returns TargetingSpringArm subobject **/
+	FORCEINLINE USpringArmComponent* GetTargetingSpringArm() const { return TargetingSpringArm; }
+
+	/** Returns TargetingCamera subobject **/
+	FORCEINLINE UCameraComponent* GetTargetingCamera() const { return TargetingCamera; }
 
 	/** Returns HealthBar subobject **/
 	FORCEINLINE UWidgetComponent* GetHealthBar() const { return HealthBar; }

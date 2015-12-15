@@ -31,6 +31,24 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	Camera->bUsePawnControlRotation = false;
 	Camera->FieldOfView = 90.f;
 
+	// Create a spring arm component
+	TargetingSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("TargetingSpringArm0"));
+	//SpringArm->TargetOffset = FVector(0.f, 0.f, 200.f);
+	TargetingSpringArm->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+	TargetingSpringArm->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
+	TargetingSpringArm->AttachTo(RootComponent);
+	TargetingSpringArm->TargetArmLength = 300.0f;
+	TargetingSpringArm->bEnableCameraRotationLag = false;
+	TargetingSpringArm->CameraRotationLagSpeed = 7.f;
+	TargetingSpringArm->bInheritPitch = false;
+	TargetingSpringArm->bInheritRoll = false;
+
+	// Create targeting camera component 
+	TargetingCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TargetingCamera0"));
+	TargetingCamera->AttachTo(TargetingSpringArm, USpringArmComponent::SocketName);
+	TargetingCamera->bUsePawnControlRotation = false;
+	TargetingCamera->FieldOfView = 30.f;
+
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
 	//HealthBar->Space = EWidgetSpace::Screen;
 	HealthBar->RelativeLocation = FVector(0.f, 0.f, 450.f);
