@@ -9,7 +9,7 @@
 UAwmTankMovementComponent::UAwmTankMovementComponent(const FObjectInitializer &ObjectInitializer)
         : Super(ObjectInitializer)
 {
-
+    
     ensurePhysXFoundationSetup();
             
     StopThreshold = 10.0f;
@@ -73,7 +73,6 @@ UAwmTankMovementComponent::UAwmTankMovementComponent(const FObjectInitializer &O
 
 
 float FTankEngineData::FindPeakTorque() const {
-    // Find max torque
     float PeakTorque = 0.f;
     TArray<FRichCurveKey> TorqueKeys = TorqueCurve.GetRichCurveConst()->GetCopyOfKeys();
     for (int32 KeyIdx = 0; KeyIdx < TorqueKeys.Num(); KeyIdx++)
@@ -84,6 +83,9 @@ float FTankEngineData::FindPeakTorque() const {
     return PeakTorque;
 }
 
+////////////////////////////////////////////////////////////
+// Setup helpers
+
 static void GetTankVehicleEngineSetup(const FTankEngineData &Setup, PxVehicleEngineData &PxSetup) {
     PxSetup.mMOI = M2ToCm2(Setup.MOI);
     PxSetup.mMaxOmega = RPMToOmega(Setup.MaxRPM);
@@ -91,8 +93,8 @@ static void GetTankVehicleEngineSetup(const FTankEngineData &Setup, PxVehicleEng
     PxSetup.mDampingRateZeroThrottleClutchEngaged = M2ToCm2(Setup.DampingRateZeroThrottleClutchEngaged);
     PxSetup.mDampingRateZeroThrottleClutchDisengaged = M2ToCm2(Setup.DampingRateZeroThrottleClutchDisengaged);
 
-    float PeakTorque = Setup.FindPeakTorque(); // In Nm
-    PxSetup.mPeakTorque = M2ToCm2(PeakTorque);    // convert Nm to (kg cm^2/s^2)
+    float PeakTorque = Setup.FindPeakTorque();
+    PxSetup.mPeakTorque = M2ToCm2(PeakTorque);
 
     // Convert from our curve to PhysX
     PxSetup.mTorqueCurve.clear();
@@ -101,7 +103,7 @@ static void GetTankVehicleEngineSetup(const FTankEngineData &Setup, PxVehicleEng
     for (int32 KeyIdx = 0; KeyIdx < NumTorqueCurveKeys; KeyIdx++)
     {
         FRichCurveKey& Key = TorqueKeys[KeyIdx];
-        PxSetup.mTorqueCurve.addPair( FMath::Clamp(Key.Time / Setup.MaxRPM, 0.f, 1.f), Key.Value / PeakTorque ); // Normalize torque to 0-1 range
+        PxSetup.mTorqueCurve.addPair( FMath::Clamp(Key.Time / Setup.MaxRPM, 0.f, 1.f), Key.Value / PeakTorque );
     }
 }
 
@@ -128,7 +130,6 @@ static void GetTankVehicleAutoBoxSetup(const FTankTransmissionData &Setup, PxVeh
 void SetupTankDriveHelper(const UAwmTankMovementComponent *VehicleData,
                           PxVehicleDriveSimData &DriveData) {
 
-
     PxVehicleEngineData EngineSetup;
     GetTankVehicleEngineSetup(VehicleData->EngineSetup, EngineSetup);
     DriveData.setEngineData(EngineSetup);
@@ -146,6 +147,8 @@ void SetupTankDriveHelper(const UAwmTankMovementComponent *VehicleData,
     DriveData.setAutoBoxData(AutoBoxSetup);
 
 }
+
+////////////////////////////////////////////////////////////
 
 void UAwmTankMovementComponent::SetupVehicle() {
     if (!UpdatedPrimitive) {
@@ -165,21 +168,16 @@ void UAwmTankMovementComponent::SetupVehicle() {
         }
     }
 
-    // Setup the chassis and wheel shapes
     SetupVehicleShapes();
 
-    // Setup mass properties
     SetupVehicleMass();
 
-    // Setup the wheels
     PxVehicleWheelsSimData *PWheelsSimData = PxVehicleWheelsSimData::allocate(WheelSetups.Num());
     SetupWheels(PWheelsSimData);
 
-    // Setup drive data
     PxVehicleDriveSimData DriveData;
     SetupTankDriveHelper(this, DriveData);
 
-    // Create the vehicle
     PxVehicleDriveTank *PVehicleDriveTank = PxVehicleDriveTank::allocate(WheelSetups.Num());
     check(PVehicleDriveTank);
     
@@ -192,20 +190,13 @@ void UAwmTankMovementComponent::SetupVehicle() {
     PVehicleDriveTank->setToRestState();
     PVehicleDriveTank->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
 
-    // cleanup
     PWheelsSimData->free();
 
-    // cache values
     PVehicle = PVehicleDriveTank;
     PVehicleDrive = PVehicleDriveTank;
 
     SetUseAutoGears(TransmissionSetup.bUseGearAutoBox);
     
-}
-
-
-void UAwmTankMovementComponent::PreTick(float DeltaTime) {
-    UWheeledVehicleMovementComponent::PreTick(DeltaTime);
 }
 
 float UAwmTankMovementComponent::CalcThrottleInput() {

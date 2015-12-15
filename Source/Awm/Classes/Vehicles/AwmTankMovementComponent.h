@@ -17,7 +17,7 @@ struct FTankEngineData
 {
     GENERATED_USTRUCT_BODY()
 
-    /** Torque (Nm) at a given RPM*/
+    /** Torque (Nm) at a given RPM */
     UPROPERTY(EditAnywhere, Category = Setup)
     FRuntimeFloatCurve TorqueCurve;
 
@@ -25,7 +25,7 @@ struct FTankEngineData
     UPROPERTY(EditAnywhere, Category = Setup, meta = (ClampMin = "0.01", UIMin = "0.01"))
     float MaxRPM;
 
-    /** Moment of inertia of the engine around the axis of rotation (Kgm^2). */
+    /** Moment of inertia of the engine around the axis of rotation (Kgm^2) */
     UPROPERTY(EditAnywhere, Category = Setup, meta = (ClampMin = "0.01", UIMin = "0.01"))
     float MOI;
 
@@ -33,11 +33,11 @@ struct FTankEngineData
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float DampingRateFullThrottle;
 
-    /** Damping rate of engine in at zero throttle when the clutch is engaged (Kgm^2/s)*/
+    /** Damping rate of engine in at zero throttle when the clutch is engaged (Kgm^2/s) */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float DampingRateZeroThrottleClutchEngaged;
 
-    /** Damping rate of engine in at zero throttle when the clutch is disengaged (in neutral gear) (Kgm^2/s)*/
+    /** Damping rate of engine in at zero throttle when the clutch is disengaged (in neutral gear) (Kgm^2/s) */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float DampingRateZeroThrottleClutchDisengaged;
 
@@ -51,15 +51,15 @@ struct FTankGearData
 {
     GENERATED_USTRUCT_BODY()
 
-    /** Determines the amount of torque multiplication*/
+    /** Determines the amount of torque multiplication */
     UPROPERTY(EditAnywhere, Category = Setup)
     float Ratio;
 
-    /** Value of engineRevs/maxEngineRevs that is low enough to gear down*/
+    /** Value of engineRevs/maxEngineRevs that is low enough to gear down */
     UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", UIMin = "0.0", ClampMax = "1.0", UIMax = "1.0"), Category = Setup)
     float DownRatio;
 
-    /** Value of engineRevs/maxEngineRevs that is high enough to gear up*/
+    /** Value of engineRevs/maxEngineRevs that is high enough to gear up */
     UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", UIMin = "0.0", ClampMax = "1.0", UIMax = "1.0"), Category = Setup)
     float UpRatio;
 };
@@ -68,6 +68,7 @@ USTRUCT()
 struct FTankTransmissionData
 {
     GENERATED_USTRUCT_BODY()
+    
     /** Whether to use automatic transmission */
     UPROPERTY(EditAnywhere, Category = VehicleSetup, meta=(DisplayName = "Automatic Transmission"))
     bool bUseGearAutoBox;
@@ -84,7 +85,7 @@ struct FTankTransmissionData
     UPROPERTY(EditAnywhere, AdvancedDisplay, Category = Setup)
     float FinalRatio;
 
-    /** Forward gear ratios (up to 30) */
+    /** Forward gear ratios */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay)
     TArray<FTankGearData> ForwardGears;
 
@@ -107,40 +108,49 @@ class AWM_API UAwmTankMovementComponent : public UWheeledVehicleMovementComponen
 
 public:
     
-    UPROPERTY(EditAnywhere, Category = "Tank Input")
+    /** Tank control model */
+    UPROPERTY(EditAnywhere, Category = MechanicalSetup)
     TankControlModel ControlModel;
     
     /** Engine */
-    UPROPERTY(EditAnywhere, Category = "Tank Input")
+    UPROPERTY(EditAnywhere, Category = MechanicalSetup)
     FTankEngineData EngineSetup;
 
-    /** Transmission data */
-    UPROPERTY(EditAnywhere, Category = "Tank Input")
+    /** Transmission */
+    UPROPERTY(EditAnywhere, Category = MechanicalSetup)
     FTankTransmissionData TransmissionSetup;
 
-    UPROPERTY(EditAnywhere, Category = "Tank Input", AdvancedDisplay)
+    /** Rate at which left thrust can rise and fall */
+    UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
     FVehicleInputRate LeftThrustRate;
     
-    UPROPERTY(EditAnywhere, Category = "Tank Input", AdvancedDisplay)
+    /** Rate at which right thrust can rise and fall */
+    UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
     FVehicleInputRate RightThrustRate;
     
-    UPROPERTY(EditAnywhere, Category = "Tank Input", AdvancedDisplay)
+    /** Rate at which right brake can rise and fall */
+    UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
     FVehicleInputRate RightBrakeRate;
     
-    UPROPERTY(EditAnywhere, Category = "Tank Input", AdvancedDisplay)
+    /** Rate at which left brake can rise and fall */
+    UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
     FVehicleInputRate LeftBrakeRate;
 
-    UPROPERTY(EditAnywhere, Category = "Tank Input", AdvancedDisplay)
+    /** TODO: use IdleBrakeInput */
+    UPROPERTY(EditAnywhere, Category = VehicleInput, AdvancedDisplay)
     float SteeringBrakeRate;
     
 protected:
+    
+    /** Allocate and setup the PhysX vehicle */
     virtual void SetupVehicle() override;
+    
+    /** Simulation tick */
     virtual void UpdateSimulation(float DeltaTime) override;
 
-public:
-    virtual void PreTick(float DeltaTime) override;
-
 protected:
+    
+    /** Compute throttle input */
     virtual float CalcThrottleInput() override;
     
 };

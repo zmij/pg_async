@@ -12,7 +12,7 @@ struct FVehicleEngineDataNW
 {
     GENERATED_USTRUCT_BODY()
     
-    /** Torque (Nm) at a given RPM*/
+    /** Torque (Nm) at a given RPM */
     UPROPERTY(EditAnywhere, Category = Setup)
     FRuntimeFloatCurve TorqueCurve;
     
@@ -20,7 +20,7 @@ struct FVehicleEngineDataNW
     UPROPERTY(EditAnywhere, Category = Setup, meta = (ClampMin = "0.01", UIMin = "0.01"))
     float MaxRPM;
     
-    /** Moment of inertia of the engine around the axis of rotation (Kgm^2). */
+    /** Moment of inertia of the engine around the axis of rotation (Kgm^2) */
     UPROPERTY(EditAnywhere, Category = Setup, meta = (ClampMin = "0.01", UIMin = "0.01"))
     float MOI;
     
@@ -28,11 +28,11 @@ struct FVehicleEngineDataNW
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float DampingRateFullThrottle;
     
-    /** Damping rate of engine in at zero throttle when the clutch is engaged (Kgm^2/s)*/
+    /** Damping rate of engine in at zero throttle when the clutch is engaged (Kgm^2/s) */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float DampingRateZeroThrottleClutchEngaged;
     
-    /** Damping rate of engine in at zero throttle when the clutch is disengaged (in neutral gear) (Kgm^2/s)*/
+    /** Damping rate of engine in at zero throttle when the clutch is disengaged (in neutral gear) (Kgm^2/s) */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float DampingRateZeroThrottleClutchDisengaged;
     
@@ -46,15 +46,15 @@ struct FVehicleGearDataNW
 {
     GENERATED_USTRUCT_BODY()
     
-    /** Determines the amount of torque multiplication*/
+    /** Determines the amount of torque multiplication */
     UPROPERTY(EditAnywhere, Category = Setup)
     float Ratio;
     
-    /** Value of engineRevs/maxEngineRevs that is low enough to gear down*/
+    /** Value of engineRevs/maxEngineRevs that is low enough to gear down */
     UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", UIMin = "0.0", ClampMax = "1.0", UIMax = "1.0"), Category = Setup)
     float DownRatio;
     
-    /** Value of engineRevs/maxEngineRevs that is high enough to gear up*/
+    /** Value of engineRevs/maxEngineRevs that is high enough to gear up */
     UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", UIMin = "0.0", ClampMax = "1.0", UIMax = "1.0"), Category = Setup)
     float UpRatio;
 };
@@ -72,15 +72,15 @@ struct FVehicleTransmissionDataNW
     UPROPERTY(EditAnywhere, Category = Setup, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float GearSwitchTime;
     
-    /** Minimum time it takes the automatic transmission to initiate a gear change (seconds)*/
+    /** Minimum time it takes the automatic transmission to initiate a gear change (seconds) */
     UPROPERTY(EditAnywhere, Category = Setup, meta = (editcondition = "bUseGearAutoBox", ClampMin = "0.0", UIMin = "0.0"))
     float GearAutoBoxLatency;
     
-    /** The final gear ratio multiplies the transmission gear ratios.*/
+    /** The final gear ratio multiplies the transmission gear ratios */
     UPROPERTY(EditAnywhere, AdvancedDisplay, Category = Setup)
     float FinalRatio;
     
-    /** Forward gear ratios (up to 30) */
+    /** Forward gear ratios */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay)
     TArray<FVehicleGearDataNW> ForwardGears;
     
@@ -88,11 +88,11 @@ struct FVehicleTransmissionDataNW
     UPROPERTY(EditAnywhere, AdvancedDisplay, Category = Setup)
     float ReverseGearRatio;
     
-    /** Value of engineRevs/maxEngineRevs that is high enough to increment gear*/
+    /** Value of engineRevs/maxEngineRevs that is high enough to increment gear */
     UPROPERTY(EditAnywhere, AdvancedDisplay, Category = Setup, meta = (ClampMin = "0.0", UIMin = "0.0", ClampMax = "1.0", UIMax = "1.0"))
     float NeutralGearUpRatio;
     
-    /** Strength of clutch (Kgm^2/s)*/
+    /** Strength of clutch (Kgm^2/s) */
     UPROPERTY(EditAnywhere, Category = Setup, AdvancedDisplay, meta = (ClampMin = "0.0", UIMin = "0.0"))
     float ClutchStrength;
 };
@@ -113,7 +113,7 @@ class UAwmNWheeledMovementComponent : public UWheeledVehicleMovementComponent
     UPROPERTY(EditAnywhere, Category = MechanicalSetup)
     FVehicleEngineDataNW EngineSetup;
     
-    /** Transmission data */
+    /** Transmission */
     UPROPERTY(EditAnywhere, Category = MechanicalSetup)
     FVehicleTransmissionDataNW TransmissionSetup;
     
@@ -121,14 +121,14 @@ class UAwmNWheeledMovementComponent : public UWheeledVehicleMovementComponent
     UPROPERTY(EditAnywhere, Category = SteeringSetup)
     FRuntimeFloatCurve SteeringCurve;
     
-#if WITH_EDITOR
-    virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
-    
+    /** FPhysXVehicleManager can't free PxVehicleTypes::eDRIVENW type, this is hack */
     virtual void DestroyPhysicsState() override;
     
 protected:
+    /** Allocate and setup the PhysX vehicle */
     virtual void SetupVehicle() override;
+    
+    /** Simulation tick */
     virtual void UpdateSimulation(float DeltaTime) override;
     
 

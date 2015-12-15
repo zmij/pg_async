@@ -63,58 +63,12 @@ UAwmNWheeledMovementComponent::UAwmNWheeledMovementComponent(const FObjectInitia
     SteeringCurveData->AddKey(60.f, 0.8f);
     SteeringCurveData->AddKey(120.f, 0.7f);
     
-    // Initialize WheelSetups array with 6 wheels
     WheelSetups.SetNum(6);
     
 }
 
-#if WITH_EDITOR
-void UAwmNWheeledMovementComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
-{
-    Super::PostEditChangeProperty(PropertyChangedEvent);
-    const FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
-    
-    if (PropertyName == TEXT("DownRatio"))
-    {
-        for (int32 GearIdx = 0; GearIdx < TransmissionSetup.ForwardGears.Num(); ++GearIdx)
-        {
-            FVehicleGearDataNW & GearData = TransmissionSetup.ForwardGears[GearIdx];
-            GearData.DownRatio = FMath::Min(GearData.DownRatio, GearData.UpRatio);
-        }
-    }
-    else if (PropertyName == TEXT("UpRatio"))
-    {
-        for (int32 GearIdx = 0; GearIdx < TransmissionSetup.ForwardGears.Num(); ++GearIdx)
-        {
-            FVehicleGearDataNW & GearData = TransmissionSetup.ForwardGears[GearIdx];
-            GearData.UpRatio = FMath::Max(GearData.DownRatio, GearData.UpRatio);
-        }
-    }
-    else if (PropertyName == TEXT("SteeringCurve"))
-    {
-        //make sure values are capped between 0 and 1
-        TArray<FRichCurveKey> SteerKeys = SteeringCurve.GetRichCurve()->GetCopyOfKeys();
-        for (int32 KeyIdx = 0; KeyIdx < SteerKeys.Num(); ++KeyIdx)
-        {
-            float NewValue = FMath::Clamp(SteerKeys[KeyIdx].Value, 0.f, 1.f);
-            SteeringCurve.GetRichCurve()->UpdateOrAddKey(SteerKeys[KeyIdx].Time, NewValue);
-        }
-    }
-}
-#endif
-
-static void GetVehicleDifferentialNWSetup(const TArray<FWheelSetup>& WheelsSetup, PxVehicleDifferentialNWData& PxSetup)
-{
-    for (int32 WheelIdx = 0; WheelIdx < WheelsSetup.Num(); ++WheelIdx)
-    {
-        const FWheelSetup& WheelSetup = WheelsSetup[WheelIdx];
-        PxSetup.setDrivenWheel(WheelIdx, !WheelSetup.WheelClass->IsChildOf<UVehicleNoDrivedWheel>());
-    }
-}
-
 float FVehicleEngineDataNW::FindPeakTorque() const
 {
-    // Find max torque
     float PeakTorque = 0.f;
     TArray<FRichCurveKey> TorqueKeys = TorqueCurve.GetRichCurveConst()->GetCopyOfKeys();
     for (int32 KeyIdx = 0; KeyIdx < TorqueKeys.Num(); KeyIdx++)
@@ -123,6 +77,18 @@ float FVehicleEngineDataNW::FindPeakTorque() const
         PeakTorque = FMath::Max(PeakTorque, Key.Value);
     }
     return PeakTorque;
+}
+
+////////////////////////////////////////////////////////////
+// Setup helpers
+
+static void GetVehicleDifferentialNWSetup(const TArray<FWheelSetup>& WheelsSetup, PxVehicleDifferentialNWData& PxSetup)
+{
+    for (int32 WheelIdx = 0; WheelIdx < WheelsSetup.Num(); ++WheelIdx)
+    {
+        const FWheelSetup& WheelSetup = WheelsSetup[WheelIdx];
+        PxSetup.setDrivenWheel(WheelIdx, !WheelSetup.WheelClass->IsChildOf<UVehicleNoDrivedWheel>());
+    }
 }
 
 static void GetVehicleEngineSetup(const FVehicleEngineDataNW& Setup, PxVehicleEngineData& PxSetup)
@@ -143,7 +109,7 @@ static void GetVehicleEngineSetup(const FVehicleEngineDataNW& Setup, PxVehicleEn
     for (int32 KeyIdx = 0; KeyIdx < NumTorqueCurveKeys; KeyIdx++)
     {
         FRichCurveKey& Key = TorqueKeys[KeyIdx];
-        PxSetup.mTorqueCurve.addPair(FMath::Clamp(Key.Time / Setup.MaxRPM, 0.f, 1.f), Key.Value / PeakTorque); // Normalize torque to 0-1 range
+        PxSetup.mTorqueCurve.addPair(FMath::Clamp(Key.Time / Setup.MaxRPM, 0.f, 1.f), Key.Value / PeakTorque);
     }
 }
 
@@ -195,57 +161,8 @@ void SetupDriveHelper(const UAwmNWheeledMovementComponent* VehicleData, const Px
     DriveData.setAutoBoxData(AutoBoxSetup);
 }
 
-void UAwmNWheeledMovementComponent::SetupVehicle()
-{
-    if (!UpdatedPrimitive)
-    {
-        return;
-    }
-    
-    for (int32 WheelIdx = 0; WheelIdx < WheelSetups.Num(); ++WheelIdx)
-    {
-        const FWheelSetup& WheelSetup = WheelSetups[WheelIdx];
-        if (WheelSetup.BoneName == NAME_None)
-        {
-            return;
-        }
-    }
-    
-    // Setup the chassis and wheel shapes
-    SetupVehicleShapes();
-    
-    // Setup mass properties
-    SetupVehicleMass();
-    
-    // Setup the wheels
-    PxVehicleWheelsSimData* PWheelsSimData = PxVehicleWheelsSimData::allocate(WheelSetups.Num());
-    SetupWheels(PWheelsSimData);
-    
-    // Setup drive data
-    PxVehicleDriveSimDataNW DriveData;
-    SetupDriveHelper(this, PWheelsSimData, DriveData);
-    
-    // Create the vehicle
-    PxVehicleDriveNW* PVehicleDriveNW = PxVehicleDriveNW::allocate(WheelSetups.Num());
-    check(PVehicleDriveNW);
-    
-    PVehicleDriveNW->setup(GPhysXSDK, UpdatedPrimitive->GetBodyInstance()->GetPxRigidDynamic_AssumesLocked(), *PWheelsSimData, DriveData, WheelSetups.Num());
-    
-    PVehicleDriveNW->setToRestState();
-    
-    PVehicleDriveNW->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
-    
-    PWheelsSimData->free();
-    
-    // cache values
-    PVehicle = PVehicleDriveNW;
-    PVehicleDrive = PVehicleDriveNW;
-    
-    SetUseAutoGears(TransmissionSetup.bUseGearAutoBox);
-    
-}
+////////////////////////////////////////////////////////////
 
-/** FPhysXVehicleManager can't free PxVehicleTypes::eDRIVENW type, this is hack */
 void UAwmNWheeledMovementComponent::DestroyPhysicsState()
 {
     //skip super invoke
@@ -274,6 +191,50 @@ void UAwmNWheeledMovementComponent::DestroyPhysicsState()
     }
 }
 
+void UAwmNWheeledMovementComponent::SetupVehicle()
+{
+    if (!UpdatedPrimitive)
+    {
+        return;
+    }
+    
+    for (int32 WheelIdx = 0; WheelIdx < WheelSetups.Num(); ++WheelIdx)
+    {
+        const FWheelSetup& WheelSetup = WheelSetups[WheelIdx];
+        if (WheelSetup.BoneName == NAME_None)
+        {
+            return;
+        }
+    }
+    
+    SetupVehicleShapes();
+    
+    SetupVehicleMass();
+    
+    PxVehicleWheelsSimData* PWheelsSimData = PxVehicleWheelsSimData::allocate(WheelSetups.Num());
+    SetupWheels(PWheelsSimData);
+    
+    PxVehicleDriveSimDataNW DriveData;
+    SetupDriveHelper(this, PWheelsSimData, DriveData);
+    
+    PxVehicleDriveNW* PVehicleDriveNW = PxVehicleDriveNW::allocate(WheelSetups.Num());
+    check(PVehicleDriveNW);
+    
+    PVehicleDriveNW->setup(GPhysXSDK, UpdatedPrimitive->GetBodyInstance()->GetPxRigidDynamic_AssumesLocked(), *PWheelsSimData, DriveData, WheelSetups.Num());
+    
+    PVehicleDriveNW->setToRestState();
+    
+    PVehicleDriveNW->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
+    
+    PWheelsSimData->free();
+    
+    PVehicle = PVehicleDriveNW;
+    PVehicleDrive = PVehicleDriveNW;
+    
+    SetUseAutoGears(TransmissionSetup.bUseGearAutoBox);
+    
+}
+
 void UAwmNWheeledMovementComponent::UpdateSimulation(float DeltaTime)
 {
     if (PVehicleDrive == NULL)
@@ -291,7 +252,6 @@ void UAwmNWheeledMovementComponent::UpdateSimulation(float DeltaTime)
         VehicleInputData.setGearDown(bRawGearDownInput);
     }
     
-    // TODO: move to SetupVehicle
     PxFixedSizeLookupTable<8> SpeedSteerLookup;
     TArray<FRichCurveKey> SteerKeys = SteeringCurve.GetRichCurve()->GetCopyOfKeys();
     const int32 MaxSteeringSamples = FMath::Min(8, SteerKeys.Num());
@@ -300,7 +260,6 @@ void UAwmNWheeledMovementComponent::UpdateSimulation(float DeltaTime)
         FRichCurveKey& Key = SteerKeys[KeyIdx];
         SpeedSteerLookup.addPair(KmHToCmS(Key.Time), FMath::Clamp(Key.Value, 0.f, 1.f));
     }
-    //end TODO
     
     PxVehiclePadSmoothingData SmoothData = {
         { ThrottleInputRate.RiseRate, BrakeInputRate.RiseRate, HandbrakeInputRate.RiseRate, SteeringInputRate.RiseRate, SteeringInputRate.RiseRate },
