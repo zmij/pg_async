@@ -122,7 +122,7 @@ class UAwmNWheeledMovementComponent : public UWheeledVehicleMovementComponent
     FRuntimeFloatCurve SteeringCurve;
     
     /** FPhysXVehicleManager can't free PxVehicleTypes::eDRIVENW type, this is hack */
-    virtual void DestroyPhysicsState() override;
+//    virtual void DestroyPhysicsState() override;
     
 protected:
     /** Allocate and setup the PhysX vehicle */

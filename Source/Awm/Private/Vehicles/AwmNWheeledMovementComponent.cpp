@@ -79,6 +79,36 @@ float FVehicleEngineDataNW::FindPeakTorque() const
     return PeakTorque;
 }
 
+/** FPhysXVehicleManager can't free PxVehicleTypes::eDRIVENW type, this is hack
+void UAwmNWheeledMovementComponent::DestroyPhysicsState()
+{
+    //skip super invoke
+    //Super::DestroyPhysicsState();
+    
+    if ( PVehicle )
+    {
+        DestroyWheels();
+        
+        // hack
+        try
+         {
+         //World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
+         }
+         catch(...)
+         {
+         ((PxVehicleDriveNW*)PVehicle)->free();
+         }
+        
+        PVehicle = NULL;
+        
+        if ( UpdatedComponent )
+        {
+            UpdatedComponent->RecreatePhysicsState();
+        }
+    }
+}
+*/
+
 ////////////////////////////////////////////////////////////
 // Setup helpers
 
@@ -163,34 +193,6 @@ void SetupDriveHelper(const UAwmNWheeledMovementComponent* VehicleData, const Px
 
 ////////////////////////////////////////////////////////////
 
-void UAwmNWheeledMovementComponent::DestroyPhysicsState()
-{
-    //skip super invoke
-    //Super::DestroyPhysicsState();
-    
-    if ( PVehicle )
-    {
-        DestroyWheels();
-        
-        // hack
-        try
-        {
-            //World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
-        }
-        catch(...)
-        {
-            ((PxVehicleDriveNW*)PVehicle)->free();
-        }
-        
-        PVehicle = NULL;
-        
-        if ( UpdatedComponent )
-        {
-            UpdatedComponent->RecreatePhysicsState();
-        }
-    }
-}
-
 void UAwmNWheeledMovementComponent::SetupVehicle()
 {
     if (!UpdatedPrimitive)
@@ -233,35 +235,6 @@ void UAwmNWheeledMovementComponent::SetupVehicle()
     
     SetUseAutoGears(TransmissionSetup.bUseGearAutoBox);
     
-}
-
-/** FPhysXVehicleManager can't free PxVehicleTypes::eDRIVENW type, this is hack */
-void UAwmNWheeledMovementComponent::DestroyPhysicsState()
-{
-    //skip super invoke
-    //Super::DestroyPhysicsState();
-    
-    if ( PVehicle )
-    {
-        DestroyWheels();
-        
-        // hack
-        /*try
-        {
-            //World->GetPhysicsScene()->GetVehicleManager()->RemoveVehicle( this );
-        }
-        catch(...)
-        {
-            ((PxVehicleDriveNW*)PVehicle)->free();
-        }*/
-        
-        PVehicle = NULL;
-        
-        if ( UpdatedComponent )
-        {
-            UpdatedComponent->RecreatePhysicsState();
-        }
-    }
 }
 
 void UAwmNWheeledMovementComponent::UpdateSimulation(float DeltaTime)
