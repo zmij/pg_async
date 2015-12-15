@@ -1,11 +1,9 @@
 /*
  * configuration.cpp
  *
- *  Created on: Aug 30, 2015
- *      Author: zmij
  */
 
-#include <awm/game/server/configuration.hpp>
+#include <awm/game/auth/configuration.hpp>
 #include <awm/game/server/config.hpp>
 #include <iostream>
 #include <fstream>
@@ -13,7 +11,7 @@
 
 namespace awm {
 namespace game {
-namespace server {
+namespace auth {
 
 LOCAL_LOGGING_FACILITY(CONFIG, OFF);
 
@@ -22,7 +20,9 @@ namespace po = boost::program_options;
 configuration::configuration() :
 		db_connection_pool(8),
 		threads(4),
-		log_use_colors(false)
+		log_use_colors(false),
+		session_timeout(15),
+		session_cleanup_interval(60)
 {
 	options_description generic("Generic options");
 	generic.add_options()
@@ -44,6 +44,9 @@ configuration::configuration() :
 		("listen-port,p",
 			po::value<std::string>(&bind_port)->default_value("65432"),
 			"Listen to port")
+		("external-uri",
+			po::value<std::string>(&external_uri)->default_value("https://localhost/server"),
+			"External URI for client")
 		("threads,t", po::value<size_t>(&threads)->default_value(4),
 			"Server worker thread count")
 		("pid-file", po::value<std::string>(&pid_file),
@@ -58,6 +61,17 @@ configuration::configuration() :
 		("connection-pool,n", po::value<size_t>(&db_connection_pool)->default_value(8),
 			"Database connection pool size")
 	;
+	options_description cache("Cache options");
+	cache.add_options()
+		("session-timeout", po::value<size_t>(&session_timeout)->default_value(15),
+			"User session timeout, in minutes")
+		("session-cleanup-interval", po::value<size_t>(&session_cleanup_interval)->default_value(60),
+			"Session cleanup interval, in seconds")
+		("user-timeout", po::value<size_t>(&user_timeout)->default_value(60),
+			"User session timeout, in minutes")
+		("user-cleanup-interval", po::value<size_t>(&user_cleanup_interval)->default_value(60),
+			"Session cleanup interval, in seconds")
+	;
 	options_description log_options("Log options");
 	log_options.add_options()
 		("log-file", po::value<std::string>(&log_target), "Log file path")
@@ -70,9 +84,9 @@ configuration::configuration() :
 	;
 	options_description l10n_options("Localization options");
 	l10n_options.add_options()
-		("l10n-root", po::value<std::string>(&l10n_root)->default_value(L10N_ROOT),
+		("l10n-root", po::value<std::string>(&l10n_root)->default_value(awm::game::server::L10N_ROOT),
 				"Root of localized messages catalog")
-		("languages", po::value<std::string>(&languages)->default_value(L10N_LANGUAGES),
+		("languages", po::value<std::string>(&languages)->default_value(awm::game::server::L10N_LANGUAGES),
 				"Supported languages for the server instance")
 		("default-language", po::value<std::string>(&default_language),
 				"Default language for the server instance. "
@@ -84,6 +98,7 @@ configuration::configuration() :
 		add(game).
 		add(server).
 		add(database).
+		add(cache).
 		add(log_options).
 		add(l10n_options)
 	;
@@ -91,6 +106,7 @@ configuration::configuration() :
 		add(server).
 		add(game).
 		add(database).
+		add(cache).
 		add(log_options).
 		add(l10n_options)
 	;
@@ -137,6 +153,6 @@ configuration::instance()
 	return config_;
 }
 
-} /* namespace server */
+} /* namespace auth */
 } /* namespace game */
 } /* namespace awm */

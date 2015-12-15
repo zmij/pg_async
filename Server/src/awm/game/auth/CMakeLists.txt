@@ -6,6 +6,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 set(game_auth_SRCS
+    configuration.cpp
     protocol.cpp
     user.cpp
     password.cpp

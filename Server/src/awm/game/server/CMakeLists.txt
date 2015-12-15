@@ -10,7 +10,6 @@ find_package( Boost COMPONENTS
 
 set(
     tip_server_SRCS
-    configuration.cpp
     authd.cpp
 )
 

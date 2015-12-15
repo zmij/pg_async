@@ -14,10 +14,10 @@
 
 #include <tip/version.hpp>
 
-#include <awm/game/server/configuration.hpp>
 #include <awm/game/server/config.hpp>
 #include <awm/game/world/world.hpp>
 
+#include <awm/game/auth/configuration.hpp>
 #include <awm/game/auth/session.hpp>
 #include <awm/game/auth/user.hpp>
 #include <awm/game/auth/password_authn_handler.hpp>
@@ -25,7 +25,6 @@
 #include <awm/game/auth/token.hpp>
 #include <awm/game/auth/user_language.hpp>
 #include <awm/game/auth/stats.hpp>
-
 
 #include <string>
 #include <iostream>
@@ -37,8 +36,8 @@ bool
 check_options()
 {
 	namespace pg = tip::db::pg;
-	using awm::game::server::configuration;
 	using tip::http::server::locale_manager;
+	using awm::game::auth::configuration;
 
 	configuration& cfg = configuration::instance();
 
@@ -148,9 +147,9 @@ int
 main(int argc, char* argv[])
 {
 	namespace pg = tip::db::pg;
-	using awm::game::server::configuration;
 	using tip::http::server::request_dispatcher;
 	using tip::http::server::server;
+	using awm::game::auth::configuration;
 	using awm::game::world::world;
 	using request_dispatcher_ptr = tip::http::server::request_dispatcher_ptr;
 

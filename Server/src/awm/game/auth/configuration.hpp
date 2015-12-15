@@ -1,12 +1,10 @@
 /*
  * configuration.hpp
  *
- *  Created on: Aug 30, 2015
- *      Author: zmij
  */
 
-#ifndef TIP_GAME_SERVER_CONFIGURATION_HPP_
-#define TIP_GAME_SERVER_CONFIGURATION_HPP_
+#ifndef TIP_GAME_AUTH_CONFIGURATION_HPP_
+#define TIP_GAME_AUTH_CONFIGURATION_HPP_
 
 #include <string>
 #include <boost/program_options.hpp>
@@ -14,7 +12,7 @@
 
 namespace awm {
 namespace game {
-namespace server {
+namespace auth {
 
 class configuration {
 public:
@@ -45,6 +43,7 @@ public:
 	/** @name Server options */
 	std::string						bind_address;
 	std::string						bind_port;
+	std::string                     external_uri;
 	size_t							threads;
 	std::string                     pid_file;
 	//@}
@@ -55,6 +54,13 @@ public:
 	tip::log::logger::event_severity
 									log_level;
 	bool							log_use_colors;
+	//@}
+	//@{
+	/** @name Cache options */
+	size_t							session_timeout;
+	size_t							session_cleanup_interval;
+	size_t							user_timeout;
+	size_t							user_cleanup_interval;
 	//@}
 	std::string						game_data_root;
 	//@{
@@ -72,8 +78,8 @@ private:
 	std::string			config_file_name_;
 };
 
-} /* namespace server */
+} /* namespace auth */
 } /* namespace game */
 } /* namespace awm */
 
-#endif /* TIP_GAME_SERVER_CONFIGURATION_HPP_ */
+#endif /* TIP_GAME_AUTH_CONFIGURATION_HPP_ */
