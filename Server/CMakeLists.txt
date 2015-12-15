@@ -81,6 +81,8 @@ find_package (Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Crypto++ REQUIRED)
 
+include_directories(${Boost_INCLUDE_DIR})
+
 # Library subprojects
 add_subproject(log ROOT lib/log 
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/log/include)
