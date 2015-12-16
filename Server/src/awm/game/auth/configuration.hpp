@@ -12,7 +12,7 @@
 
 namespace awm {
 namespace game {
-namespace auth {
+namespace authn {
 
 class configuration {
 public:
@@ -78,7 +78,7 @@ private:
 	std::string			config_file_name_;
 };
 
-} /* namespace auth */
+} /* namespace authn */
 } /* namespace game */
 } /* namespace awm */
 

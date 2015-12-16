@@ -37,7 +37,7 @@ check_options()
 {
 	namespace pg = tip::db::pg;
 	using tip::http::server::locale_manager;
-	using awm::game::auth::configuration;
+	using awm::game::authn::configuration;
 
 	configuration& cfg = configuration::instance();
 
@@ -87,6 +87,8 @@ check_options()
 	if (!cfg.default_language.empty()) {
 		loc_mgr.set_default_language(cfg.default_language);
 	}
+
+	awm::game::authn::set_authn_response_lobby_uri( cfg.external_uri );
 
 	std::locale::global(loc_mgr.default_locale());
 
@@ -149,7 +151,7 @@ main(int argc, char* argv[])
 	namespace pg = tip::db::pg;
 	using tip::http::server::request_dispatcher;
 	using tip::http::server::server;
-	using awm::game::auth::configuration;
+	using awm::game::authn::configuration;
 	using awm::game::world::world;
 	using request_dispatcher_ptr = tip::http::server::request_dispatcher_ptr;
 

@@ -22,6 +22,12 @@ operator << (std::ostream& os, vendor_uid_req const& val)
 	return os;
 }
 
+std::string authn_response::lobby_uri = "";
+
+void
+set_authn_response_lobby_uri( std::string& uri ) {
+	authn_response::lobby_uri = uri;
+}
 
 }  // namespace authn
 }  // namespace game

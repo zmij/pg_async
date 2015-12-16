@@ -11,7 +11,7 @@
 
 namespace awm {
 namespace game {
-namespace auth {
+namespace authn {
 
 LOCAL_LOGGING_FACILITY(CONFIG, OFF);
 
@@ -153,6 +153,6 @@ configuration::instance()
 	return config_;
 }
 
-} /* namespace auth */
+} /* namespace authn */
 } /* namespace game */
 } /* namespace awm */

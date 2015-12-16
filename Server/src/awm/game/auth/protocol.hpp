@@ -46,10 +46,15 @@ struct vendor_uid_req {
 std::ostream&
 operator << (std::ostream& os, vendor_uid_req const& val);
 
+void
+set_authn_response_lobby_uri( std::string& );
+
 struct authn_response {
 	identity_type	uid;
 	std::string		name;
 	identity_type	token;
+
+	static
 	std::string		lobby_uri;
 
 	template < typename Archive >
