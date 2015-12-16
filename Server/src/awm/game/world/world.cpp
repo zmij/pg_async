@@ -6,7 +6,6 @@
  */
 
 #include <awm/game/world/world.hpp>
-#include <awm/game/server/configuration.hpp>
 
 #include <tip/log.hpp>
 

@@ -74,14 +74,20 @@ set(BOOST_COMPONENTS
     regex
     filesystem
     locale
+    program_options
 )
 
 find_package(Boost 1.58 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 find_package (Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Crypto++ REQUIRED)
+find_package(PStreams REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIR})
+
+if(BUILD_TESTS)
+    enable_testing()
+endif()
 
 # Library subprojects
 add_subproject(log ROOT lib/log 
@@ -108,7 +114,11 @@ include_directories(
 )
 
 add_subdirectory(include/tip)
-add_subdirectory(src/awm/game)
+add_subdirectory(src/awm)
+
+if(BUILD_TESTS)
+    add_subdirectory(test)
+endif()
 
 # Game databases
 add_subdirectory(sql/create)

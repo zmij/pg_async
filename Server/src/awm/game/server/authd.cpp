@@ -46,10 +46,6 @@ check_options()
 			{"application_name", "TIP Game Server"},
 			{"client_encoding", "UTF8"}
 		});
-	if (cfg.main_database.empty()) {
-		std::cerr << "Main database argument is empty\n";
-		return false;
-	}
 	pg::connection_options main =
 			pg::connection_options::parse(cfg.main_database);
 	main.alias = pg::dbalias{"main"};
@@ -159,76 +155,66 @@ main(int argc, char* argv[])
 		logger::set_proc_name(argv[0]);
 		boost::program_options::variables_map vm;
 		configuration& cfg = configuration::instance();
-		cfg.parse_options(argc, argv, vm);
+		if (cfg.parse_options(argc, argv)) {
+			logger::use_colors(cfg.log_use_colors);
+			logger::min_severity(cfg.log_level);
+			logger::set_stream(std::cerr);
 
-		logger::use_colors(cfg.log_use_colors);
-		logger::min_severity(cfg.log_level);
-		logger::set_stream(std::cerr);
-
-		if (!cfg.log_target.empty()) {
-			try {
-				redirect_cerr = std::make_shared< stream_redirect >( std::cerr, cfg.log_target );
-			} catch (std::runtime_error const& e) {
-				std::cerr << e.what();
+			if (!cfg.log_target.empty()) {
+				try {
+					redirect_cerr = std::make_shared< stream_redirect >( std::cerr, cfg.log_target );
+				} catch (std::runtime_error const& e) {
+					std::cerr << e.what();
+				}
 			}
+
+			if (!cfg.pid_file.empty()) {
+				std::ofstream pid_file(cfg.pid_file);
+				pid_file << getpid() << "\n";
+			}
+
+			local_log(logger::INFO) << argv[0] << " server version "
+					<< tip::VERSION << " branch " << tip::BRANCH;
+			if (!check_options()) {
+				cfg.usage(std::cerr);
+				return 1;
+			}
+
+			// Reading world prototypes
+			local_log(logger::INFO) << "Reading world prototypes";
+			world& wrld = world::instance();
+			wrld.import(cfg.game_data_root);
+
+			request_dispatcher_ptr dispatcher(std::make_shared<request_dispatcher>());
+			// Configure dispatcher
+			configure_request_dispatcher(dispatcher);
+
+			local_log(logger::INFO) << "Bind to address " << cfg.bind_address
+					<< ":" << cfg.bind_port;
+			local_log(logger::INFO) << "Threads " << cfg.threads
+					<< " connection pool size " << cfg.db_connection_pool;
+			// Initialize session LRU cache
+			awm::game::authn::session::register_lru(
+					cfg.session_cleanup_interval,
+					cfg.session_timeout);
+			// Initialize user LRU cache
+			awm::game::authn::user::register_lru(
+					cfg.user_cleanup_interval,
+					cfg.user_timeout);
+
+			// Create server instance
+			server s(pg::db_service::io_service(),
+					cfg.bind_address, cfg.bind_port, cfg.threads,
+					dispatcher,
+					[](){
+						// FIXME clean up caches before calling the db_service stop
+						awm::game::authn::session::clear_lru();
+						awm::game::authn::user::clear_lru();
+						pg::db_service::stop();
+					});
+			// Run server
+			s.run();
 		}
-
-		if (vm.count("help")) {
-			cfg.usage(std::cout);
-			return 0;
-		}
-		if (vm.count("version")) {
-			std::cout << "TIP Game Server version "
-				<< tip::VERSION << " branch " << tip::BRANCH << "\n";
-			return 0;
-		}
-
-		if (!cfg.pid_file.empty()) {
-			std::ofstream pid_file(cfg.pid_file);
-			pid_file << getpid() << "\n";
-		}
-
-		local_log(logger::INFO) << "TIP Game Server version "
-				<< tip::VERSION << " branch " << tip::BRANCH;
-		if (!check_options()) {
-			cfg.usage(std::cerr);
-			return 1;
-		}
-
-		// Reading world prototypes
-		local_log(logger::INFO) << "Reading world prototypes";
-		world& wrld = world::instance();
-		wrld.import(cfg.game_data_root);
-
-		request_dispatcher_ptr dispatcher(std::make_shared<request_dispatcher>());
-		// Configure dispatcher
-		configure_request_dispatcher(dispatcher);
-
-		local_log(logger::INFO) << "Bind to address " << cfg.bind_address
-				<< ":" << cfg.bind_port;
-		local_log(logger::INFO) << "Threads " << cfg.threads
-				<< " connection pool size " << cfg.db_connection_pool;
-		// Initialize session LRU cache
-		awm::game::authn::session::register_lru(
-				cfg.session_cleanup_interval,
-				cfg.session_timeout);
-		// Initialize user LRU cache
-		awm::game::authn::user::register_lru(
-				cfg.user_cleanup_interval,
-				cfg.user_timeout);
-
-		// Create server instance
-		server s(pg::db_service::io_service(),
-				cfg.bind_address, cfg.bind_port, cfg.threads,
-				dispatcher,
-				[](){
-					// FIXME clean up caches before calling the db_service stop
-					awm::game::authn::session::clear_lru();
-					awm::game::authn::user::clear_lru();
-					pg::db_service::stop();
-				});
-		// Run server
-		s.run();
 	} catch (std::exception const& e) {
 		local_log(logger::ERROR) << "Uncaught exception: " << e.what();
 		return 1;

@@ -20,17 +20,9 @@ namespace po = boost::program_options;
 configuration::configuration() :
 		db_connection_pool(8),
 		threads(4),
-		log_use_colors(false),
 		session_timeout(15),
 		session_cleanup_interval(60)
 {
-	options_description generic("Generic options");
-	generic.add_options()
-		("config-file,c",
-				po::value<std::string>(&config_file_name_), "Configuration file")
-		("version", "Print version and exit")
-		("help", "Print help and exit")
-	;
 	options_description game("Game data options");
 	game.add_options()
 		("game-data,w", po::value<std::string>(&game_data_root),
@@ -54,7 +46,8 @@ configuration::configuration() :
 	;
 	options_description database("Database options");
 	database.add_options()
-		("main-database,d", po::value<std::string>(&main_database),
+		("main-database,d",
+			po::value<std::string>(&main_database)->required(),
 			"Main database connection string [mandatory]")
 		("log-database,l", po::value<std::string>(&log_database),
 			"Log database connection string [mandatory]")
@@ -72,19 +65,12 @@ configuration::configuration() :
 		("user-cleanup-interval", po::value<size_t>(&user_cleanup_interval)->default_value(60),
 			"Session cleanup interval, in seconds")
 	;
-	options_description log_options("Log options");
-	log_options.add_options()
-		("log-file", po::value<std::string>(&log_target), "Log file path")
-		("log-date-format", po::value<std::string>(&log_date_format)->default_value("%d.%m", "DD.MM"),
-				"Log date format. See boost::date_time IO documentation for available flags")
-		("log-level,v",
-			po::value<logger::event_severity>(&log_level)->default_value(logger::INFO),
-			"Log level (TRACE, DEBUG, INFO, WARNING, ERROR)")
-		("log-colors", "Output colored log")
-	;
 	options_description l10n_options("Localization options");
 	l10n_options.add_options()
-		("l10n-root", po::value<std::string>(&l10n_root)->default_value(awm::game::server::L10N_ROOT),
+		("l10n-root",
+				po::value<std::string>(&l10n_root)
+					->default_value(awm::game::server::L10N_ROOT)
+					->required(),
 				"Root of localized messages catalog")
 		("languages", po::value<std::string>(&languages)->default_value(awm::game::server::L10N_LANGUAGES),
 				"Supported languages for the server instance")
@@ -93,57 +79,11 @@ configuration::configuration() :
 				"Will use the first in the language list if not set")
 	;
 
-	command_line_.
-		add(generic).
-		add(game).
-		add(server).
-		add(database).
-		add(cache).
-		add(log_options).
-		add(l10n_options)
-	;
-	config_file_options_.
-		add(server).
-		add(game).
-		add(database).
-		add(cache).
-		add(log_options).
-		add(l10n_options)
-	;
-}
-
-void
-configuration::add_command_line_options(options_description const& desc)
-{
-	command_line_.add(desc);
-}
-void
-configuration::add_config_file_options(options_description const& desc)
-{
-	config_file_options_.add(desc);
-}
-
-void
-configuration::parse_options(int argc, char* argv[], variables_map& vm)
-{
-	po::store(po::parse_command_line(argc, argv, command_line_), vm);
-	po::notify(vm);
-	if (!config_file_name_.empty()) {
-		std::ifstream cfg(config_file_name_.c_str());
-		if (cfg) {
-			po::store(po::parse_config_file(cfg, config_file_options_), vm);
-			po::notify(vm);
-		}
-	}
-	log_use_colors = vm.count("log-colors");
-}
-
-void
-configuration::usage(std::ostream& os)
-{
-	os << "TIP server " << tip::VERSION << " branch " << tip::BRANCH
-		<< " usage:\n"
-		<< command_line_ << "\n";
+	add_options(game);
+	add_options(server);
+	add_options(database);
+	add_options(cache);
+	add_options(l10n_options);
 }
 
 configuration&

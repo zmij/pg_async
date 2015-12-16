@@ -33,6 +33,7 @@ set(auth_LIBRARIES
 	${TIP_LOG_LIB}
 	${TIP_DB_LIB}
 	${TIP_HTTP_SERVER_LIB}
+	awm-config
 )
 target_link_libraries(${LIB_NAME} ${auth_LIBRARIES})
 
