@@ -103,20 +103,23 @@ void UAwmInput::UpdateGameKeys(float DeltaTime)
 {
 	AAwmPlayerController* MyController = CastChecked<AAwmPlayerController>(GetOuter());
 
-	// Prepare unconsumed 
+	// Prepare unconsumed
+	const int32 UnconsumedInputMax = 2;
 	TArray<FFingerTouch> UnconsumedInput;
-	UnconsumedInput.SetNum(2);
+	UnconsumedInput.SetNum(UnconsumedInputMax);
 
 	// Cache touch input states
     int32 CurrentTouch = 0;
-	int32 TouchCount = FMath::Min(TouchCache.Num(), UnconsumedInput.Num());
-	for (int32 i = 0; i < TouchCount; i++)
+	for (int32 i = 0; i < TouchCache.Num(); i++)
 	{
 		// Check unconsumed fingers
 		if (!TouchCache[i].bConsumed)
 		{
 			UnconsumedInput[CurrentTouch] = TouchCache[i];
             CurrentTouch++;
+			if (CurrentTouch == UnconsumedInputMax) {
+				break;
+			}
 		}
 	}
 
