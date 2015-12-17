@@ -15,6 +15,8 @@ AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer)
 	ReplaySpectatorPlayerControllerClass = AAwmDemoSpectator::StaticClass();
 
 	MinRespawnDelay = 5.0f;
+	bRespawn = true;
+    bOneRound = false;
 
 	bAllowBots = true;
 	bNeedsBotCreation = true;
@@ -45,6 +47,8 @@ void AAwmGameMode::PreInitializeComponents()
 	Super::PreInitializeComponents();
 
 	GetWorldTimerManager().SetTimer(TimerHandle_DefaultTimer, this, &AAwmGameMode::DefaultTimer, GetWorldSettings()->GetEffectiveTimeDilation(), true);
+    
+    LastCallDefaultTimer = GetWorld()->GetTimeSeconds();
 }
 
 void AAwmGameMode::DefaultTimer()
@@ -59,11 +63,15 @@ void AAwmGameMode::DefaultTimer()
 		}
 		return;
 	}
+    
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    float DeltaTime = CurrentTime - LastCallDefaultTimer;
+    LastCallDefaultTimer = CurrentTime;
 
 	AAwmGameState* const MyGameState = Cast<AAwmGameState>(GameState);
 	if (MyGameState && MyGameState->RemainingTime > 0 && !MyGameState->bTimerPaused)
 	{
-		MyGameState->RemainingTime--;
+		MyGameState->RemainingTime -= DeltaTime;
 		
 		if (MyGameState->RemainingTime <= 0)
 		{
@@ -158,6 +166,20 @@ void AAwmGameMode::FinishMatch()
 		// set up to restart the match
 		MyGameState->RemainingTime = TimeBetweenMatches;
 	}
+}
+
+
+
+void AAwmGameMode::RestartGame()
+{
+    if (bOneRound)
+    {
+        RequestFinishAndExitToMainMenu();
+    }
+    else
+    {
+        Super::RestartGame();
+    }
 }
 
 void AAwmGameMode::RequestFinishAndExitToMainMenu()

@@ -79,6 +79,17 @@ class AWM_API AAwmGameMode : public AGameMode
 	/** Create a bot */
 	AAwmAIController* CreateBot(int32 BotNum);	
 
+public:
+    
+    /** Respawn */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="Respawn"))
+    bool bRespawn;
+    
+    /** If true, RestartGame return players to main menu  */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="One round"))
+    bool bOneRound;
+    
+
 protected:
 
 	/** delay between first player login and starting match */
@@ -140,6 +151,9 @@ public:
 	/** finish current match and lock players */
 	UFUNCTION(exec)
 	void FinishMatch();
+    
+    /** Restart game or return to main menu */
+    virtual void RestartGame() override;
 
 	/*Finishes the match and bumps everyone to main menu.*/
 	/*Only GameInstance should call this function */
@@ -147,6 +161,11 @@ public:
 
 	/** get the name of the bots count option used in server travel URL */
 	static FString GetBotsCountOptionName();
+    
+private:
+    
+    /** Time the last call DefaultTimer */
+    float LastCallDefaultTimer;
 
 	
 };

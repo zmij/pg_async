@@ -6,6 +6,8 @@ AAwmGame_TeamDeathMatch::AAwmGame_TeamDeathMatch(const FObjectInitializer& Objec
 {
 	NumTeams = 2;
 	bDelayedStart = true;
+    bRespawn = false;
+    bOneRound = true;
 }
 
 void AAwmGame_TeamDeathMatch::PostLogin(APlayerController* NewPlayer)
@@ -76,27 +78,37 @@ int32 AAwmGame_TeamDeathMatch::ChooseTeam(AAwmPlayerState* ForPlayerState) const
 
 void AAwmGame_TeamDeathMatch::DetermineMatchWinner()
 {
-	AAwmGameState const* const MyGameState = Cast<AAwmGameState>(GameState);
-	int32 BestScore = MAX_uint32;
-	int32 BestTeam = -1;
-	int32 NumBestTeams = 1;
-
-	for (int32 i = 0; i < MyGameState->TeamScores.Num(); i++)
-	{
-		const int32 TeamScore = MyGameState->TeamScores[i];
-		if (BestScore < TeamScore)
-		{
-			BestScore = TeamScore;
-			BestTeam = i;
-			NumBestTeams = 1;
-		}
-		else if (BestScore == TeamScore)
-		{
-			NumBestTeams++;
-		}
-	}
-
-	WinnerTeam = (NumBestTeams == 1) ? BestTeam : NumTeams;
+    
+    TArray<int32> Values;
+    Values.AddZeroed(NumTeams);
+    
+    for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
+    {
+        AAwmPlayerState* const PlayerState = Cast<AAwmPlayerState>(GameState->PlayerArray[i]);
+        if (PlayerState->GetDeaths() > 0 || PlayerState->bOnlySpectator || PlayerState->bIsSpectator) continue;
+        
+        Values[PlayerState->GetTeamNum()]++;
+    }
+    
+    int32 BestValue = MIN_int32;
+    int32 BestTeam = -1;
+    int32 NumBestTeams = 1;
+    
+    for (int32 i = 0; i < Values.Num(); i++)
+    {
+        if (BestValue < Values[i]) {
+            BestValue = Values[i];
+            BestTeam = i;
+            NumBestTeams = 1;
+        }
+        else if ( BestValue == Values[i] )
+        {
+            NumBestTeams++;
+        }
+    }
+    
+    WinnerTeam = (NumBestTeams == 1) ? BestTeam : NumTeams;
+    
 }
 
 bool AAwmGame_TeamDeathMatch::IsWinner(AAwmPlayerState* PlayerState) const

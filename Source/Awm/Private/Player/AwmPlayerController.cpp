@@ -75,7 +75,14 @@ void AAwmPlayerController::PreClientTravel(const FString& PendingURL, ETravelTyp
 
 void AAwmPlayerController::UnFreeze()
 {
-	ServerRestartPlayer();
+    AGameMode* GameMode = GetWorld()->GetAuthGameMode();
+    if (GameMode == NULL) return;
+    
+    AAwmGameMode* AwmGameMode = Cast<AAwmGameMode>(GameMode);
+    if (AwmGameMode == NULL || (AwmGameMode != NULL && AwmGameMode->bRespawn))
+    {
+        ServerRestartPlayer();
+    }
 }
 
 void AAwmPlayerController::FailedToSpawnPawn()
