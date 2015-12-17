@@ -114,6 +114,9 @@ protected:
 	/** List of cached touch positions */
 	TArray<FFingerTouch> TouchCache;
 
+	/** List of tracked (for event generation purposes) fingers; true = tracked*/
+	TArray<bool> TrackedFingers;
+
 	/** How long was touch 0 pressed? */
 	float Touch0DownTime;
 

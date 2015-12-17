@@ -9,6 +9,7 @@ UAwmInput::UAwmInput(const FObjectInitializer& ObjectInitializer)
 	// Init default touch cache
 	for (int i = 0; i < 4; i++) {
 		TouchCache.Add(FFingerTouch());
+		TrackedFingers.Add(false);
 	}
 }
 
@@ -94,7 +95,8 @@ void UAwmInput::UpdateTouchCache(float DeltaTime)
 
 	// Let chance to HUD to process events by itself
 	AAwmHUD* MyHUD = Cast<AAwmHUD>(MyController->GetHUD());
-	if (MyHUD) {
+	if (MyHUD) 
+	{
 		MyHUD->ProcessTouchEvents(TouchCache);
 	}
 }
@@ -103,20 +105,39 @@ void UAwmInput::UpdateGameKeys(float DeltaTime)
 {
 	AAwmPlayerController* MyController = CastChecked<AAwmPlayerController>(GetOuter());
 
-	// Prepare unconsumed 
+	// Prepare unconsumed
+	const int32 UnconsumedInputMax = 2;
 	TArray<FFingerTouch> UnconsumedInput;
-	UnconsumedInput.SetNum(2);
+	UnconsumedInput.SetNum(UnconsumedInputMax);
 
 	// Cache touch input states
     int32 CurrentTouch = 0;
-	int32 TouchCount = FMath::Min(TouchCache.Num(), UnconsumedInput.Num());
-	for (int32 i = 0; i < TouchCount; i++)
+	for (int32 i = 0; i < TouchCache.Num(); i++)
 	{
-		// Check unconsumed fingers
-		if (!TouchCache[i].bConsumed)
+		// upkeep tracked fingers array
+		if (TouchCache[i].bConsumed == true)
 		{
-			UnconsumedInput[CurrentTouch] = TouchCache[i];
-            CurrentTouch++;
+			TrackedFingers[i] = false;
+		}
+		else if (TouchCache[i].bFingerDown == true)
+		{
+			TrackedFingers[i] = true;
+		}
+		// Skip consumed fingers and untracked fingers
+		if (!TrackedFingers[i] || TouchCache[i].bConsumed)
+		{
+			continue;
+		}
+
+		UnconsumedInput[CurrentTouch] = TouchCache[i];
+        CurrentTouch++;
+		if (!TouchCache[i].bFingerDown)
+		{
+			TrackedFingers[i] = false;
+		}
+		// Don't use more than two unconsumed touches
+		if (CurrentTouch == UnconsumedInputMax) {
+			break;
 		}
 	}
 
