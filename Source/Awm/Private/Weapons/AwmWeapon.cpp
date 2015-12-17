@@ -929,25 +929,8 @@ FVector AAwmWeapon::GetAdjustedAim_Implementation()
 
 FVector AAwmWeapon::GetCameraDamageStartLocation(const FVector& AimDir) const
 {
-	AAwmPlayerController* PC = MyPawn ? Cast<AAwmPlayerController>(MyPawn->Controller) : NULL;
-	AAwmAIController* AIPC = MyPawn ? Cast<AAwmAIController>(MyPawn->Controller) : NULL;
-	FVector OutStartTrace = FVector::ZeroVector;
-
-	if (PC)
-	{
-		// use player's camera
-		FRotator UnusedRot;
-		PC->GetPlayerViewPoint(OutStartTrace, UnusedRot);
-
-		// Adjust trace so there is nothing blocking the ray between the camera and the pawn, and calculate distance from adjusted start
-		OutStartTrace = OutStartTrace + AimDir * ((Instigator->GetActorLocation() - OutStartTrace) | AimDir);
-	}
-	else if (AIPC)
-	{
-		OutStartTrace = GetMuzzleLocation();
-	}
-
-	return OutStartTrace;
+	// In AWM we trust the muzzle
+	return GetMuzzleLocation();
 }
 
 FVector AAwmWeapon::GetMuzzleLocation() const
