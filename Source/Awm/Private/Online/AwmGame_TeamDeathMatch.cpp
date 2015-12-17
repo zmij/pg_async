@@ -78,37 +78,15 @@ int32 AAwmGame_TeamDeathMatch::ChooseTeam(AAwmPlayerState* ForPlayerState) const
 
 void AAwmGame_TeamDeathMatch::DetermineMatchWinner()
 {
+    WinnerTeam = CheckWinnerTeam();
+}
+
+int32 AAwmGame_TeamDeathMatch::CheckWinnerTeam() {
     
-    TArray<int32> Values;
-    Values.AddZeroed(NumTeams);
+    if ( !bRespawn && OnlyOneTeamIsAlive() )
+        return GetMoreLiveTeam();
     
-    for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
-    {
-        AAwmPlayerState* const PlayerState = Cast<AAwmPlayerState>(GameState->PlayerArray[i]);
-        if (PlayerState->GetDeaths() > 0 || PlayerState->bOnlySpectator || PlayerState->bIsSpectator) continue;
-        
-        Values[PlayerState->GetTeamNum()]++;
-    }
-    
-    int32 BestValue = MIN_int32;
-    int32 BestTeam = -1;
-    int32 NumBestTeams = 1;
-    
-    for (int32 i = 0; i < Values.Num(); i++)
-    {
-        if (BestValue < Values[i]) {
-            BestValue = Values[i];
-            BestTeam = i;
-            NumBestTeams = 1;
-        }
-        else if ( BestValue == Values[i] )
-        {
-            NumBestTeams++;
-        }
-    }
-    
-    WinnerTeam = (NumBestTeams == 1) ? BestTeam : NumTeams;
-    
+    return -1;
 }
 
 bool AAwmGame_TeamDeathMatch::IsWinner(AAwmPlayerState* PlayerState) const

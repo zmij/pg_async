@@ -34,6 +34,9 @@ protected:
 
 	/** check who won */
 	virtual void DetermineMatchWinner() override;
+    
+    /** Check winner team in tick */
+    virtual int32 CheckWinnerTeam() override;
 
 	/** check if PlayerState is a winner */
 	virtual bool IsWinner(AAwmPlayerState* PlayerState) const override;

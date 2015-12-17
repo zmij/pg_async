@@ -89,7 +89,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="One round"))
     bool bOneRound;
     
-
 protected:
 
 	/** delay between first player login and starting match */
@@ -134,8 +133,11 @@ protected:
 	/** initialization for bot after creation */
 	virtual void InitBot(AAwmAIController* AIC, int32 BotNum);
 
-	/** check who won */
+    /** check who won, return -1 if there are no winners */
 	virtual void DetermineMatchWinner();
+    
+    /** Check winner team in tick */
+    virtual int32 CheckWinnerTeam();
 
 	/** check if PlayerState is a winner */
 	virtual bool IsWinner(AAwmPlayerState* PlayerState) const;
@@ -145,7 +147,17 @@ protected:
 
 	/** check if player should use spawnpoint */
 	virtual bool IsSpawnpointPreferred(APlayerStart* SpawnPoint, AController* Player) const;
-
+    
+    
+    //////////////////////////////////////////////////////////////////////////
+    // Team helpers
+    
+    /** Get team who has more live players */
+    virtual int32 GetMoreLiveTeam();
+    
+    /** Only one team is alive */
+    virtual bool OnlyOneTeamIsAlive();
+    
 public:	
 
 	/** finish current match and lock players */

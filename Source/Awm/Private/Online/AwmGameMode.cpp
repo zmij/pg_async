@@ -52,7 +52,17 @@ void AAwmGameMode::PreInitializeComponents()
 }
 
 void AAwmGameMode::DefaultTimer()
-{                                                                                                                                                                           
+{
+    // whether there is a winning team?
+    if (GetMatchState() == MatchState::InProgress)
+    {
+        if ( CheckWinnerTeam() > -1 )
+        {
+            FinishMatch();
+            return;
+        }
+    }
+    
 	// don't update timers for Play In Editor mode, it's not real match
 	if (GetWorld()->IsPlayInEditor())
 	{
@@ -168,8 +178,6 @@ void AAwmGameMode::FinishMatch()
 	}
 }
 
-
-
 void AAwmGameMode::RestartGame()
 {
     if (bOneRound)
@@ -212,6 +220,11 @@ void AAwmGameMode::RequestFinishAndExitToMainMenu()
 	{
 		LocalPrimaryController->HandleReturnToMainMenu();
 	}
+}
+
+int32 AAwmGameMode::CheckWinnerTeam()
+{
+    return -1;
 }
 
 void AAwmGameMode::DetermineMatchWinner()
@@ -494,4 +507,57 @@ void AAwmGameMode::InitBot(AAwmAIController* AIController, int32 BotNum)
 			AIController->PlayerState->PlayerName = BotName;
 		}		
 	}
+}
+
+int32 AAwmGameMode::GetMoreLiveTeam()
+{
+    AAwmGameState* MyGameState = Cast<AAwmGameState>(GameState);
+    
+    TArray<int32> Values;
+    Values.AddZeroed(MyGameState->NumTeams);
+    
+    for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+    {
+        AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
+        AAwmPlayerState* PS = Cast<AAwmPlayerState>(PC->PlayerState);
+        if ((PS->GetDeaths() > 0 && !bRespawn) || PS->bOnlySpectator || PS->bIsSpectator) continue;
+        Values[PS->GetTeamNum()]++;
+    }
+    
+    int32 BestValue = MIN_int32;
+    int32 BestTeam = -1;
+    int32 NumBestTeams = 0;
+    
+    for (int32 i = 0; i < Values.Num(); i++)
+    {
+        if (BestValue < Values[i])
+        {
+            BestValue = Values[i];
+            BestTeam = i;
+            NumBestTeams = 1;
+        }
+        else if ( BestValue == Values[i] )
+        {
+            NumBestTeams++;
+        }
+    }
+    
+    return NumBestTeams == 1 ? BestTeam : -1;
+}
+
+bool AAwmGameMode::OnlyOneTeamIsAlive()
+{
+    AAwmGameState* MyGameState = Cast<AAwmGameState>(GameState);
+    
+    int32 Team = MIN_int32;
+    
+    for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+    {
+        AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
+        AAwmPlayerState* PS = Cast<AAwmPlayerState>(PC->PlayerState);
+        if ((PS->GetDeaths() > 0 && !bRespawn) || PS->bOnlySpectator || PS->bIsSpectator) continue;
+        if (Team == MIN_int32) Team = PS->GetTeamNum();
+        if (Team != PS->GetTeamNum()) return false;
+    }
+    return true;
 }
