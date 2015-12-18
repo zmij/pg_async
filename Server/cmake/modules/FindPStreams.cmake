@@ -6,8 +6,9 @@ else()
     find_path(
         PSTREAMS_INCLUDE_DIR
         NAMES pstreams/pstream.h
-        HINTS   /usr/include
-                /usr/local/include
+        HINTS
+              /usr/include
+              /usr/local/include
     )
     find_package_handle_standard_args(PStreams DEFAULT_MSG
         "" ${PSTREAMS_INCLUDE_DIR})
