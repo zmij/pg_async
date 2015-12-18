@@ -190,6 +190,18 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Weapon", meta = (DisplayName = "Lock Target"))
 	AAwmVehicle* LockTargetBP();
 
+	/** [server + client] unlock target */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void UnlockTarget();
+
+	/** [server] unlock target */
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerUnlockTarget();
+
+	/** [server + client] unlocks target (assuming further replication of LockedTarget variable from server to client) */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Weapon", meta = (DisplayName = "Notify Unlock Target"))
+	void NotifyUnlockTargetBP();
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Control

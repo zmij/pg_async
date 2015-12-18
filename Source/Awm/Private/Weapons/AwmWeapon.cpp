@@ -356,6 +356,26 @@ bool AAwmWeapon::ServerLockTarget_Validate()
 	return true;
 }
 
+void AAwmWeapon::UnlockTarget()
+{
+	if (Role < ROLE_Authority)
+	{
+		ServerUnlockTarget();
+	}
+	LockedTarget = nullptr;
+	NotifyUnlockTargetBP();
+}
+
+void AAwmWeapon::ServerUnlockTarget_Implementation()
+{
+	UnlockTarget();
+}
+
+bool AAwmWeapon::ServerUnlockTarget_Validate()
+{
+	return true;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Control
