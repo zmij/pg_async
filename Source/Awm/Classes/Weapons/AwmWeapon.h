@@ -200,7 +200,7 @@ public:
 
 	/** [server + client] unlocks target (assuming further replication of LockedTarget variable from server to client) */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Weapon", meta = (DisplayName = "Notify Unlock Target"))
-	void NotifyUnlockTargetBP();
+	void NotifyUnlockTarget();
 
 
 	//////////////////////////////////////////////////////////////////////////

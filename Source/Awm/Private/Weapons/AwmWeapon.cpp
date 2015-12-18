@@ -362,8 +362,9 @@ void AAwmWeapon::UnlockTarget()
 	{
 		ServerUnlockTarget();
 	}
+
 	LockedTarget = nullptr;
-	NotifyUnlockTargetBP();
+	NotifyUnlockTarget();
 }
 
 void AAwmWeapon::ServerUnlockTarget_Implementation()
