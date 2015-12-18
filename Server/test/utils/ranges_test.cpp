@@ -23,7 +23,7 @@ TEST(Range, ShortRange)
 	EXPECT_EQ("[4444,4744]", os.str());
 	std::istringstream is("[4444,4744]");
 	uint16_range r2;
-	bool read_from_stream = is >> r2;
+	bool read_from_stream = (bool)(is >> r2);
 	EXPECT_TRUE(read_from_stream);
 	EXPECT_EQ(r1, r2);
 }
