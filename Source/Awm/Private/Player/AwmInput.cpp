@@ -4,7 +4,7 @@
 
 UAwmInput::UAwmInput(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
-	, PrevTouchState(0)
+	, PrevTouchState(0), bNeedAnchorReset(false)
 {
 	// Init default touch cache
 	for (int i = 0; i < 4; i++) {
@@ -123,6 +123,7 @@ void UAwmInput::UpdateGameKeys(float DeltaTime)
 		{
 			TrackedFingers[i] = true;
 		}
+
 		// Skip consumed fingers and untracked fingers
 		if (!TrackedFingers[i] || TouchCache[i].bConsumed)
 		{
@@ -135,6 +136,7 @@ void UAwmInput::UpdateGameKeys(float DeltaTime)
 		{
 			TrackedFingers[i] = false;
 		}
+
 		// Don't use more than two unconsumed touches
 		if (CurrentTouch == UnconsumedInputMax) {
 			break;
@@ -169,10 +171,11 @@ void UAwmInput::DetectOnePointActions(bool bCurrentState, bool bPrevState, float
 	if (bCurrentState && !bTwoPointsTouch)
 	{
 		// Just pressed? set anchor and zero time
-		if (!bPrevState)
+		if (!bPrevState || bNeedAnchorReset)
 		{
 			DownTime = 0;
 			AnchorPosition = CurrentPosition;
+			bNeedAnchorReset = false;
 		}
 
 		// Swipe detection & upkeep
@@ -339,6 +342,7 @@ void UAwmInput::DetectTwoPointsActions(bool bCurrentState, bool bPrevState, floa
 				PinchState.Position2 = CurrentPosition2;
 				PinchState.DownTime = TwoPointsDownTime;
 			}
+			bNeedAnchorReset = true;
 		}
 	}
 }

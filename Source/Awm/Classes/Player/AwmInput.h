@@ -132,6 +132,9 @@ protected:
 	/** Is two points touch active? */
 	bool bTwoPointsTouch;
 
+	/** is anchor reset needed after 2-touch event finishing? */
+	bool bNeedAnchorReset;
+
 	/** Update fingers touch cache */
 	void UpdateTouchCache(float DeltaTime);
 
