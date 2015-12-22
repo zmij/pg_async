@@ -344,6 +344,12 @@ void AAwmWeapon::LockTarget()
 		ServerLockTarget();
 	}
 	LockedTarget = LockTargetBP();
+
+	AAwmPlayerController* MyPC = (MyPawn != nullptr) ? Cast<AAwmPlayerController>(MyPawn->Controller) : nullptr;
+	if (MyPC != nullptr)
+	{
+		MyPC->OnTargetLocked(LockedTarget);
+	}
 }
 
 void AAwmWeapon::ServerLockTarget_Implementation()
@@ -365,6 +371,12 @@ void AAwmWeapon::UnlockTarget()
 
 	LockedTarget = nullptr;
 	NotifyUnlockTarget();
+	
+	AAwmPlayerController* MyPC = (MyPawn != nullptr) ? Cast<AAwmPlayerController>(MyPawn->Controller) : nullptr;
+	if (MyPC != nullptr)
+	{
+		MyPC->OnTargetUnlocked();
+	}	
 }
 
 void AAwmWeapon::ServerUnlockTarget_Implementation()
