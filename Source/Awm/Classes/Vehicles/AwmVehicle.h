@@ -259,6 +259,13 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
 	float GetThrottle();
 
+	/** vehicle type, set by derived classes */
+	EVehicleMovement::Type VehicleType;
+
+	/** returns vehicle type */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	EVehicleMovement::Type GetVehicleType();
+
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
 

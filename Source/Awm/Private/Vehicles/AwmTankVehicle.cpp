@@ -5,5 +5,5 @@
 AAwmTankVehicle::AAwmTankVehicle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UAwmTankMovementComponent>(VehicleMovementComponentName))
 {
-
+	VehicleType = EVehicleMovement::Tank;
 }

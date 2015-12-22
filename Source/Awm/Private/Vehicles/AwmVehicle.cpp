@@ -656,6 +656,11 @@ float AAwmVehicle::GetThrottle()
 	return LastThrottle;
 }
 
+EVehicleMovement::Type AAwmVehicle::GetVehicleType()
+{
+	return VehicleType;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Inventory
