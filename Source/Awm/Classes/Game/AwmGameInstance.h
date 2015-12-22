@@ -4,6 +4,7 @@
 
 #include "AwmGameInstance.generated.h"
 
+
 UCLASS()
 class UAwmGameInstance : public UGameInstance
 {
@@ -25,4 +26,8 @@ public:
 	/** [server] Called when match ends */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Game Instance", meta = (DisplayName = "Notify End Match"))
 	void NotifyEndMatch();
+
+	/** returns default class for controller using information about tanks, returning nullptr means usage DefaultPawnClass set in GameMode */
+	UFUNCTION(BlueprintNativeEvent, Category = "Game")
+	UClass* GetDefaultClassFor(AController* Controller);
 };

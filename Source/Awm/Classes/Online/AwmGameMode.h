@@ -182,6 +182,9 @@ public:
 
 	/** get the name of the bots count option used in server travel URL */
 	static FString GetBotsCountOptionName();
+
+	/** spawns awm specific pawn using AwmGameInstance */
+	APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, class AActor* StartSpot) override;
     
 private:
     

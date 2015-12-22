@@ -2,6 +2,9 @@
 
 #include "Awm.h"
 
+
+DEFINE_LOG_CATEGORY_STATIC(LogGameMode, Log, All);
+
 AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
 {
@@ -618,4 +621,36 @@ bool AAwmGameMode::OnlyOneTeamIsAlive()
         if (Team != PS->GetTeamNum()) return false;
     }
     return true;
+}
+
+APawn* AAwmGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	// don't allow pawn to be spawned with any pitch or roll
+	FRotator StartRotation(ForceInit);
+	StartRotation.Yaw = StartSpot->GetActorRotation().Yaw;
+	FVector StartLocation = StartSpot->GetActorLocation();
+
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.Instigator = Instigator;
+	SpawnInfo.ObjectFlags |= RF_Transient;	// We never want to save default player pawns into a map
+
+	// Getting PawnClass for spawning
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	UClass* PawnClass = nullptr;
+	if (GameInstance != nullptr)
+	{
+		PawnClass = GameInstance->GetDefaultClassFor(NewPlayer);
+	}
+	if (PawnClass == nullptr)
+	{
+		PawnClass = DefaultPawnClass;
+	}
+
+	// Spawning actor
+	APawn* ResultPawn = GetWorld()->SpawnActor<APawn>(PawnClass, StartLocation, StartRotation, SpawnInfo);
+	if (ResultPawn == NULL)
+	{
+		UE_LOG(LogGameMode, Warning, TEXT("AwmGameMode: couldn't spawn Pawn of type %s at %s"), *GetNameSafe(PawnClass), *StartSpot->GetName());
+	}
+	return ResultPawn;
 }
