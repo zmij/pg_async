@@ -125,7 +125,7 @@ void AAwmGameMode::HandleMatchIsWaitingToStart()
 				MyGameState->RemainingTime = 0.0f;
 			}
 		}
-	}
+	}	
 }
 
 void AAwmGameMode::HandleMatchHasStarted()
@@ -145,6 +145,64 @@ void AAwmGameMode::HandleMatchHasStarted()
 		{
 			PC->ClientGameStarted();
 		}
+	}
+}
+
+void AAwmGameMode::StartPlay()
+{
+	if (MatchState == MatchState::EnteringMap)
+	{
+		SetMatchState(MatchState::WaitingToStart);
+	}
+
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	ensure(GameInstance != nullptr);
+	GameInstance->NotifyStartPlay();
+
+	// Check to see if we should immediately transfer to match start
+	if (MatchState == MatchState::WaitingToStart && ReadyToStartMatch())
+	{
+		StartMatch();
+	}
+}
+
+void AAwmGameMode::StartMatch()
+{
+	if (HasMatchStarted())
+	{
+		// Already started
+		return;
+	}
+
+	//Let the game session override the StartMatch function, in case it wants to wait for arbitration
+	if (GameSession->HandleStartMatchRequest())
+	{
+		return;
+	}
+
+	SetMatchState(MatchState::InProgress);
+
+	// Notify game instance about starting match (no more than once)
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	if (GameInstance != nullptr)
+	{
+		GameInstance->NotifyStartMatch();
+	}
+}
+
+void AAwmGameMode::EndMatch()
+{
+	if (!IsMatchInProgress())
+	{
+		return;
+	}
+
+	SetMatchState(MatchState::WaitingPostMatch);
+
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	if (GameInstance != nullptr)
+	{
+		GameInstance->NotifyEndMatch();
 	}
 }
 

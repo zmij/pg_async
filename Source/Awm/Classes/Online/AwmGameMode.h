@@ -160,6 +160,15 @@ protected:
     
 public:	
 
+	/** overrided StartPlay, runs awm logic implemented in BP (AwmGameInstance) */
+	void StartPlay() override;
+
+	/** overrided StartMatch, runs awm logic implemented in BP (AwmGameInstance) */
+	void StartMatch() override;
+
+	/** overrided EndMatch, runs awm logic implemented in BP (AwmGameInstance) */
+	void EndMatch() override;
+
 	/** finish current match and lock players */
 	UFUNCTION(exec)
 	void FinishMatch();
