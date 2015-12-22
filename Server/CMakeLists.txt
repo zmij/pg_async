@@ -81,7 +81,6 @@ find_package(Boost 1.58 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 find_package (Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Crypto++ REQUIRED)
-find_package(PStreams REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIR})
 
@@ -104,6 +103,7 @@ add_subproject(http ROOT lib/http
             ${CMAKE_CURRENT_BINARY_DIR}/lib/http/include)
 add_subproject(l10n ROOT lib/l10n
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/l10n/include)
+add_subproject(pstreams INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/pstreams)
 
 # Game source
 include_directories(
