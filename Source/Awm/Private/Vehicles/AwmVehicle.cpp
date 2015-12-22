@@ -64,6 +64,9 @@ AAwmVehicle::AAwmVehicle(const FObjectInitializer& ObjectInitializer)
 	BaseLookUpRate = 45.f;
 
 	Health = 100.f;
+
+	LastSteering = 0.f;
+	LastThrottle = 0.f;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -538,11 +541,14 @@ void AAwmVehicle::SetupPlayerInputComponent(class UInputComponent* InputComponen
 
 void AAwmVehicle::MoveForward(float Val)
 {
+	LastThrottle = Val;
 	GetVehicleMovementComponent()->SetThrottleInput(Val);
 }
 
+
 void AAwmVehicle::MoveRight(float Val)
 {
+	LastSteering = Val;
 	GetVehicleMovementComponent()->SetSteeringInput(Val);
 }
 
@@ -639,6 +645,16 @@ bool AAwmVehicle::IsFiring() const
 {
 	return bWantsToFire;
 };
+
+float AAwmVehicle::GetSteering()
+{
+	return LastSteering;
+}
+
+float AAwmVehicle::GetThrottle()
+{
+	return LastThrottle;
+}
 
 
 //////////////////////////////////////////////////////////////////////////
