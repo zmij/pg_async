@@ -24,6 +24,7 @@ AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer)
 	bAllowBots = true;
 	bNeedsBotCreation = true;
 	bUseSeamlessTravel = true;
+    bGotAllCaptureAreas = false;
 }
 
 FString AAwmGameMode::GetBotsCountOptionName()
@@ -300,6 +301,9 @@ void AAwmGameMode::RequestFinishAndExitToMainMenu()
 
 int32 AAwmGameMode::CheckWinnerTeam()
 {
+    if (bGotAllCaptureAreas && OnlyOneTeamGotAllCaptureAreas())
+        return GetTeamWithMaxNumCaptureArea();
+    
     return -1;
 }
 
@@ -641,7 +645,7 @@ bool AAwmGameMode::OnlyOneTeamIsAlive()
     return true;
 }
 
-int32 AAwmGameMode::GetMaxAmountCaptureAreaTeam()
+int32 AAwmGameMode::GetTeamWithMaxNumCaptureArea()
 {
     if (CaptureAreas.Num() == 0) return -1;
     
@@ -690,7 +694,7 @@ int32 AAwmGameMode::GetAmountCaptureAreaByTeam(int32 Team)
     return Result;
 }
 
-bool AAwmGameMode::OnlyOneTeamOwnAllCaptureAreas()
+bool AAwmGameMode::OnlyOneTeamGotAllCaptureAreas()
 {
     if (CaptureAreas.Num() == 0) return false;
     int32 Team = MIN_int32;

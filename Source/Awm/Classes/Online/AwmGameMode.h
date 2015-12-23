@@ -90,6 +90,10 @@ public:
     
 protected:
     
+    /** Got all capture areas for victory  */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="Got all CA for victory"))
+    bool bGotAllCaptureAreas;
+    
     /** If true, RestartGame return players to main menu  */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="One round"))
     bool bOneRound;
@@ -165,13 +169,13 @@ protected:
     virtual bool OnlyOneTeamIsAlive();
     
     /** Get team that has more capturea areas */
-    virtual int32 GetMaxAmountCaptureAreaTeam();
+    virtual int32 GetTeamWithMaxNumCaptureArea();
     
     /** Get num capture area by team */
     virtual int32 GetAmountCaptureAreaByTeam(int32 Team);
     
-    /** Only one team own all capture areas */
-    virtual bool OnlyOneTeamOwnAllCaptureAreas();
+    /** Only one team got all capture areas */
+    virtual bool OnlyOneTeamGotAllCaptureAreas();
     
 public:	
 

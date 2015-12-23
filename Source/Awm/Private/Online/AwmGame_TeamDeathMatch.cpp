@@ -8,6 +8,7 @@ AAwmGame_TeamDeathMatch::AAwmGame_TeamDeathMatch(const FObjectInitializer& Objec
 	bDelayedStart = true;
     bRespawn = false;
     bOneRound = true;
+    bGotAllCaptureAreas = true;
 }
 
 void AAwmGame_TeamDeathMatch::PostLogin(APlayerController* NewPlayer)
@@ -78,15 +79,15 @@ int32 AAwmGame_TeamDeathMatch::ChooseTeam(AAwmPlayerState* ForPlayerState) const
 
 void AAwmGame_TeamDeathMatch::DetermineMatchWinner()
 {
-    WinnerTeam = CheckWinnerTeam();
+    WinnerTeam = (CheckWinnerTeam() == -1 ? GetMoreLiveTeam() : -1);
 }
 
 int32 AAwmGame_TeamDeathMatch::CheckWinnerTeam() {
     
-    if ( !bRespawn && OnlyOneTeamIsAlive() )
+    if (!bRespawn && OnlyOneTeamIsAlive())
         return GetMoreLiveTeam();
     
-    return -1;
+    return Super::CheckWinnerTeam();
 }
 
 bool AAwmGame_TeamDeathMatch::IsWinner(AAwmPlayerState* PlayerState) const
