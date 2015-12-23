@@ -31,6 +31,8 @@ class AAwmPlayerState : public APlayerState
 
 	/** player died */
 	void ScoreDeath(AAwmPlayerState* KilledBy, int32 Points);
+    
+    void AddPenetration();
 
 	/** get current team */
 	int32 GetTeamNum() const;
@@ -41,8 +43,11 @@ class AAwmPlayerState : public APlayerState
 	/** get number of deaths */
 	int32 GetDeaths() const;
 
-	/** get number of points */
-	float GetScore() const;
+    /** get number of points */
+    float GetScore() const;
+    
+    /** get number of penetrations */
+    int32 GetNumPenetrations() const;
 
 	/** get number of bullets fired this match */
 	int32 GetNumBulletsFired() const;
@@ -92,14 +97,18 @@ protected:
 	/** number of deaths */
 	UPROPERTY(Transient, Replicated)
 	int32 NumDeaths;
+    
+    /** number of penetrations */
+    UPROPERTY(Transient, Replicated)
+    int32 NumPenetrations;
 
 	/** number of bullets fired this match */
 	UPROPERTY()
 	int32 NumBulletsFired;
 
-	/** number of rockets fired this match */
-	UPROPERTY()
-	int32 NumRocketsFired;
+    /** number of rockets fired this match */
+    UPROPERTY()
+    int32 NumRocketsFired;
 
 	/** whether the user quit the match */
 	UPROPERTY()

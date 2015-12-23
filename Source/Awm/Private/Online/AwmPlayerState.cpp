@@ -107,6 +107,11 @@ float AAwmPlayerState::GetScore() const
 	return Score;
 }
 
+int32 AAwmPlayerState::GetNumPenetrations() const
+{
+    return NumPenetrations;
+}
+
 int32 AAwmPlayerState::GetNumBulletsFired() const
 {
 	return NumBulletsFired;
@@ -132,6 +137,11 @@ void AAwmPlayerState::ScoreDeath(AAwmPlayerState* KilledBy, int32 Points)
 {
 	NumDeaths++;
 	ScorePoints(Points);
+}
+
+void AAwmPlayerState::AddPenetration()
+{
+    NumPenetrations++;
 }
 
 void AAwmPlayerState::ScorePoints(int32 Points)

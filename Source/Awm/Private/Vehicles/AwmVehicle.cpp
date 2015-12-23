@@ -219,7 +219,7 @@ float AAwmVehicle::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	if (ActualDamage > 0.f)
 	{
-		Health -= ActualDamage;
+        Health -= ActualDamage;
 		if (Health <= 0)
 		{
 			Die(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
@@ -228,7 +228,10 @@ float AAwmVehicle::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 		{
 			PlayHit(ActualDamage, DamageEvent, EventInstigator ? EventInstigator->GetPawn() : NULL, DamageCauser);
 		}
-
+        
+        AAwmPlayerState* MyPlayerState = (AAwmPlayerState*) PlayerState;
+        MyPlayerState->AddPenetration();
+        
 		MakeNoise(1.0f, EventInstigator ? EventInstigator->GetPawn() : this);
 	}
 
