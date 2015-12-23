@@ -19,6 +19,7 @@ AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer)
 
 	bLoopedMuzzleFX = false;
 	bLoopedFireAnim = false;
+	bIsMuzzlePSCVisibleToOwner = false;
 	bPlayingFireAnim = false;
 	bIsEquipped = false;
 	bWantsToFire = false;
@@ -35,7 +36,7 @@ AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
-	bNetUseOwnerRelevancy = true;
+	bNetUseOwnerRelevancy = true;	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -739,6 +740,10 @@ void AAwmWeapon::SimulateWeaponFire()
 			{
 				MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, UseWeaponMesh, MuzzleAttachPoint);
 			}
+			if (MuzzlePSC != nullptr)
+			{
+				MuzzlePSC->SetOwnerNoSee(!bIsMuzzlePSCVisibleToOwner);
+			}
 		}
 	}
 
@@ -867,6 +872,11 @@ AAwmVehicle* AAwmWeapon::GetLockedTarget() const
 	return LockedTarget;
 }
 
+UParticleSystemComponent* AAwmWeapon::GetMuzzlePSC() const
+{
+	return MuzzlePSC;
+}
+
 float AAwmWeapon::GetEquipStartedTime() const
 {
 	return EquipStartedTime;
@@ -875,6 +885,18 @@ float AAwmWeapon::GetEquipStartedTime() const
 float AAwmWeapon::GetEquipDuration() const
 {
 	return EquipDuration;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Sound and Effects
+
+void AAwmWeapon::SetMuzzleVisibleToOwner(bool bIsVisible)
+{
+	bIsMuzzlePSCVisibleToOwner = bIsVisible;
+	if (MuzzlePSC != nullptr)
+	{
+		MuzzlePSC->SetOwnerNoSee(!bIsMuzzlePSCVisibleToOwner);
+	}
 }
 
 

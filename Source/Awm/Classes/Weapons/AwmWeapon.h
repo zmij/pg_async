@@ -335,6 +335,10 @@ public:
 
 	/** gets the duration of equipping weapon*/
 	float GetEquipDuration() const;
+
+	/** get current camera view location */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	UParticleSystemComponent* GetMuzzlePSC() const;
 	
 private:
 	/** weapon mesh: 3rd person view */
@@ -469,6 +473,13 @@ protected:
 	/** is fire animation looped? */
 	UPROPERTY(EditDefaultsOnly, Category=Animation)
 	uint32 bLoopedFireAnim : 1;
+
+	/** MuzzlePSC visibility */
+	bool bIsMuzzlePSCVisibleToOwner;
+
+	/** set MuzzlePSC visibility */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void SetMuzzleVisibleToOwner(bool bIsVisible);
 
 
 	//////////////////////////////////////////////////////////////////////////
