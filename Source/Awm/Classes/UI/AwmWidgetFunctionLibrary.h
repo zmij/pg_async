@@ -16,7 +16,7 @@ class AWM_API UAwmWidgetFunctionLibrary : public UBlueprintFunctionLibrary
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Awm|WidgetUtils")
-	void GetWidgetAbsolutePosition(UUserWidget* Widget, FVector2D& AbsolutePosition);
+	static void GetWidgetAbsolutePosition(UUserWidget* Widget, FVector2D& AbsolutePosition);
 	
 	
 };
