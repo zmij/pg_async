@@ -581,7 +581,9 @@ int32 AAwmGameMode::GetMoreLiveTeam()
     {
         AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
         AAwmPlayerState* PS = Cast<AAwmPlayerState>(PC->PlayerState);
-        if ((PS->GetDeaths() > 0 && !bRespawn) || PS->bOnlySpectator || PS->bIsSpectator) continue;
+        AAwmVehicle* Vehicle = Cast<AAwmVehicle>(PC->GetAwmVehiclePawn());
+        if ((Vehicle == NULL || !Vehicle->IsAlive()) && !bRespawn) continue;
+        
         Values[PS->GetTeamNum()]++;
     }
     
@@ -616,7 +618,8 @@ bool AAwmGameMode::OnlyOneTeamIsAlive()
     {
         AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
         AAwmPlayerState* PS = Cast<AAwmPlayerState>(PC->PlayerState);
-        if ((PS->GetDeaths() > 0 && !bRespawn) || PS->bOnlySpectator || PS->bIsSpectator) continue;
+        AAwmVehicle* Vehicle = Cast<AAwmVehicle>(PC->GetAwmVehiclePawn());
+        if (Vehicle == NULL || !Vehicle->IsAlive()) continue;
         if (Team == MIN_int32) Team = PS->GetTeamNum();
         if (Team != PS->GetTeamNum()) return false;
     }

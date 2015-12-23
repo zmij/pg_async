@@ -150,7 +150,7 @@ protected:
     
     
     //////////////////////////////////////////////////////////////////////////
-    // Team helpers
+    // Helpers
     
     /** Get team who has more live players */
     virtual int32 GetMoreLiveTeam();
