@@ -137,12 +137,12 @@ public:
 	/** Returns the persistent user record associated with this player, or null if there is't one. */
 	class UAwmPersistentUser* GetPersistentUser() const;
 
+    /** Helper to return cast version of controlled Vehicle */
+    AAwmVehicle* GetAwmVehiclePawn() const;
+    
 private:
 	/** Helper to return cast version of Spectator pawn */
 	AAwmSpectatorPawn* GetAwmSpectatorPawn() const;
-
-	/** Helper to return cast version of controlled Vehicle */
-	AAwmVehicle* GetAwmVehiclePawn() const;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Awm|Player", meta = (bTraceComplex = true))
