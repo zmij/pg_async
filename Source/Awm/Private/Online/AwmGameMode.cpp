@@ -54,12 +54,31 @@ void AAwmGameMode::PreInitializeComponents()
     LastCallDefaultTimer = GetWorld()->GetTimeSeconds();
 }
 
+void AAwmGameMode::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    TArray<AActor*> Actors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAwmCaptureArea::StaticClass(), Actors);
+    
+    for(auto Actor : Actors)
+    {
+        CaptureAreas.Add(Cast<AAwmCaptureArea>(Actor));
+    }
+    
+}
+
 void AAwmGameMode::DefaultTimer()
 {
-    // whether there is a winning team?
+    
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    float DeltaTime = CurrentTime - LastCallDefaultTimer;
+    LastCallDefaultTimer = CurrentTime;
+    
     if (GetMatchState() == MatchState::InProgress)
     {
-        if ( CheckWinnerTeam() > -1 )
+        // whether there is a winning team?
+        if (CheckWinnerTeam() > -1)
         {
             FinishMatch();
             return;
@@ -77,10 +96,6 @@ void AAwmGameMode::DefaultTimer()
 		return;
 	}
     
-    float CurrentTime = GetWorld()->GetTimeSeconds();
-    float DeltaTime = CurrentTime - LastCallDefaultTimer;
-    LastCallDefaultTimer = CurrentTime;
-
 	AAwmGameState* const MyGameState = Cast<AAwmGameState>(GameState);
 	if (MyGameState && MyGameState->RemainingTime > 0 && !MyGameState->bTimerPaused)
 	{
@@ -581,7 +596,7 @@ int32 AAwmGameMode::GetMoreLiveTeam()
     {
         AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
         AAwmPlayerState* PS = Cast<AAwmPlayerState>(PC->PlayerState);
-        AAwmVehicle* Vehicle = Cast<AAwmVehicle>(PC->GetAwmVehiclePawn());
+        AAwmVehicle* Vehicle = PC->GetAwmVehiclePawn();
         if ((Vehicle == NULL || !Vehicle->IsAlive()) && !bRespawn) continue;
         
         Values[PS->GetTeamNum()]++;
@@ -618,10 +633,72 @@ bool AAwmGameMode::OnlyOneTeamIsAlive()
     {
         AAwmPlayerController* PC = Cast<AAwmPlayerController>(*It);
         AAwmPlayerState* PS = Cast<AAwmPlayerState>(PC->PlayerState);
-        AAwmVehicle* Vehicle = Cast<AAwmVehicle>(PC->GetAwmVehiclePawn());
+        AAwmVehicle* Vehicle = PC->GetAwmVehiclePawn();
         if (Vehicle == NULL || !Vehicle->IsAlive()) continue;
         if (Team == MIN_int32) Team = PS->GetTeamNum();
         if (Team != PS->GetTeamNum()) return false;
+    }
+    return true;
+}
+
+int32 AAwmGameMode::GetMaxAmountCaptureAreaTeam()
+{
+    if (CaptureAreas.Num() == 0) return -1;
+    
+    AAwmGameState* MyGameState = Cast<AAwmGameState>(GameState);
+    
+    TArray<int32> Values;
+    Values.AddZeroed(MyGameState->NumTeams);
+    
+    for(AAwmCaptureArea* CaptureArea : CaptureAreas)
+    {
+        if (!CaptureArea->HasOwner()) continue;
+        Values[CaptureArea->GetOwnerTeam()]++;
+    }
+    
+    int32 BestValue = MIN_int32;
+    int32 BestTeam = -1;
+    int32 NumBestTeams = 0;
+    
+    for (int32 i = 0; i < Values.Num(); i++)
+    {
+        if (BestValue < Values[i])
+        {
+            BestValue = Values[i];
+            BestTeam = i;
+            NumBestTeams = 1;
+        }
+        else if ( BestValue == Values[i] )
+        {
+            NumBestTeams++;
+        }
+    }
+    
+    return NumBestTeams == 1 ? BestTeam : -1;
+}
+
+int32 AAwmGameMode::GetAmountCaptureAreaByTeam(int32 Team)
+{
+    if (CaptureAreas.Num() == 0) return 0;
+    int32 Result = 0;
+    for(AAwmCaptureArea* CaptureArea : CaptureAreas)
+    {
+        if (!CaptureArea->HasOwner()) continue;
+        if (CaptureArea->GetOwnerTeam() == Team)
+            Result++;
+    }
+    return Result;
+}
+
+bool AAwmGameMode::OnlyOneTeamOwnAllCaptureAreas()
+{
+    if (CaptureAreas.Num() == 0) return false;
+    int32 Team = MIN_int32;
+    for(AAwmCaptureArea* CaptureArea : CaptureAreas)
+    {
+        if (!CaptureArea->HasOwner()) return false;
+        if (Team == MIN_int32) Team = CaptureArea->GetOwnerTeam();
+        if (Team != CaptureArea->GetOwnerTeam()) return false;
     }
     return true;
 }

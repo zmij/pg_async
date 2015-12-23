@@ -21,6 +21,9 @@ class AWM_API AAwmGameMode : public AGameMode
 
 	// Begin AGameMode interface
 	virtual void PreInitializeComponents() override;
+    
+    /** Event when play begins for this actor. */
+    virtual void BeginPlay() override;
 
 	/** Initialize the game. This is called before actors' PreInitializeComponents. */
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
@@ -85,15 +88,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="Respawn"))
     bool bRespawn;
     
+protected:
+    
     /** If true, RestartGame return players to main menu  */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="One round"))
     bool bOneRound;
-    
-protected:
 
-	/** delay between first player login and starting match */
-	UPROPERTY(config)
-	int32 WarmupTime;
+    /** delay between first player login and starting match */
+    UPROPERTY(config)
+    int32 WarmupTime;
 
 	/** match duration */
 	UPROPERTY(config)
@@ -117,8 +120,11 @@ protected:
 	UPROPERTY(config)
 	int32 MaxBots;
 
-	UPROPERTY()
-	TArray<AAwmAIController*> BotControllers;
+    UPROPERTY()
+    TArray<AAwmAIController*> BotControllers;
+    
+    UPROPERTY()
+    TArray<AAwmCaptureArea*> CaptureAreas;
 	
 	/** Handle for efficient management of DefaultTimer timer */
 	FTimerHandle TimerHandle_DefaultTimer;
@@ -157,6 +163,15 @@ protected:
     
     /** Only one team is alive */
     virtual bool OnlyOneTeamIsAlive();
+    
+    /** Get team that has more capturea areas */
+    virtual int32 GetMaxAmountCaptureAreaTeam();
+    
+    /** Get num capture area by team */
+    virtual int32 GetAmountCaptureAreaByTeam(int32 Team);
+    
+    /** Only one team own all capture areas */
+    virtual bool OnlyOneTeamOwnAllCaptureAreas();
     
 public:	
 
