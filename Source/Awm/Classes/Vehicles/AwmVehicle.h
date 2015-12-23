@@ -245,6 +245,26 @@ protected:
 	UPROPERTY(Transient)
 	TArray<UMaterialInstanceDynamic*> MeshMIDs;
 
+	/*** last used steering, cached by MoveRight */
+	float LastSteering;
+
+	/*** last used steering, cached by MoveForward */
+	float LastThrottle;
+
+	/** last used steering */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	float GetSteering();
+
+	/** last used throttle */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	float GetThrottle();
+
+	/** vehicle type, set by derived classes */
+	EVehicleMovement::Type VehicleType;
+
+	/** returns vehicle type */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	EVehicleMovement::Type GetVehicleType();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory

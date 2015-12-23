@@ -57,6 +57,14 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Player|Notify")
 	void OnDeathMessage(class AAwmPlayerState* KillerPlayerState, class AAwmPlayerState* KilledPlayerState, const UDamageType* KillerDamageType);
 
+	/** Notify local client about locking target */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Player|Notify")
+	void OnTargetLocked(class AAwmVehicle* NewTarget);
+
+	/** Notify local client about unlocking target */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Player|Notify")
+	void OnTargetUnlocked();
+
 	/** Cleans up any resources necessary to return to main menu. Does not modify GameInstance state. */
 	virtual void HandleReturnToMainMenu();
 

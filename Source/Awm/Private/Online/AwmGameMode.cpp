@@ -2,6 +2,9 @@
 
 #include "Awm.h"
 
+
+DEFINE_LOG_CATEGORY_STATIC(LogGameMode, Log, All);
+
 AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
 {
@@ -125,7 +128,7 @@ void AAwmGameMode::HandleMatchIsWaitingToStart()
 				MyGameState->RemainingTime = 0.0f;
 			}
 		}
-	}
+	}	
 }
 
 void AAwmGameMode::HandleMatchHasStarted()
@@ -145,6 +148,64 @@ void AAwmGameMode::HandleMatchHasStarted()
 		{
 			PC->ClientGameStarted();
 		}
+	}
+}
+
+void AAwmGameMode::StartPlay()
+{
+	if (MatchState == MatchState::EnteringMap)
+	{
+		SetMatchState(MatchState::WaitingToStart);
+	}
+
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	ensure(GameInstance != nullptr);
+	GameInstance->NotifyStartPlay();
+
+	// Check to see if we should immediately transfer to match start
+	if (MatchState == MatchState::WaitingToStart && ReadyToStartMatch())
+	{
+		StartMatch();
+	}
+}
+
+void AAwmGameMode::StartMatch()
+{
+	if (HasMatchStarted())
+	{
+		// Already started
+		return;
+	}
+
+	//Let the game session override the StartMatch function, in case it wants to wait for arbitration
+	if (GameSession->HandleStartMatchRequest())
+	{
+		return;
+	}
+
+	SetMatchState(MatchState::InProgress);
+
+	// Notify game instance about starting match (no more than once)
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	if (GameInstance != nullptr)
+	{
+		GameInstance->NotifyStartMatch();
+	}
+}
+
+void AAwmGameMode::EndMatch()
+{
+	if (!IsMatchInProgress())
+	{
+		return;
+	}
+
+	SetMatchState(MatchState::WaitingPostMatch);
+
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	if (GameInstance != nullptr)
+	{
+		GameInstance->NotifyEndMatch();
 	}
 }
 
@@ -560,4 +621,36 @@ bool AAwmGameMode::OnlyOneTeamIsAlive()
         if (Team != PS->GetTeamNum()) return false;
     }
     return true;
+}
+
+APawn* AAwmGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	// don't allow pawn to be spawned with any pitch or roll
+	FRotator StartRotation(ForceInit);
+	StartRotation.Yaw = StartSpot->GetActorRotation().Yaw;
+	FVector StartLocation = StartSpot->GetActorLocation();
+
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.Instigator = Instigator;
+	SpawnInfo.ObjectFlags |= RF_Transient;	// We never want to save default player pawns into a map
+
+	// Getting PawnClass for spawning
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(this->GetGameInstance());
+	UClass* PawnClass = nullptr;
+	if (GameInstance != nullptr)
+	{
+		PawnClass = GameInstance->GetDefaultClassFor(NewPlayer);
+	}
+	if (PawnClass == nullptr)
+	{
+		PawnClass = DefaultPawnClass;
+	}
+
+	// Spawning actor
+	APawn* ResultPawn = GetWorld()->SpawnActor<APawn>(PawnClass, StartLocation, StartRotation, SpawnInfo);
+	if (ResultPawn == NULL)
+	{
+		UE_LOG(LogGameMode, Warning, TEXT("AwmGameMode: couldn't spawn Pawn of type %s at %s"), *GetNameSafe(PawnClass), *StartSpot->GetName());
+	}
+	return ResultPawn;
 }

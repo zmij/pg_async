@@ -8,3 +8,8 @@ FString UAwmGameInstance::EncodeSalt(FString UserID, FString Token)
 
 	return FMD5::HashAnsiString(*SignatureString);
 }
+
+UClass* UAwmGameInstance::GetDefaultClassFor_Implementation(AController* Controller)
+{
+	return nullptr;
+}

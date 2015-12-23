@@ -5,5 +5,5 @@
 AAwmNWheeledVehicle::AAwmNWheeledVehicle(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer.SetDefaultSubobjectClass<UAwmNWheeledMovementComponent>(VehicleMovementComponentName))
 {
-    
+	VehicleType = EVehicleMovement::Wheel;
 }

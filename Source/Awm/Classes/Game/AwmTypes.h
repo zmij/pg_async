@@ -30,6 +30,16 @@ namespace EGameKey
 }
 
 UENUM(BlueprintType)
+namespace EVehicleMovement
+{
+	enum Type
+	{
+		Tank,
+		Wheel,
+	};
+}
+
+UENUM(BlueprintType)
 namespace EAwmPhysMaterialType
 {
 	enum Type
