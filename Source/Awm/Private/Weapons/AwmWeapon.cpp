@@ -19,7 +19,7 @@ AAwmWeapon::AAwmWeapon(const FObjectInitializer& ObjectInitializer)
 
 	bLoopedMuzzleFX = false;
 	bLoopedFireAnim = false;
-	bIsMuzzlePSCVisibleToOwner = false;
+	bIsMuzzlePSCVisibleToOwner = true;		// visible by default
 	bPlayingFireAnim = false;
 	bIsEquipped = false;
 	bWantsToFire = false;
@@ -740,6 +740,7 @@ void AAwmWeapon::SimulateWeaponFire()
 			{
 				MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, UseWeaponMesh, MuzzleAttachPoint);
 			}
+
 			if (MuzzlePSC != nullptr)
 			{
 				MuzzlePSC->SetOwnerNoSee(!bIsMuzzlePSCVisibleToOwner);
@@ -893,6 +894,7 @@ float AAwmWeapon::GetEquipDuration() const
 void AAwmWeapon::SetMuzzleVisibleToOwner(bool bIsVisible)
 {
 	bIsMuzzlePSCVisibleToOwner = bIsVisible;
+
 	if (MuzzlePSC != nullptr)
 	{
 		MuzzlePSC->SetOwnerNoSee(!bIsMuzzlePSCVisibleToOwner);
