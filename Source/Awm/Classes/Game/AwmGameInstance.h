@@ -28,6 +28,10 @@ public:
 	void NotifyEndMatch();
 
 	/** returns default class for controller using information about tanks, returning nullptr means usage DefaultPawnClass set in GameMode */
-	UFUNCTION(BlueprintNativeEvent, Category = "Game")
+	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Game Instance")
 	UClass* GetDefaultClassFor(AController* Controller);
+
+	/** [server] checks if player shall be accepted to this server or not. DontKnow means GameInstance need more information for assured answer */
+	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Game Instance")
+	EClientAuthority::Type CheckPlayerAuthority(const FString& Options);
 };

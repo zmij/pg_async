@@ -324,12 +324,42 @@ void AAwmGameMode::PreLogin(const FString& Options, const FString& Address, cons
 	if( bMatchIsOver )
 	{
 		ErrorMessage = TEXT("Match is over!");
+		return;
 	}
-	else
+
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(GetGameInstance());
+	check(GameInstance != nullptr);
+
+	EClientAuthority::Type IsClientAccepted = GameInstance->CheckPlayerAuthority(Options);
+	if (IsClientAccepted == EClientAuthority::Reject)
 	{
-		// GameSession can be NULL if the match is over
-		Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+		ErrorMessage = TEXT("Player is rejected!");
+		return;
 	}
+	
+	// GameSession can be NULL if the match is over
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+}
+
+APlayerController* AAwmGameMode::Login(UPlayer* NewPlayer, ENetRole RemoteRole, const FString& Portal, const FString& Options, const TSharedPtr<const FUniqueNetId>& UniqueId, FString& ErrorMessage)
+{
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(GetGameInstance());
+	EClientAuthority::Type IsClientAccepted = GameInstance->CheckPlayerAuthority(Options);
+
+	if (IsClientAccepted == EClientAuthority::Reject)
+	{
+		return nullptr;
+	}
+
+	APlayerController* PC = Super::Login(NewPlayer, RemoteRole, Portal, Options, UniqueId, ErrorMessage);
+
+	AAwmPlayerController* AwmPC = Cast<AAwmPlayerController>(PC);
+	if (AwmPC != nullptr)
+	{
+		AwmPC->SetConnectionOptions(Options);
+	}
+
+	return PC;
 }
 
 
@@ -349,6 +379,26 @@ void AAwmGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		NewPC->ClientGameStarted();
 		//NewPC->ClientStartOnlineGame();
+	}
+}
+
+void AAwmGameMode::KickRejectedPlayers()
+{
+	UAwmGameInstance* GameInstance = Cast<UAwmGameInstance>(GetGameInstance());
+	check(GameInstance != nullptr);
+
+	for (TActorIterator<AAwmPlayerController> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		const FString& Options = *ActorItr->GetConnectionOptions();
+
+		EClientAuthority::Type PlayerAuthority = GameInstance->CheckPlayerAuthority(Options);
+		check(PlayerAuthority != EClientAuthority::DontKnow); // KickRejectedPLayers shall be called when GameInstance has information for assured answer
+
+		if (PlayerAuthority == EClientAuthority::Reject)
+		{
+			FText KickReason = NSLOCTEXT("NetworkErrors", "PlayerKick", "Player is not allowed");
+			GameSession->KickPlayer(*ActorItr, KickReason);
+		}
 	}
 }
 
