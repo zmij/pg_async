@@ -649,17 +649,17 @@ bool AAwmVehicle::IsFiring() const
 	return bWantsToFire;
 };
 
-float AAwmVehicle::GetSteering()
+float AAwmVehicle::GetSteering() const
 {
 	return LastSteering;
 }
 
-float AAwmVehicle::GetThrottle()
+float AAwmVehicle::GetThrottle() const
 {
 	return LastThrottle;
 }
 
-EVehicleMovement::Type AAwmVehicle::GetVehicleType()
+EVehicleMovement::Type AAwmVehicle::GetVehicleType() const
 {
 	return VehicleType;
 }

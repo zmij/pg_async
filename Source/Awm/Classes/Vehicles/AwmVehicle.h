@@ -220,6 +220,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Awm|Vehicle|Weapon")
 	bool IsFiring() const;
 
+	/** last used steering */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	float GetSteering() const;
+
+	/** last used throttle */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	float GetThrottle() const;
+
+	/** returns vehicle type */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	EVehicleMovement::Type GetVehicleType() const;
+
 protected:
 	/** Replicate where this pawn was last hit and damaged */
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_LastTakeHitInfo)
@@ -251,20 +263,9 @@ protected:
 	/*** last used steering, cached by MoveForward */
 	float LastThrottle;
 
-	/** last used steering */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
-	float GetSteering();
-
-	/** last used throttle */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
-	float GetThrottle();
-
 	/** vehicle type, set by derived classes */
 	EVehicleMovement::Type VehicleType;
 
-	/** returns vehicle type */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
-	EVehicleMovement::Type GetVehicleType();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
