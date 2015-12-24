@@ -340,3 +340,17 @@ void AAwmPlayerController::OnPinchReleased_Implementation(const FVector2D& Scree
 		GetAwmVehiclePawn()->OnPinchReleased(InputHandler, ScreenPosition1, ScreenPosition2, DownTime);
 	}
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// Client connect
+
+FString AAwmPlayerController::GetConnectionOptions() const
+{
+	return ConnectionOptions;
+}
+
+void AAwmPlayerController::SetConnectionOptions(const FString& ConnectionOptions)
+{
+	this->ConnectionOptions = ConnectionOptions;
+}

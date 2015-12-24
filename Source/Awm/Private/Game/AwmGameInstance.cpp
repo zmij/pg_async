@@ -13,3 +13,9 @@ UClass* UAwmGameInstance::GetDefaultClassFor_Implementation(AController* Control
 {
 	return nullptr;
 }
+
+EClientAuthority::Type UAwmGameInstance::CheckPlayerAuthority_Implementation(const FString& Options)
+{
+	// Default implementation accepts everyone
+	return EClientAuthority::Accept;
+}

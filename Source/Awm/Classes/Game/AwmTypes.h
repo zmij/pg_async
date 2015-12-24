@@ -40,6 +40,17 @@ namespace EVehicleMovement
 }
 
 UENUM(BlueprintType)
+namespace EClientAuthority
+{
+	enum Type
+	{
+		Accept,
+		Reject,
+		DontKnow, // need more information to give assured answer
+	};
+}
+
+UENUM(BlueprintType)
 namespace EAwmPhysMaterialType
 {
 	enum Type
