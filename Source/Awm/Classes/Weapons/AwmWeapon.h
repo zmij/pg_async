@@ -405,6 +405,11 @@ protected:
 	//////////////////////////////////////////////////////////////////////////
 	// Sound and effects
 
+public:
+	/** set MuzzlePSC visibility */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
+	void SetMuzzleVisibleToOwner(bool bIsVisible);
+	
 protected:
 	/** firing audio (bLoopedFireSound set) */
 	UPROPERTY(Transient)
@@ -476,10 +481,6 @@ protected:
 
 	/** MuzzlePSC visibility */
 	bool bIsMuzzlePSCVisibleToOwner;
-
-	/** set MuzzlePSC visibility */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Weapon")
-	void SetMuzzleVisibleToOwner(bool bIsVisible);
 
 
 	//////////////////////////////////////////////////////////////////////////
