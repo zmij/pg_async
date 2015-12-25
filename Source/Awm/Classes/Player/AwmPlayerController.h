@@ -206,4 +206,18 @@ protected:
 	uint8 bGodMode : 1;
 
 
+	//////////////////////////////////////////////////////////////////////////
+	// Client connect
+
+protected:
+	/** saved options for player authority check */
+	FString ConnectionOptions;
+
+public:
+	/** get saved player options */
+	UFUNCTION(BlueprintCallable, Category = "Awm|Player")
+	FString GetConnectionOptions() const;
+
+	/** get saved player options */
+	void SetConnectionOptions(const FString& ConnectionOptions);
 };

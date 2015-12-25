@@ -36,8 +36,15 @@ class AWM_API AAwmGameMode : public AGameMode
 	/** Accept or reject a player attempting to join the server.  Fails login if you set the ErrorMessage to a non-empty string. */
 	virtual void PreLogin(const FString& Options, const FString& Address, const TSharedPtr<const FUniqueNetId>& UniqueId, FString& ErrorMessage) override;
 
+	/** If login is successful, returns a new PlayerController to associate with this player. Login fails if ErrorMessage string is set. */
+	virtual APlayerController* Login(class UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const TSharedPtr<const FUniqueNetId>& UniqueId, FString& ErrorMessage) override;
+
 	/** starts match warmup */
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	/** kicks all players which arent allowed to this server, GameInstance must have enough information for assured answer if player is allowed to be at server or not */
+	UFUNCTION(BluePrintCallable, Category = "Awm|GameMode")
+	void KickRejectedPlayers();
 
 	/** select best spawn point for player */
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
