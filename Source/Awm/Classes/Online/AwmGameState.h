@@ -14,9 +14,13 @@ public:
 	UPROPERTY(Transient, Replicated)
 	int32 NumTeams;
 
-	/** accumulated score per team */
-	UPROPERTY(Transient, Replicated)
-	TArray<int32> TeamScores;
+    /** accumulated death score per team */
+    UPROPERTY(Transient, Replicated)
+    TArray<int32> TeamDeathScores;
+    
+    /** accumulated score per team */
+    UPROPERTY(Transient, Replicated)
+    TArray<int32> TeamScores;
 
 	/** time left for warmup / match */
 	UPROPERTY(Transient, Replicated)
@@ -27,5 +31,7 @@ public:
 	bool bTimerPaused;
 
 	void RequestFinishAndExitToMainMenu();
-	
+    
+    /** Add team scores from game mode */
+    void AddTeamScores(int32 Team, int32 Scores);
 };

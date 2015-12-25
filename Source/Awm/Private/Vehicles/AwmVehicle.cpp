@@ -223,8 +223,11 @@ float AAwmVehicle::TakeDamage(float Damage, struct FDamageEvent const& DamageEve
 	if (ActualDamage > 0.f)
 	{
 		AAwmPlayerState* MyPlayerState = (AAwmPlayerState*)PlayerState;
-		MyPlayerState->AddPenetration();
-
+        if (MyPlayerState != NULL)
+        {
+            MyPlayerState->AddPenetration();
+        }
+        
         Health -= ActualDamage;
 		if (Health <= 0)
 		{

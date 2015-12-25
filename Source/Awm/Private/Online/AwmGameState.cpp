@@ -10,16 +10,6 @@ AAwmGameState::AAwmGameState(const class FObjectInitializer& PCIP)
 	bTimerPaused = false;
 }
 
-void AAwmGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AAwmGameState, NumTeams);
-	DOREPLIFETIME(AAwmGameState, RemainingTime);
-	DOREPLIFETIME(AAwmGameState, bTimerPaused);
-	DOREPLIFETIME(AAwmGameState, TeamScores);
-}
-
 void AAwmGameState::RequestFinishAndExitToMainMenu()
 {
 	if (AuthorityGameMode)
@@ -41,5 +31,24 @@ void AAwmGameState::RequestFinishAndExitToMainMenu()
 			PrimaryPC->HandleReturnToMainMenu();
 		}
 	}
+}
 
+void AAwmGameState::AddTeamScores(int32 Team, int32 Scores)
+{
+    while(TeamScores.Num() <= Team)
+    {
+        TeamScores[TeamScores.Num()] = 0;
+    }
+    TeamScores[Team] += Scores;
+}
+
+void AAwmGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    
+    DOREPLIFETIME(AAwmGameState, NumTeams);
+    DOREPLIFETIME(AAwmGameState, RemainingTime);
+    DOREPLIFETIME(AAwmGameState, bTimerPaused);
+    DOREPLIFETIME(AAwmGameState, TeamScores);
+    DOREPLIFETIME(AAwmGameState, TeamDeathScores);
 }

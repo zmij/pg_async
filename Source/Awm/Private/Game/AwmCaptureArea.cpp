@@ -37,6 +37,10 @@ AAwmCaptureArea::AAwmCaptureArea(const FObjectInitializer& ObjectInitializer)
     
     LostSuperiority = CaptureAreaLostSuperiorityType::RESET;
     
+    // Add bonus point for owner team
+    bBonusPointsBroadcast = true;
+    BonusPointsIncome.Time = 4.f;
+    BonusPointsIncome.Value = 1.f;
 }
 
 void AAwmCaptureArea::BeginPlay()
@@ -48,6 +52,17 @@ void AAwmCaptureArea::BeginPlay()
     LastCheckTick = GetWorld()->GetTimeSeconds();
     
     GetWorldTimerManager().SetTimer(TimerHandle_DefaultTimer, this, &AAwmCaptureArea::DefaultTimer, CheckTime, true);
+}
+
+void AAwmCaptureArea::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    StopBonusTimer();
+    Super::EndPlay(EndPlayReason);
+}
+
+void AAwmCaptureArea::BonusTimer()
+{
+    BonusEvent.Broadcast(this);
 }
 
 void AAwmCaptureArea::DefaultTimer()
@@ -356,8 +371,17 @@ void AAwmCaptureArea::CalculateOwner(TMap<int32,float> TeamPoints)
     
     if (ChangeOwner)
     {
-        // broadcast
+        StopBonusTimer();
+        if (bBonusPointsBroadcast && HasOwner() && BonusPointsIncome.Time > 0.f && BonusPointsIncome.Value > 0.f)
+        {
+            GetWorldTimerManager().SetTimer(TimerHandle_BonusTimer, this, &AAwmCaptureArea::BonusTimer, BonusPointsIncome.Time, true);
+        }
     }
+}
+
+void AAwmCaptureArea::StopBonusTimer()
+{
+    GetWorldTimerManager().ClearTimer(TimerHandle_BonusTimer);
 }
 
 void AAwmCaptureArea::CalculateEstimate(TMap<int32,TArray<AController*>> Teams, float CurrentTime)

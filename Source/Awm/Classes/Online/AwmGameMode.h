@@ -7,6 +7,8 @@
 
 class AAwmPlayerState;
 
+
+
 /**
  * 
  */
@@ -24,6 +26,9 @@ class AWM_API AAwmGameMode : public AGameMode
     
     /** Event when play begins for this actor. */
     virtual void BeginPlay() override;
+    
+    /** Overridable function called whenever this actor is being removed from a level */
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Initialize the game. This is called before actors' PreInitializeComponents. */
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
@@ -165,24 +170,28 @@ protected:
 	/** check if player should use spawnpoint */
 	virtual bool IsSpawnpointPreferred(APlayerStart* SpawnPoint, AController* Player) const;
     
+    //////////////////////////////////////////////////////////////////////////
+    // Events
+    
+    virtual void OnCaptureAreaBonus(AAwmCaptureArea* CaptureArea);
     
     //////////////////////////////////////////////////////////////////////////
     // Helpers
     
     /** Get team who has more live players */
-    virtual int32 GetMoreLiveTeam();
+    virtual int32 GetMoreLiveTeam() const;
     
     /** Only one team is alive */
-    virtual bool OnlyOneTeamIsAlive();
+    virtual bool OnlyOneTeamIsAlive() const;
     
     /** Get team that has more capturea areas */
-    virtual int32 GetTeamWithMaxNumCaptureArea();
+    virtual int32 GetTeamWithMaxNumCaptureArea() const;
     
     /** Get num capture area by team */
-    virtual int32 GetAmountCaptureAreaByTeam(int32 Team);
+    virtual int32 GetAmountCaptureAreaByTeam(int32 Team) const;
     
     /** Only one team got all capture areas */
-    virtual bool OnlyOneTeamGotAllCaptureAreas();
+    virtual bool OnlyOneTeamGotAllCaptureAreas() const;
     
 public:	
 
@@ -216,6 +225,5 @@ private:
     
     /** Time the last call DefaultTimer */
     float LastCallDefaultTimer;
-
 	
 };
