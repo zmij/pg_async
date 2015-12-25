@@ -89,16 +89,16 @@ if(BUILD_TESTS)
 endif()
 
 # Library subprojects
-add_subproject(log ROOT lib/log 
+add_subproject(log ROOT lib/log
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/log/include)
-add_subproject(pg ROOT lib/pg_async 
+add_subproject(pg ROOT lib/pg_async
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/pg_async/include)
 add_subproject(facet INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/facet/include)
 add_subproject(lru INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/lru/include)
-add_subproject(iri ROOT lib/iri 
+add_subproject(iri ROOT lib/iri
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/iri/include)
-add_subproject(http ROOT lib/http 
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/http/include 
+add_subproject(http ROOT lib/http
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/lib/http/include
             ${CMAKE_CURRENT_SOURCE_DIR}/lib/http/lib/cereal/include
             ${CMAKE_CURRENT_BINARY_DIR}/lib/http/include)
 add_subproject(l10n ROOT lib/l10n
@@ -107,8 +107,8 @@ add_subproject(pstreams INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/pstreams)
 
 # Game source
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/include
 )

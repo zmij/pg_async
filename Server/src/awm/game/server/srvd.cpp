@@ -26,6 +26,8 @@
 #include <awm/game/auth/user_language.hpp>
 #include <awm/game/auth/stats.hpp>
 
+#include <awm/game/lobby/tank.hpp>
+
 #include <string>
 #include <iostream>
 #include <fstream>

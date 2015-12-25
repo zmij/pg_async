@@ -6,5 +6,6 @@
 cmake_minimum_required(VERSION 2.6)
 
 add_subdirectory(auth)
+add_subdirectory(lobby)
 add_subdirectory(world)
 add_subdirectory(server)

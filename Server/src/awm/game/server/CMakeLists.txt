@@ -17,6 +17,7 @@ target_link_libraries(awm-srvd
     ${ASIO_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     awm-auth
+    awm-lobby
     awm-world
 )
 
