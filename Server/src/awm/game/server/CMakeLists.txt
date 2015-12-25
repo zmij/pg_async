@@ -6,14 +6,14 @@ cmake_minimum_required(VERSION 2.6)
 
 set(
     tip_server_SRCS
-    authd.cpp
+    srvd.cpp
 )
 
 quoted_initializer_list(L10N_DOMAINS_INIT ${L10N_DOMAINS})
 configure_file(config.in.hpp config.hpp)
 
-add_executable(awm-authd ${tip_server_SRCS})
-target_link_libraries(awm-authd
+add_executable(awm-srvd ${tip_server_SRCS})
+target_link_libraries(awm-srvd
     ${ASIO_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     awm-auth
@@ -21,6 +21,6 @@ target_link_libraries(awm-authd
 )
 
 install (
-    TARGETS awm-authd
+    TARGETS awm-srvd
     RUNTIME DESTINATION bin
 )
