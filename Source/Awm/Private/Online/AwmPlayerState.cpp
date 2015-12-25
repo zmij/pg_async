@@ -149,12 +149,12 @@ void AAwmPlayerState::ScorePoints(int32 Points)
 	AAwmGameState* const MyGameState = Cast<AAwmGameState>(GetWorld()->GameState);
 	if (MyGameState && TeamNumber >= 0)
 	{
-		if (TeamNumber >= MyGameState->TeamScores.Num())
+		if (TeamNumber >= MyGameState->TeamDeathScores.Num())
 		{
-			MyGameState->TeamScores.AddZeroed(TeamNumber - MyGameState->TeamScores.Num() + 1);
+			MyGameState->TeamDeathScores.AddZeroed(TeamNumber - MyGameState->TeamDeathScores.Num() + 1);
 		}
 
-		MyGameState->TeamScores[TeamNumber] += Points;
+		MyGameState->TeamDeathScores[TeamNumber] += Points;
 	}
 
 	Score += Points;

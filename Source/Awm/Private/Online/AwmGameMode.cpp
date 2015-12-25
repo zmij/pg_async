@@ -64,9 +64,21 @@ void AAwmGameMode::BeginPlay()
     
     for(auto Actor : Actors)
     {
-        CaptureAreas.Add(Cast<AAwmCaptureArea>(Actor));
+        AAwmCaptureArea* CaptureArea = Cast<AAwmCaptureArea>(Actor);
+        CaptureAreas.Add(CaptureArea);
+        CaptureArea->BonusEvent.AddUObject(this, &AAwmGameMode::OnCaptureAreaBonus);
+        
     }
-    
+}
+
+void AAwmGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+    for(auto CaptureArea : CaptureAreas)
+    {
+        CaptureArea->BonusEvent.RemoveAll(this);
+    }
+    CaptureAreas.SetNum(0);
 }
 
 void AAwmGameMode::DefaultTimer()
@@ -589,7 +601,7 @@ void AAwmGameMode::InitBot(AAwmAIController* AIController, int32 BotNum)
 	}
 }
 
-int32 AAwmGameMode::GetMoreLiveTeam()
+int32 AAwmGameMode::GetMoreLiveTeam() const
 {
     AAwmGameState* MyGameState = Cast<AAwmGameState>(GameState);
     
@@ -627,7 +639,7 @@ int32 AAwmGameMode::GetMoreLiveTeam()
     return NumBestTeams == 1 ? BestTeam : -1;
 }
 
-bool AAwmGameMode::OnlyOneTeamIsAlive()
+bool AAwmGameMode::OnlyOneTeamIsAlive() const
 {
     AAwmGameState* MyGameState = Cast<AAwmGameState>(GameState);
     
@@ -645,7 +657,7 @@ bool AAwmGameMode::OnlyOneTeamIsAlive()
     return true;
 }
 
-int32 AAwmGameMode::GetTeamWithMaxNumCaptureArea()
+int32 AAwmGameMode::GetTeamWithMaxNumCaptureArea() const
 {
     if (CaptureAreas.Num() == 0) return -1;
     
@@ -681,7 +693,7 @@ int32 AAwmGameMode::GetTeamWithMaxNumCaptureArea()
     return NumBestTeams == 1 ? BestTeam : -1;
 }
 
-int32 AAwmGameMode::GetAmountCaptureAreaByTeam(int32 Team)
+int32 AAwmGameMode::GetAmountCaptureAreaByTeam(int32 Team) const
 {
     if (CaptureAreas.Num() == 0) return 0;
     int32 Result = 0;
@@ -694,7 +706,7 @@ int32 AAwmGameMode::GetAmountCaptureAreaByTeam(int32 Team)
     return Result;
 }
 
-bool AAwmGameMode::OnlyOneTeamGotAllCaptureAreas()
+bool AAwmGameMode::OnlyOneTeamGotAllCaptureAreas() const
 {
     if (CaptureAreas.Num() == 0) return false;
     int32 Team = MIN_int32;
@@ -705,6 +717,15 @@ bool AAwmGameMode::OnlyOneTeamGotAllCaptureAreas()
         if (Team != CaptureArea->GetOwnerTeam()) return false;
     }
     return true;
+}
+
+void AAwmGameMode::OnCaptureAreaBonus(AAwmCaptureArea* CaptureArea)
+{
+    if(!CaptureArea->HasOwner()) return;
+    AAwmGameState* GS = Cast<AAwmGameState>(GameState);
+    if (GS == NULL) return;
+    GS->AddTeamScores(CaptureArea->GetOwnerTeam(), CaptureArea->BonusPointsIncome.Value);
+    UE_LOG(LogTemp, Warning, TEXT("ADD BONUS POINTS %f"), CaptureArea->BonusPointsIncome.Value);
 }
 
 APawn* AAwmGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)

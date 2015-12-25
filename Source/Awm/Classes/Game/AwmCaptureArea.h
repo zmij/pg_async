@@ -40,12 +40,27 @@ class AAwmCaptureArea : public AActor
 	GENERATED_UCLASS_BODY()
 	
 public:
-
-	/** Called when the game starts or when spawned */
+    
+    /** Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
+    
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
-	/** Called every CheckTime seconds */
-	virtual void DefaultTimer();
+    /** Called every CheckTime seconds */
+    virtual void DefaultTimer();
+    
+    /** Called every BonusPointsIncome.Time, if bBonusPointsBroadcast == true */
+    virtual void BonusTimer();
+    
+    DECLARE_EVENT_OneParam( AAwmCaptureArea, FBonusEvent, AAwmCaptureArea* )
+    FBonusEvent BonusEvent;
+    
+    /** Enable bonus broadcast  */
+    bool bBonusPointsBroadcast;
+    
+    /** Bonus income data */
+    UPROPERTY(EditDefaultsOnly, Category = "Setup")
+    FCaptureAreaIncomeData BonusPointsIncome;
     
     /** Area radius */
     UPROPERTY(EditDefaultsOnly, Category = "Setup")
@@ -95,6 +110,9 @@ protected:
     
     /** Handle for efficient management of DefaultTimer timer */
     FTimerHandle TimerHandle_DefaultTimer;
+    
+    /** Handle for efficient management of BonusTimer timer */
+    FTimerHandle TimerHandle_BonusTimer;
     
     /** Current points capture for each occupant <occupant controller, points for the capture> */
     UPROPERTY(Transient)
@@ -154,6 +172,9 @@ protected:
     
     /** Clear all capture points */
     FORCEINLINE void ClearCapturePoints();
+    
+    /** Stop bonus timer */
+    FORCEINLINE void StopBonusTimer();
     
 private:
     
