@@ -9,6 +9,7 @@
 #define AWM_GAME_LOBBY_TANK_HPP_
 
 #include <tip/db/pg/resultset.hpp>
+#include <tip/http/server/request_handler.hpp>
 
 #include <boost/uuid/uuid.hpp>
 #include <string>
@@ -23,8 +24,20 @@ public:
 	tank(tip::db::pg::resultset::row r);
 
 private:
+	void
+	read(tip::db::pg::resultset::row);
+private:
 	boost::uuids::uuid  uid_;
-	std::string			proto_id_;
+	std::string			proto_;
+};
+
+class lobby_tanks_handler : public tip::http::server::request_handler {
+public:
+	lobby_tanks_handler();
+	virtual ~lobby_tanks_handler();
+private:
+	virtual void
+	do_handle_request(tip::http::server::reply);
 };
 
 }  // namespace lobby

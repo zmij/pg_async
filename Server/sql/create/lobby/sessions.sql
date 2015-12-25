@@ -16,3 +16,14 @@ create table if not exists auth.sessions (
 	constraint sessions_pkey primary key (sid) 
 );
 
+------------------------------------------------------------------------------
+--	lobby.tanks
+------------------------------------------------------------------------------
+create table if not exists lobby.tanks (
+	uid			uuid		not null,
+	proto_id	text		not null,
+	constraint tanks_user_key foreign key (uid)
+		references auth.users(uid) on delete cascade on update cascade,
+	constraint tanks_pkey primary key (uid, proto_id)
+);
+
