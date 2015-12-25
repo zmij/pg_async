@@ -314,7 +314,14 @@ void AAwmGameMode::RequestFinishAndExitToMainMenu()
 int32 AAwmGameMode::CheckWinnerTeam()
 {
     if (bGotAllCaptureAreas && OnlyOneTeamGotAllCaptureAreas())
+    {
         return GetTeamWithMaxNumCaptureArea();
+    }
+    
+    if (HasScoresForVictory())
+    {
+        return GetTeamWithMaxScores();
+    }
     
     return -1;
 }
@@ -767,6 +774,48 @@ bool AAwmGameMode::OnlyOneTeamGotAllCaptureAreas() const
         if (Team != CaptureArea->GetOwnerTeam()) return false;
     }
     return true;
+}
+
+int32 AAwmGameMode::GetTeamWithMaxScores() const
+{
+    if (NeedScoresForVictory <= 0) return false;
+    AAwmGameState* GS = Cast<AAwmGameState>(GameState);
+    if (GS == NULL) return false;
+    
+    int32 BestScores = 0;
+    int32 BestTeam = -1;
+    int32 Num = 0;
+    
+    for(int32 i = 0; i < GS->TeamScores.Num(); i++)
+    {
+        int32 Scores = GS->TeamScores[i];
+        if (Scores > BestScores)
+        {
+            BestScores = Scores;
+            BestTeam = i;
+            Num = 1;
+        }
+        else if (Scores == BestScores)
+        {
+            Num = 2;
+        }
+    }
+    return Num == 1 ? BestTeam : -1;
+}
+
+bool AAwmGameMode::HasScoresForVictory() const
+{
+    if (NeedScoresForVictory <= 0) return false;
+    AAwmGameState* GS = Cast<AAwmGameState>(GameState);
+    if (GS == NULL) return false;
+    for(int32 i = 0; i < GS->TeamScores.Num(); i++)
+    {
+        if (GS->TeamScores[i] >= NeedScoresForVictory)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void AAwmGameMode::OnCaptureAreaBonus(AAwmCaptureArea* CaptureArea)

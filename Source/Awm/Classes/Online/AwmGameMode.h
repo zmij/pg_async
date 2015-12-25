@@ -110,6 +110,10 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="One round"))
     bool bOneRound;
 
+    /** How many scores need for victory */
+    UPROPERTY(config)
+    int32 NeedScoresForVictory;
+    
     /** delay between first player login and starting match */
     UPROPERTY(config)
     int32 WarmupTime;
@@ -192,6 +196,12 @@ protected:
     
     /** Only one team got all capture areas */
     virtual bool OnlyOneTeamGotAllCaptureAreas() const;
+    
+    /** Get team with max scores */
+    virtual int32 GetTeamWithMaxScores() const;
+    
+    /** Has scores for victory */
+    virtual bool HasScoresForVictory() const;
     
 public:	
 
