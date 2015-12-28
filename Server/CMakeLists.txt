@@ -86,6 +86,7 @@ include_directories(${Boost_INCLUDE_DIR})
 
 if(BUILD_TESTS)
     enable_testing()
+    include(sql/create/set_db_options.cmake)
 endif()
 
 # Library subprojects
