@@ -6,9 +6,9 @@ AAwmGame_TeamDeathMatch::AAwmGame_TeamDeathMatch(const FObjectInitializer& Objec
 {
 	NumTeams = 2;
 	bDelayedStart = true;
-    bRespawn = false;
+    bRespawn = true;
     bOneRound = true;
-    bGotAllCaptureAreas = true;
+    bGotAllCaptureAreas = false;
 }
 
 void AAwmGame_TeamDeathMatch::PostLogin(APlayerController* NewPlayer)
