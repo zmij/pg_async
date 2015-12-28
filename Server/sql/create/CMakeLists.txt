@@ -15,8 +15,5 @@ set(LOBBY_DB_SQL
     lobby/sessions.sql
 )
 
-build_db_options(AUTHN)
-build_db_options(LOBBY)
-
 build_database(AUTHN ${AUTHN_DB_SQL})
 build_database(LOBBY ${LOBBY_DB_SQL})

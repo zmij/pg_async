@@ -18,7 +18,14 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
+if (GTEST_XML_OUTPUT)
+    set (
+        TEST_ARGS
+        --gtest_output=xml:test-utils-detail.xml
+    )
+endif()
+
 add_test(
     NAME test-utils
-    COMMAND test-utils
+    COMMAND test-utils ${TEST_ARGS}
 )

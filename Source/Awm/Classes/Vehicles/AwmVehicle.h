@@ -221,15 +221,15 @@ public:
 	bool IsFiring() const;
 
 	/** last used steering */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Awm|Vehicle")
 	float GetSteering() const;
 
 	/** last used throttle */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Awm|Vehicle")
 	float GetThrottle() const;
 
 	/** returns vehicle type */
-	UFUNCTION(BlueprintCallable, Category = "Awm|Vehicle")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Awm|Vehicle")
 	EVehicleMovement::Type GetVehicleType() const;
 
 protected:

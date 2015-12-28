@@ -25,6 +25,8 @@ AAwmGameMode::AAwmGameMode(const FObjectInitializer& ObjectInitializer)
 	bNeedsBotCreation = true;
 	bUseSeamlessTravel = true;
     bGotAllCaptureAreas = false;
+    
+    NeedScoresForVictory = 0;
 }
 
 FString AAwmGameMode::GetBotsCountOptionName()

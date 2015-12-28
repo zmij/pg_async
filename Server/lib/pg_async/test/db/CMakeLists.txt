@@ -47,14 +47,22 @@ target_link_libraries(
 
 if (TEST_DATABASE)
     set(TEST_ARGS
-        -d'${TEST_DATABASE}' -s2 -x4 -q10 --run-deadline=1
+        "-d${TEST_DATABASE}" -s2 -x4 -q10 --run-deadline=1
     )
 else()
     set(TEST_ARGS)
 endif()
 
+if (GTEST_XML_OUTPUT)
+    set (
+        TEST_ARGS ${TEST_ARGS}
+        --gtest_output=xml:test-pg-async-detail.xml
+    )
+endif()
+
+
 add_test(
-    NAME pg-async-test
+    NAME test-pg-async
     COMMAND ${PGTEST} ${TEST_ARGS}
 )
 
