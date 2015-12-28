@@ -22,6 +22,8 @@ class tank {
 public:
 	tank() {}
 	tank(tip::db::pg::resultset::row r);
+	tank(boost::uuids::uuid uid, std::string proto) : uid_(uid), proto_(proto) {}
+	std::string proto(void) { return proto_; }
 
 private:
 	void
@@ -30,6 +32,8 @@ private:
 	boost::uuids::uuid  uid_;
 	std::string			proto_;
 };
+
+typedef std::shared_ptr< tank > tank_ptr;
 
 class lobby_tanks_handler : public tip::http::server::request_handler {
 public:

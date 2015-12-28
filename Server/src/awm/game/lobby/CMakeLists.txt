@@ -6,7 +6,8 @@
 cmake_minimum_required(VERSION 2.6)
 
 set(game_lobby_SRCS
-    tank.cpp tank.hpp
+    protocol.cpp
+    tank.cpp
 )
 set(LIB_NAME ${PROJECT_PREFIX}-lobby)
 
