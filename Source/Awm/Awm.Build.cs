@@ -11,6 +11,7 @@ public class Awm : ModuleRules
                 "Core",
                 "CoreUObject",
                 "Engine",
+                "EngineSettings",
                 "InputCore",
                 "AIModule",
                 "PhysX",

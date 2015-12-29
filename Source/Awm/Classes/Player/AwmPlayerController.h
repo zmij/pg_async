@@ -220,4 +220,8 @@ public:
 
 	/** get saved player options */
 	void SetConnectionOptions(const FString& ConnectionOptions);
+
+	/** notifies player about reason of returning to main menu and loads main menu map */
+	UFUNCTION(Reliable, Client)
+	virtual void ClientReturnToMainMenu(const FString& ReturnReason) override;
 };

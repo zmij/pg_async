@@ -354,3 +354,15 @@ void AAwmPlayerController::SetConnectionOptions(const FString& ConnectionOptions
 {
 	this->ConnectionOptions = ConnectionOptions;
 }
+
+void AAwmPlayerController::ClientReturnToMainMenu_Implementation(const FString& ReturnReason)
+{
+	UAwmGameInstance* AwmGameInstance = Cast<UAwmGameInstance>(GetWorld()->GetAuthGameMode());
+	// Don't notify when ReturnReason is empty
+	if (AwmGameInstance != nullptr && ReturnReason.Len() > 0)
+	{
+		AwmGameInstance->NotifyConnectionError(ReturnReason);
+	}
+
+	HandleReturnToMainMenu();
+}

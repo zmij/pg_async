@@ -30,3 +30,11 @@ void AAwmHUD::ShowLoadingScreen_Implementation(const FString& PendingURL)
 		LoadingScreenModule->StartInGameLoadingScreen();
 	}
 }
+
+void AAwmHUD::HandleReturnToMainMenu()
+{
+	ShowLoadingScreen(TEXT(""));
+
+	const UGameMapsSettings* GameMapsSettings = GetDefault<UGameMapsSettings>();
+	GEngine->SetClientTravel(GetWorld(), *(GameMapsSettings->GetGameDefaultMap() + GameMapsSettings->LocalMapOptions), ETravelType::TRAVEL_Absolute);
+}

@@ -19,3 +19,8 @@ EClientAuthority::Type UAwmGameInstance::CheckPlayerAuthority_Implementation(con
 	// Default implementation accepts everyone
 	return EClientAuthority::Accept;
 }
+
+TSubclassOf<UOnlineSession> UAwmGameInstance::GetOnlineSessionClass()
+{
+	return UAwmOnlineSession::StaticClass();
+}
