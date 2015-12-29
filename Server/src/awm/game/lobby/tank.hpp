@@ -18,12 +18,26 @@ namespace awm {
 namespace game {
 namespace lobby {
 
+enum tank_types {
+	MBT     = 1,        // Main battle tank
+	LT      = 2,        // Light tank
+	AFV     = 3,        // Armored fighting vehicle
+	SPG     = 4,        // Self-propelled gun
+	TD      = 5         // Tank destroyer
+};
+
 class tank {
 public:
 	tank() {}
 	tank(tip::db::pg::resultset::row r);
 	tank(boost::uuids::uuid uid, std::string proto) : uid_(uid), proto_(proto) {}
-	std::string proto(void) { return proto_; }
+
+	std::string proto(void)     { return proto_; }
+	std::string name(void)      { return proto_; }
+	int         tier(void)      { return 1; }
+	std::string dealer(void)    { return "leopard"; }
+	tank_types  tank_type(void) { return MBT; }
+
 
 private:
 	void

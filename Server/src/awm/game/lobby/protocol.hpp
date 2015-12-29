@@ -25,8 +25,11 @@ struct tank_dump {
 	serialize(Archive& archive)
 	{
 		archive(
-			cereal::make_nvp( "proto_id",   tank_->proto() ),
-			cereal::make_nvp( "name",       tank_->proto() )
+			cereal::make_nvp( "proto_id",   tank_->proto()     ),
+			cereal::make_nvp( "name",       tank_->name()      ),
+			cereal::make_nvp( "tier",       tank_->tier()      ),
+			cereal::make_nvp( "dealer",     tank_->dealer()    ),
+			cereal::make_nvp( "tank_type",  tank_->tank_type() )
 		);
 	}
 };
