@@ -410,8 +410,6 @@ void AAwmCaptureArea::CalculateEstimate(TMap<int32,TArray<AController*>>& Teams,
     
     int32 MaxPPSTeam = -1;
     float MaxPPSValue = 0;
-    
-    int32 MidPPSTeam = -1;
     float MidPPSValue = 0;
     
     for(auto Pair : Teams)
@@ -422,10 +420,10 @@ void AAwmCaptureArea::CalculateEstimate(TMap<int32,TArray<AController*>>& Teams,
         if (PPS >= MaxPPSValue)
         {
             MidPPSValue = MaxPPSValue;
-            MidPPSTeam = MaxPPSTeam;
-            
             MaxPPSValue = PPS;
             MaxPPSTeam = Pair.Key;
+        } else if (PPS >= MidPPSValue) {
+            MidPPSValue = PPS;
         }
     }
     
@@ -507,12 +505,6 @@ TMap<int32,float> AAwmCaptureArea::GetTeamsPoints(TMap<int32,TArray<AController*
 {
     TMap<int32,float> TeamsPoints;
     
-    int32 MaxPointsTeam = -1;
-    float MaxPointsValue = -1;
-    
-    int32 MidPointsTeam = -1;
-    float MidPointsValue = -1;
-    
     // Calculate total points for each team
     for(auto Pair : Teams)
     {
@@ -521,16 +513,6 @@ TMap<int32,float> AAwmCaptureArea::GetTeamsPoints(TMap<int32,TArray<AController*
         {
             Points += *CurrentCapturePointsMap.Find(Controller);
         }
-        
-        if (Points > MaxPointsValue)
-        {
-            MidPointsValue = MaxPointsValue;
-            MidPointsTeam = MaxPointsTeam;
-            
-            MaxPointsValue = Points;
-            MaxPointsTeam = Pair.Key;
-        }
-        
         TeamsPoints.Add(Pair.Key, Points);
     }
     
