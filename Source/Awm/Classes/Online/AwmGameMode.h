@@ -96,48 +96,50 @@ class AWM_API AAwmGameMode : public AGameMode
 
 public:
     
-    /** Respawn */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="Respawn"))
-    bool bRespawn;
+    bool UseRespawn() const;
     
 protected:
     
+    /** Respawn */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(DisplayName="Respawn"))
+    bool bRespawn;
+    
     /** Got all capture areas for victory  */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="Got all CA for victory"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(DisplayName="Got all CA for victory"))
     bool bGotAllCaptureAreas;
     
     /** If true, RestartGame return players to main menu  */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode, meta=(DisplayName="One round"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(DisplayName="One round"))
     bool bOneRound;
 
     /** How many scores need for victory */
-    UPROPERTY(config)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     int32 NeedScoresForVictory;
     
     /** delay between first player login and starting match */
-    UPROPERTY(config)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     int32 WarmupTime;
 
 	/** match duration */
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 RoundTime;
 
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 TimeBetweenMatches;
 
 	/** score for kill */
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 KillScore;
 
 	/** score for death */
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 DeathScore;
 
 	/** scale for self instigated damage */
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float DamageSelfScale;
 
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 MaxBots;
 
     UPROPERTY()

@@ -79,7 +79,7 @@ void AAwmPlayerController::UnFreeze()
     if (GameMode == NULL) return;
     
     AAwmGameMode* AwmGameMode = Cast<AAwmGameMode>(GameMode);
-    if (AwmGameMode == NULL || (AwmGameMode != NULL && AwmGameMode->bRespawn))
+    if (AwmGameMode == NULL || (AwmGameMode != NULL && AwmGameMode->UseRespawn()))
     {
         ServerRestartPlayer();
     }

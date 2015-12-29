@@ -661,6 +661,11 @@ void AAwmGameMode::InitBot(AAwmAIController* AIController, int32 BotNum)
 	}
 }
 
+bool AAwmGameMode::UseRespawn() const
+{
+    return bRespawn;
+}
+
 int32 AAwmGameMode::GetMoreLiveTeam() const
 {
     AAwmGameState* MyGameState = Cast<AAwmGameState>(GameState);
