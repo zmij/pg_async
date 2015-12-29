@@ -418,6 +418,7 @@ void AAwmGameMode::KickRejectedPlayers()
 		if (PlayerAuthority == EClientAuthority::Reject)
 		{
 			FText KickReason = NSLOCTEXT("NetworkErrors", "PlayerKick", "Player is not allowed");
+			(*ActorItr)->ClientReturnToMainMenu(KickReason.ToString());
 			GameSession->KickPlayer(*ActorItr, KickReason);
 		}
 	}

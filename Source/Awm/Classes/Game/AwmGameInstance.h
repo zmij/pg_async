@@ -27,6 +27,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Game Instance", meta = (DisplayName = "Notify End Match"))
 	void NotifyEndMatch();
 
+	/** [client] Called when connection error occures */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|Game Instance", meta = (DisplayName = "Notify Connection Error"))
+	void NotifyConnectionError(const FString& Message);
+
 	/** returns default class for controller using information about tanks, returning nullptr means usage DefaultPawnClass set in GameMode */
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Game Instance")
 	UClass* GetDefaultClassFor(AController* Controller);
@@ -34,4 +38,7 @@ public:
 	/** [server] checks if player shall be accepted to this server or not. DontKnow means GameInstance need more information for assured answer */
 	UFUNCTION(BlueprintNativeEvent, Category = "Awm|Game Instance")
 	EClientAuthority::Type CheckPlayerAuthority(const FString& Options);
+
+	/** @return OnlineSession class to use for this game instance  */
+	virtual TSubclassOf<UOnlineSession> GetOnlineSessionClass();
 };

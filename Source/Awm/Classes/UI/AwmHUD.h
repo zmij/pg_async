@@ -27,8 +27,8 @@ class AAwmHUD : public AHUD
 	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
 	void NotifyClientGameStarted();
 
-	/** Show the loading screen */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Awm|HUD")
+	/** Show the loading screen and return to default map */
+	UFUNCTION(BlueprintCallable, Category = "Awm|HUD")
 	void HandleReturnToMainMenu();
 
 
