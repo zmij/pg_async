@@ -826,7 +826,6 @@ void AAwmGameMode::OnCaptureAreaBonus(AAwmCaptureArea* CaptureArea)
     AAwmGameState* GS = Cast<AAwmGameState>(GameState);
     if (GS == NULL) return;
     GS->AddTeamScores(CaptureArea->GetOwnerTeam(), CaptureArea->BonusPointsIncome.Value);
-    UE_LOG(LogTemp, Warning, TEXT("ADD BONUS POINTS %f"), CaptureArea->BonusPointsIncome.Value);
 }
 
 APawn* AAwmGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)

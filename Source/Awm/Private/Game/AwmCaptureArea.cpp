@@ -12,6 +12,7 @@ FCaptureAreaIncomeData::FCaptureAreaIncomeData(float InTime, float InValue)
 AAwmCaptureArea::AAwmCaptureArea(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
+    bReplicates = true;
     PrimaryActorTick.bCanEverTick = true;
     
     Radius = 1000.f;
@@ -56,8 +57,8 @@ void AAwmCaptureArea::BeginPlay()
 
 void AAwmCaptureArea::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    StopBonusTimer();
     Super::EndPlay(EndPlayReason);
+    StopBonusTimer();
 }
 
 void AAwmCaptureArea::BonusTimer()
@@ -87,7 +88,7 @@ void AAwmCaptureArea::Calculate(float CurrentTime, float DeltaTime)
     
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAwmVehicle::StaticClass(), Vehicles);
     TArray<AController*> ControllersOfOccupants;
-    TSet<AController*> Newbies;
+    TArray<AController*> Newbies;
     TMap<AController*,int32> DeltaPenetrations;
     
     // find vehicle
@@ -130,6 +131,14 @@ void AAwmCaptureArea::Calculate(float CurrentTime, float DeltaTime)
         ControllersOfOccupants.Add(Controller);
     }
     
+    TArray<AController*> Lost = GetLostControllers(ControllersOfOccupants);
+    if (Lost.Num() > 0)
+    {
+        ControllersOfOccupants.Append(Lost);
+        // Recalculate if the vehicle has disappeared
+        bNeedCalculate = true;
+    }
+    
     // Create team list
     TMap<int32,TArray<AController*>> Teams;
     for(auto Controller : ControllersOfOccupants)
@@ -152,7 +161,15 @@ void AAwmCaptureArea::Calculate(float CurrentTime, float DeltaTime)
     int32 MaxValue = 0;
     
     for(auto Pair : Teams) {
-        float Value = Pair.Value.Num();
+        float Value = 0;
+        for(auto Controller : Pair.Value)
+        {
+            // skip lost controllers
+            if (!Lost.Contains(Controller))
+            {
+                Value++;
+            }
+        }
         if (MaxValue < Value)
         {
             MaxTeam = Pair.Key;
@@ -164,9 +181,6 @@ void AAwmCaptureArea::Calculate(float CurrentTime, float DeltaTime)
         }
     }
     
-    // Recalculate if the vehicle has disappeared, and remove points
-    bNeedCalculate = bNeedCalculate || ClearLostControllers(ControllersOfOccupants);
-    
     if ( !bNeedCalculate ) return;
     
     //Long time without calculation
@@ -177,19 +191,33 @@ void AAwmCaptureArea::Calculate(float CurrentTime, float DeltaTime)
     
     // Add points to occupants
     CalculateCapturePoints(Teams, Newbies, DeltaTime);
+    // Remove excess points
+    CalculateExcessPoints(Teams);
     // Remove points by LostSuperiority rule
     CalculateLostSuperiority(MaxTeam);
     // Remove "damaged" points
     CalculateDamageCapture(DeltaPenetrations);
-    // Remove excess points
-    TMap<int32,float> ResultTeamPoints = CalculateExcessPoints(Teams);
+    // Clear lost vehicle points & all information
+    ClearLostControllers(Lost);
+    
+    TArray<int32> Keys;
+    Teams.GetKeys(Keys);
+    
+    for(int32 Key : Keys)
+    {
+        for(auto Controller : Lost)
+        {
+            Teams.Find(Key)->RemoveSingle(Controller);
+        }
+    }
+    
     // Calculate owner
-    CalculateOwner(ResultTeamPoints);
+    CalculateOwner(Teams);
     // Calculate estimate
     CalculateEstimate(Teams, CurrentTime);
 }
 
-bool AAwmCaptureArea::ClearLostControllers(TArray<AController*> ControllersOfOccupants)
+TArray<AController*> AAwmCaptureArea::GetLostControllers(TArray<AController*>& ControllersOfOccupants)
 {
     TArray<AController*> Lost;
     for(auto Pair : CurrentCapturePointsMap)
@@ -200,16 +228,10 @@ bool AAwmCaptureArea::ClearLostControllers(TArray<AController*> ControllersOfOcc
         }
     }
     
-    // remove all information about lost controllers
-    for(auto Controller : Lost) {
-        CurrentCapturePointsMap.Remove(Controller);
-        Penetrations.Remove(Controller);
-    }
-    
-    return Lost.Num() > 0;
+    return Lost;
 }
 
-void AAwmCaptureArea::CalculateCapturePoints(TMap<int32,TArray<AController*>> Teams, TSet<AController*> Newbies, float DeltaTime)
+void AAwmCaptureArea::CalculateCapturePoints(TMap<int32,TArray<AController*>>& Teams, TArray<AController*>& Newbies, float DeltaTime)
 {
     TMap<int32,float> TeamPoints;
     
@@ -232,6 +254,45 @@ void AAwmCaptureArea::CalculateCapturePoints(TMap<int32,TArray<AController*>> Te
     }
 }
 
+void AAwmCaptureArea::CalculateExcessPoints(TMap<int32,TArray<AController*>>& Teams)
+{
+    TMap<int32,float> TeamsPoints = GetTeamsPoints(Teams);
+    
+    float MaxPointsValue = 0;
+    float MidPointsValue = 0;
+    
+    for(auto Pair : TeamsPoints)
+    {
+        if (MaxPointsValue <= Pair.Value)
+        {
+            MidPointsValue = MaxPointsValue;
+            MaxPointsValue = Pair.Value;
+        }
+        else if (MidPointsValue <= Pair.Value)
+        {
+            MidPointsValue = Pair.Value;
+        }
+    }
+    
+    if (MidPointsValue > 0.f)
+    {
+        float Remove = MidPointsValue;
+        for(auto Pair : Teams)
+        {
+            float Points = *TeamsPoints.Find(Pair.Key);
+            if (Points <= 0.f) continue;
+            
+            float RemovePercent = ( Points - Remove ) / Points;
+            if (RemovePercent < 0.f) RemovePercent = 0.f;
+            
+            for(auto Controller : Pair.Value)
+            {
+                CurrentCapturePointsMap.Add(Controller, *CurrentCapturePointsMap.Find(Controller) * RemovePercent);
+            }
+        }
+    }
+}
+
 void AAwmCaptureArea::CalculateLostSuperiority(int32 MaxTeam)
 {
     if (LostSuperiority == CaptureAreaLostSuperiorityType::RESET)
@@ -248,7 +309,7 @@ void AAwmCaptureArea::CalculateLostSuperiority(int32 MaxTeam)
     }
 }
 
-void AAwmCaptureArea::CalculateDamageCapture(TMap<AController*,int32> DeltaPenetrations)
+void AAwmCaptureArea::CalculateDamageCapture(TMap<AController*,int32>& DeltaPenetrations)
 {
     for(auto Pair : CurrentCapturePointsMap)
     {
@@ -267,68 +328,28 @@ void AAwmCaptureArea::CalculateDamageCapture(TMap<AController*,int32> DeltaPenet
     }
 }
 
-TMap<int32,float> AAwmCaptureArea::CalculateExcessPoints(TMap<int32,TArray<AController*>> Teams)
+void AAwmCaptureArea::ClearLostControllers(TArray<AController*>& Lost)
 {
-    TMap<int32,float> TeamPoints;
+    if (Lost.Num() == 0) return;
     
-    int32 MaxPointsTeam = -1;
-    float MaxPointsValue = -1;
-    
-    int32 MidPointsTeam = -1;
-    float MidPointsValue = -1;
-    
-    // Calculate total points for each team
-    for(auto Pair : Teams)
-    {
-        float Points = 0.f;
-        for(auto Controller : Pair.Value)
-        {
-            Points += *CurrentCapturePointsMap.Find(Controller);
-        }
-        
-        if (Points > MaxPointsValue)
-        {
-            MidPointsValue = MaxPointsValue;
-            MidPointsTeam = MaxPointsTeam;
-            
-            MaxPointsValue = Points;
-            MaxPointsTeam = Pair.Key;
-        }
-        
-        TeamPoints.Add(Pair.Key, Points);
+    // Remove all information about lost controllers
+    for(auto Controller : Lost) {
+        CurrentCapturePointsMap.Remove(Controller);
+        Penetrations.Remove(Controller);
     }
-
-    if (MidPointsValue > 0.f)
-    {
-        float Remove = MidPointsValue;
-        for(auto Pair : Teams)
-        {
-            float Points = *TeamPoints.Find(Pair.Key);
-            if (Points <= 0.f) continue;
-            
-            float RemovePercent = ( Points - Remove ) / Points;
-            if (RemovePercent < 0.f) RemovePercent = 0.f;
-            
-            TeamPoints.Add(Pair.Key, Points * RemovePercent);
-            for(auto Controller : Pair.Value)
-            {
-                CurrentCapturePointsMap.Add(Controller, *CurrentCapturePointsMap.Find(Controller) * RemovePercent);
-            }
-        }
-    }
-    
-    return TeamPoints;
 }
 
-void AAwmCaptureArea::CalculateOwner(TMap<int32,float> TeamPoints)
+void AAwmCaptureArea::CalculateOwner(TMap<int32,TArray<AController*>>& Teams)
 {
+    TMap<int32,float> TeamsPoints = GetTeamsPoints(Teams);
+    
     bool ChangeOccupant = false;
     bool ChangeOwner = false;
     
     int32 MaxPointsTeam = -1;
     float MaxPointsValue = -1;
     
-    for(auto Pair : TeamPoints)
+    for(auto Pair : TeamsPoints)
     {
         if (Pair.Value >= MaxPointsValue)
         {
@@ -344,7 +365,7 @@ void AAwmCaptureArea::CalculateOwner(TMap<int32,float> TeamPoints)
     
     if (OccupantTeam > -1)
     {
-        LastCalculateCapturePoints = *TeamPoints.Find(OccupantTeam);
+        LastCalculateCapturePoints = *TeamsPoints.Find(OccupantTeam);
         if (LastCalculateCapturePoints >= TotalCapturePoints)
         {
             if ( OwnerTeam != OccupantTeam )
@@ -354,13 +375,11 @@ void AAwmCaptureArea::CalculateOwner(TMap<int32,float> TeamPoints)
         }
         if (OccupantTeam == OwnerTeam)
         {
-            LastCalculateCapturePoints = 0;
             ClearCapturePoints();
         }
     }
     else
     {
-        LastCalculateCapturePoints = 0;
         ClearCapturePoints();
     }
     
@@ -376,15 +395,11 @@ void AAwmCaptureArea::CalculateOwner(TMap<int32,float> TeamPoints)
         {
             GetWorldTimerManager().SetTimer(TimerHandle_BonusTimer, this, &AAwmCaptureArea::BonusTimer, BonusPointsIncome.Time, true);
         }
+        // broadcast
     }
 }
 
-void AAwmCaptureArea::StopBonusTimer()
-{
-    GetWorldTimerManager().ClearTimer(TimerHandle_BonusTimer);
-}
-
-void AAwmCaptureArea::CalculateEstimate(TMap<int32,TArray<AController*>> Teams, float CurrentTime)
+void AAwmCaptureArea::CalculateEstimate(TMap<int32,TArray<AController*>>& Teams, float CurrentTime)
 {
     float LostSuperiorityFactor = 1.0f;
     
@@ -440,41 +455,86 @@ void AAwmCaptureArea::CalculateEstimate(TMap<int32,TArray<AController*>> Teams, 
 
 void AAwmCaptureArea::ClearCapturePoints()
 {
+    LastCalculateCapturePoints = 0;
     for(auto Pair : CurrentCapturePointsMap)
     {
         CurrentCapturePointsMap.Add(Pair.Key, 0.f);
     }
 }
 
-float AAwmCaptureArea::GetCurrentCapturePoints()
+void AAwmCaptureArea::StopBonusTimer()
+{
+    GetWorldTimerManager().ClearTimer(TimerHandle_BonusTimer);
+}
+
+float AAwmCaptureArea::GetCurrentCapturePoints() const
 {
     float TimeFactor = FMath::Clamp((EstimatedTime - GetWorld()->GetTimeSeconds()) / (EstimatedTime - LastCalculateTime),0.f, 1.f);
     return TimeFactor * LastCalculateCapturePoints + (1.f - TimeFactor) * EstimatedCapturePoints;
 }
 
-float AAwmCaptureArea::GetCaptureProgress()
+float AAwmCaptureArea::GetCaptureProgress() const
 {
     return FMath::Clamp(GetCurrentCapturePoints() / (float)TotalCapturePoints, 0.f, 1.f);
 }
 
-bool AAwmCaptureArea::HasOccupant()
+bool AAwmCaptureArea::HasOccupant() const
 {
     return OccupantTeam != -1;
 }
 
-int32 AAwmCaptureArea::GetOccupantTeam()
+int32 AAwmCaptureArea::GetOccupantTeam() const
 {
     return OccupantTeam;
 }
 
-bool AAwmCaptureArea::HasOwner()
+bool AAwmCaptureArea::HasOwner() const
 {
     return OwnerTeam != -1;
 }
 
-int32 AAwmCaptureArea::GetOwnerTeam()
+int32 AAwmCaptureArea::GetOwnerTeam() const
 {
     return OwnerTeam;
+}
+
+float AAwmCaptureArea::GetRadius() const
+{
+    return Radius;
+}
+
+TMap<int32,float> AAwmCaptureArea::GetTeamsPoints(TMap<int32,TArray<AController*>>& Teams)
+{
+    TMap<int32,float> TeamsPoints;
+    
+    int32 MaxPointsTeam = -1;
+    float MaxPointsValue = -1;
+    
+    int32 MidPointsTeam = -1;
+    float MidPointsValue = -1;
+    
+    // Calculate total points for each team
+    for(auto Pair : Teams)
+    {
+        float Points = 0.f;
+        for(auto Controller : Pair.Value)
+        {
+            Points += *CurrentCapturePointsMap.Find(Controller);
+        }
+        
+        if (Points > MaxPointsValue)
+        {
+            MidPointsValue = MaxPointsValue;
+            MidPointsTeam = MaxPointsTeam;
+            
+            MaxPointsValue = Points;
+            MaxPointsTeam = Pair.Key;
+        }
+        
+        TeamsPoints.Add(Pair.Key, Points);
+    }
+    
+    return TeamsPoints;
 }
 
 FCaptureAreaIncomeData& AAwmCaptureArea::GetCapturePointsCurve(int32 Num)

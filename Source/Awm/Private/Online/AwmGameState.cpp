@@ -35,9 +35,9 @@ void AAwmGameState::RequestFinishAndExitToMainMenu()
 
 void AAwmGameState::AddTeamScores(int32 Team, int32 Scores)
 {
-    while(TeamScores.Num() <= Team)
+    if (TeamScores.Num() <= Team)
     {
-        TeamScores[TeamScores.Num()] = 0;
+        TeamScores.SetNum(Team + 1);
     }
     TeamScores[Team] += Scores;
 }

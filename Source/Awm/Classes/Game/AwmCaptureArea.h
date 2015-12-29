@@ -84,27 +84,31 @@ public:
     
     /** Get current capture points with estimate */
     UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
-    float GetCurrentCapturePoints();
+    float GetCurrentCapturePoints() const;
     
     /** Current capture progress in percent */
     UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
-    float GetCaptureProgress();
+    float GetCaptureProgress() const;
     
     /** Has occupant */
     UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
-    bool HasOccupant();
+    bool HasOccupant() const;
     
     /** Get occupant team num */
     UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
-    int32 GetOccupantTeam();
+    int32 GetOccupantTeam() const;
     
     /** Has owner */
     UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
-    bool HasOwner();
+    bool HasOwner() const;
     
     /** Get owner team num */
     UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
-    int32 GetOwnerTeam();
+    int32 GetOwnerTeam() const;
+    
+    /** Get radius */
+    UFUNCTION(BlueprintCallable, Category = "Awm|CaptureArea")
+    float GetRadius() const;
 
 protected:
     
@@ -149,26 +153,29 @@ protected:
     /** Vehicle filter & calculate capture points */
     FORCEINLINE void Calculate(float CurrentTime, float DeltaTime);
     
-    /** Remove and clean controller if vehicle disappeared */
-    FORCEINLINE bool ClearLostControllers(TArray<AController*> ControllersOfOccupants);
+    /** Get lost vehicle */
+    FORCEINLINE TArray<AController*> GetLostControllers(TArray<AController*>& ControllersOfOccupants);
     
     /** Add points to occupants */
-    FORCEINLINE void CalculateCapturePoints(TMap<int32,TArray<AController*>> Teams, TSet<AController*> Newbies, float DeltaTime);
+    FORCEINLINE void CalculateCapturePoints(TMap<int32,TArray<AController*>>& Teams, TArray<AController*>& Newbies, float DeltaTime);
+    
+    /** Remove excess points */
+    FORCEINLINE void CalculateExcessPoints(TMap<int32,TArray<AController*>>& Teams);
     
     /** Remove points by LostSuperiority rule */
     FORCEINLINE void CalculateLostSuperiority(int32 MaxTeam);
     
     /** Remove "damaged" points */
-    FORCEINLINE void CalculateDamageCapture(TMap<AController*,int32> DeltaPenetrations);
+    FORCEINLINE void CalculateDamageCapture(TMap<AController*,int32>& DeltaPenetrations);
     
-    /** Remove excess points */
-    FORCEINLINE TMap<int32,float> CalculateExcessPoints(TMap<int32,TArray<AController*>> Teams);
+    /** Clear lost vehicle points & all information */
+    FORCEINLINE void ClearLostControllers(TArray<AController*>& Lost);
     
     /** Calculate owner */
-    FORCEINLINE void CalculateOwner(TMap<int32,float> TeamPoints);
+    FORCEINLINE void CalculateOwner(TMap<int32,TArray<AController*>>& Teams);
     
     /** Calculate estimate */
-    FORCEINLINE void CalculateEstimate(TMap<int32,TArray<AController*>> Teams, float CurrentTime);
+    FORCEINLINE void CalculateEstimate(TMap<int32,TArray<AController*>>& Teams, float CurrentTime);
     
     /** Clear all capture points */
     FORCEINLINE void ClearCapturePoints();
@@ -177,6 +184,9 @@ protected:
     FORCEINLINE void StopBonusTimer();
     
 private:
+    
+    /** Calculate total points for each team */
+    FORCEINLINE TMap<int32,float> GetTeamsPoints(TMap<int32,TArray<AController*>>& Teams);
     
     /** Get current time step & income points by num occupants */
     FORCEINLINE FCaptureAreaIncomeData& GetCapturePointsCurve(int32 Num);
