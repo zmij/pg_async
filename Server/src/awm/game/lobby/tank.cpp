@@ -60,7 +60,7 @@ lobby_tanks_handler::~lobby_tanks_handler()
 }
 
 void
-lobby_tanks_handler::do_handle_request(tip::http::server::reply r)
+lobby_tanks_handler::checked_handle_request(tip::http::server::reply r)
 {
 	namespace ths = tip::http::server;
 	local_log() << "tanks_handler";

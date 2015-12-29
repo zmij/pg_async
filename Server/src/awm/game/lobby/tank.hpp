@@ -10,7 +10,9 @@
 
 #include <tip/db/pg/resultset.hpp>
 #include <tip/http/server/request_handler.hpp>
+#include <tip/http/server/prerequisite_handler.hpp>
 
+#include <awm/game/auth/session.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <string>
 
@@ -49,13 +51,13 @@ private:
 
 typedef std::shared_ptr< tank > tank_ptr;
 
-class lobby_tanks_handler : public tip::http::server::request_handler {
+class lobby_tanks_handler : public tip::http::server::prerequisite_handler< authn::authorized > {
 public:
 	lobby_tanks_handler();
 	virtual ~lobby_tanks_handler();
 private:
 	virtual void
-	do_handle_request(tip::http::server::reply);
+	checked_handle_request(tip::http::server::reply);
 };
 
 }  // namespace lobby
