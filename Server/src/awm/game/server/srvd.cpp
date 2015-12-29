@@ -106,6 +106,10 @@ configure_request_dispatcher(tip::http::server::request_dispatcher_ptr disp)
 	disp->add_handler< awm::game::authn::ios::vendor_uid_reg_handler >
 		(http::POST, "/api/register/apple-vendor");
 
+	// Lobby
+	disp->add_handler< awm::game::lobby::lobby_tanks_handler >
+		(http::GET,  "/api/player/tanks");
+
 	// Stats
 	disp->add_handler< awm::game::authn::current_online >
 		(http::GET, "/api/stats/online");
