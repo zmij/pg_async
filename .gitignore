@@ -1,23 +1,31 @@
-/Binaries/
-/Content/
-/Intermediate/
-/Saved/
-*.opensdf
-*.sdf
-/Awm.sln
-*.v12.suo
-/.svn/
-*.uproject
-/Build/
-*.DS_Store
-/Awm.xcodeproj/
-/Awm.xcworkspace/
-/Config/
-*.mo
-*.*~
-*.orig
-/.vs/
-/DerivedDataCache/
-/Plugins/
-/Debug/
-*.VC.opendb
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build trees
+*build
