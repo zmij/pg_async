@@ -53,8 +53,7 @@ find_package(Threads REQUIRED)
 add_definitions("-std=c++11")
 
 if(NOT TIP_UTIL_INCLUDE_DIRS)
-    message(FATAL_ERROR "Please set tip utility include directories (-DTIP_UTIL_INCLUDE_DIRS=)")
-    # TODO Fallback to subtree
+    set(TIP_UTIL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/util/include)
 endif()
 
 include_directories(
