@@ -52,12 +52,18 @@ endif()
 find_package(Threads REQUIRED)
 add_definitions("-std=c++11")
 
+if(NOT TIP_UTIL_INCLUDE_DIRS)
+    message(FATAL_ERROR "Please set tip utility include directories (-DTIP_UTIL_INCLUDE_DIRS=)")
+    # TODO Fallback to subtree
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
+    ${TIP_UTIL_INCLUDE_DIRS}
 )
 
 if (USE_TIP_LOG)
@@ -68,7 +74,6 @@ set(PGASYNC_LIB_NAME ${PROJECT_PREFIX}-psql)
 
 add_subdirectory(src/tip/db/pg)
 add_subdirectory(include/tip/db)
-add_subdirectory(include/tip/util)
 
 if (BUILD_TESTS)
 enable_testing()
