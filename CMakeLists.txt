@@ -63,6 +63,7 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
     ${TIP_UTIL_INCLUDE_DIRS}
+    ${TIP_LOG_INCLUDE_DIRS}
 )
 
 if (USE_TIP_LOG)
@@ -77,4 +78,10 @@ add_subdirectory(include/tip/db)
 if (BUILD_TESTS)
 enable_testing()
 add_subdirectory(test)
+endif()
+
+get_directory_property(has_parent PARENT_DIRECTORY)
+if (has_parent)
+    set(TIP_DB_LIB ${PROJECT_PREFIX}-psql CACHE INTERNAL "Name of tip psql library target")
+    set(TIP_DB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include ${TIP_LOG_INCLUDE_DIRS} CACHE INTERNAL "Paths to tip psql library includes")
 endif()

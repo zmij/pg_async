@@ -51,7 +51,7 @@ set_target_properties(
 set(pgsql_lib_LIBRARIES
     ${ASIO_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
-    ${TIP_LOG_LIBRARY}
+    ${TIP_LOG_LIB}
 )
 
 target_link_libraries(${PGASYNC_LIB_NAME} ${pgsql_lib_LIBRARIES})
