@@ -31,7 +31,6 @@ database_impl::database_impl(size_t pool_size, client_options_type const& defaul
 database_impl::~database_impl()
 {
 	stop();
-	local_log() << "* database_impl::~database_impl";
 }
 
 void
@@ -127,7 +126,6 @@ database_impl::stop()
 {
 	if (state_ == running) {
 		state_ = closing;
-		local_log(logger::INFO) << "Closing connections";
 		std::shared_ptr< size_t > pool_count =
 				std::make_shared< size_t >(connections_.size());
 		asio_config::io_service_ptr svc = service_;
@@ -139,7 +137,6 @@ database_impl::stop()
 			[pool_count, svc](){
 				--(*pool_count);
 				if (*pool_count == 0) {
-					local_log(logger::INFO) << "*** All connections closed";
 					svc->stop();
 				}
 			});
