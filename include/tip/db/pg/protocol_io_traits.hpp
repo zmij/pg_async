@@ -654,7 +654,7 @@ struct protocol_formatter< std::string, TEXT_DATA_FORMAT > :
     bool
     operator()(std::vector<byte>& buffer)
     {
-    	auto iter = std::copy(base_type::value.begin(), base_type::value.end(),
+    	std::copy(base_type::value.begin(), base_type::value.end(),
     			std::back_inserter(buffer));
     	return true;
     }

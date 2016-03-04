@@ -103,8 +103,8 @@ TEST( ConnectionTest, Connect)
 		[&](connection_ptr c) {
 			conn_ptr = c;
 			conn->terminate();
-		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, error::connection_error const& ec) {
+		}, [] (connection_ptr) {
+		}, [](connection_ptr, error::connection_error const&) {
 			FAIL();
 		}}));
 
@@ -183,7 +183,7 @@ TEST( ConnectionTest, ConnectionPool )
 							}
 						}, [](error::db_error const&){} );
 					},
-					[&] (error::db_error const& ec) {
+					[&] (error::db_error const&) {
 						++fail_count; // transaction rolled back
 					});
 				}
@@ -239,12 +239,12 @@ TEST( ConnectionTest, ExecutePrepared )
 					tran->execute(
 					"select * from pg_catalog.pg_type where typelem > $1 limit $2",
 					param_types, params,
-					[&](transaction_ptr tran, resultset r, bool complete) {
+					[&](transaction_ptr trx, resultset r, bool) {
 						EXPECT_TRUE(r);
 						EXPECT_TRUE(r.size());
 						EXPECT_TRUE(r.columns_size());
 						EXPECT_FALSE(r.empty());
-						tran->commit();
+						trx->commit();
 					}, [&](error::db_error const& ) {
 					});
 				}, [](error::db_error const&) {
@@ -252,8 +252,8 @@ TEST( ConnectionTest, ExecutePrepared )
 			} else {
 				c->terminate();
 			}
-		}, [](connection_ptr c) {
-		}, [](connection_ptr c, error::connection_error const& ec) {
+		}, [](connection_ptr) {
+		}, [](connection_ptr, error::connection_error const&) {
 
 		}}));
 		io_service->run();
@@ -292,8 +292,8 @@ TEST( TransactionTest, CleanExit )
 			} else {
 				c->terminate();
 			}
-		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, error::connection_error const& ec) {
+		}, [] (connection_ptr) {
+		}, [](connection_ptr, error::connection_error const&) {
 			FAIL();
 		}}));
 		io_service->run();
@@ -332,8 +332,8 @@ TEST(TransactionTest, DirtyTerminate)
 			} else {
 				c->terminate();
 			}
-		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, error::connection_error const& ec) {
+		}, [] (connection_ptr) {
+		}, [](connection_ptr, error::connection_error const&) {
 			FAIL();
 		}}));
 		io_service->run();
@@ -377,8 +377,8 @@ TEST(TransactionTest, DirtyUnlock)
 				}}));
 				transactions++;
 			}
-		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, error::connection_error const& ec) {
+		}, [] (connection_ptr) {
+		}, [](connection_ptr, error::connection_error const&) {
 			FAIL();
 		}}));
 		io_service->run();
@@ -411,7 +411,7 @@ TEST(TransactionTest, Query)
 					EXPECT_TRUE(tran.get());
 					EXPECT_TRUE(tran->in_transaction());
 					tran->execute( "select * from pg_catalog.pg_class",
-					[&] (transaction_ptr tran, resultset r, bool complete) {
+					[&] (transaction_ptr, resultset r, bool complete) {
 						if (complete)
 							result_count++;
 						local_log() << "Received a resultset columns: " << r.columns_size()
@@ -425,8 +425,8 @@ TEST(TransactionTest, Query)
 			} else {
 				c->terminate();
 			}
-		}, [] (connection_ptr c) {
-		}, [](connection_ptr c, error::connection_error const& ec) {
+		}, [] (connection_ptr) {
+		}, [](connection_ptr, error::connection_error const&) {
 			FAIL();
 		}}));
 		io_service->run();
@@ -438,8 +438,6 @@ TEST(TransactionTest, Query)
 
 TEST(DatabaseTest, Service)
 {
-	typedef std::shared_ptr< std::thread > thread_ptr;
-	typedef std::chrono::high_resolution_clock clock_type;
 	using namespace tip::db::pg;
 	ASSERT_THROW(
 			db_service::begin("notthere"_db,
@@ -469,10 +467,10 @@ TEST(DatabaseTest, Service)
 		});
 		connection_options opts = connection_options::parse(test::environment::test_database);
 		db_service::begin(opts.alias,
-		[&](transaction_ptr c){
+		[&](transaction_ptr){
             timer.cancel();
 			db_service::stop();
-		}, [](error::db_error const& ec) {
+		}, [](error::db_error const&) {
 
 		});
 

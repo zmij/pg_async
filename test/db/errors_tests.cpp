@@ -32,11 +32,11 @@ TEST(ErrorTest, InvalidQueryError)
 		[&](transaction_ptr tran){
 			EXPECT_TRUE(tran.get());
 			query(tran, "select * from __shouldnt_be_there_")(
-			[&](transaction_ptr t, resultset r, bool) {
+			[&](transaction_ptr, resultset, bool) {
 				local_log(logger::DEBUG) << "Query resultset callback fired";
 				query_res_callback = true;
 			},
-			[&](error::db_error const& e) {
+			[&](error::db_error const&) {
 				local_log(logger::DEBUG) << "Query error callback fired";
 				query_err_callback++;
 
@@ -66,8 +66,8 @@ TEST(ErrorTest, ExceptionInTranHanlder)
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
 		int tran_err_callback = 0;
-		int query_err_callback = 0;
-		bool query_res_callback = false;
+//		int query_err_callback = 0;
+//		bool query_res_callback = false;
 		ASSERT_NO_THROW(db_service::begin(opts.alias,
 		[&](transaction_ptr tran) {
 			EXPECT_TRUE(tran.get());
@@ -93,8 +93,8 @@ TEST(ErrorTest, ExceptionInTranErrorHandler)
 		connection_options opts = connection_options::parse(test::environment::test_database);
 
 		int tran_err_callback = 0;
-		int query_err_callback = 0;
-		bool query_res_callback = false;
+//		int query_err_callback = 0;
+//		bool query_res_callback = false;
 		ASSERT_NO_THROW(db_service::begin(opts.alias,
 		[&](transaction_ptr tran) {
 			EXPECT_TRUE(tran.get());
@@ -127,12 +127,12 @@ TEST(ErrorTest, ExceptionInQueryResultsHanlder)
 		ASSERT_NO_THROW(db_service::begin(opts.alias,
 		[&](transaction_ptr tran) {
 			query(tran, "select * from pg_catalog.pg_type")(
-			[&](transaction_ptr t, resultset r, bool) {
+			[&](transaction_ptr, resultset, bool) {
 				local_log(logger::DEBUG) << "Query resultset callback fired";
 				query_res_callback = true;
 				throw std::runtime_error("Bail out");
 			},
-			[&](error::db_error const& e) {
+			[&](error::db_error const&) {
 				local_log(logger::DEBUG) << "Query error callback fired";
 				query_err_callback++;
 
@@ -168,11 +168,11 @@ TEST(ErrorTest, ExceptionInQueryErrorHanlder)
 		[&](transaction_ptr tran){
 			EXPECT_TRUE(tran.get());
 			query(tran, "select * from __shouldnt_be_there_")(
-			[&](transaction_ptr t, resultset r, bool) {
+			[&](transaction_ptr, resultset, bool) {
 				local_log(logger::DEBUG) << "Query resultset callback fired";
 				query_res_callback = true;
 			},
-			[&](error::db_error const& e) {
+			[&](error::db_error const&) {
 				local_log(logger::DEBUG) << "Query error callback fired";
 				query_err_callback++;
 
@@ -232,14 +232,14 @@ TEST(ErrorTest, BreakQueryQueue)
 				}, [](error::db_error const&){
 				});
 				query(tran, "select * from pg_async_test")
-				([&](transaction_ptr c, resultset r, bool) {
+				([&](transaction_ptr c, resultset, bool) {
 					local_log(logger::DEBUG) << "Query two finished";
 					EXPECT_TRUE(c.get());
 					query_resultsets[1] = true;
 				}, [](error::db_error const&){
 				});
 				query(tran, "drop table pg_async_test")
-				([&](transaction_ptr c, resultset r, bool) {
+				([&](transaction_ptr c, resultset, bool) {
 					local_log(logger::DEBUG) << "Query three finished";
 					EXPECT_TRUE(c.get());
 					query_resultsets[2] = true;
@@ -301,7 +301,7 @@ TEST(ErrorTest, FailQueryQueue)
 					query_error++;
 				});
 				query(tran, "select * from pg_async_test")
-				([&](transaction_ptr c, resultset r, bool) {
+				([&](transaction_ptr c, resultset, bool) {
 					local_log(logger::DEBUG) << "Query two finished";
 					EXPECT_TRUE(c.get());
 					query_resultsets[1] = true;
@@ -309,7 +309,7 @@ TEST(ErrorTest, FailQueryQueue)
 					query_error++;
 				});
 				query(tran, "drop table pg_async_test")
-				([&](transaction_ptr c, resultset r, bool) {
+				([&](transaction_ptr c, resultset, bool) {
 					local_log(logger::DEBUG) << "Query three finished";
 					EXPECT_TRUE(c.get());
 					query_resultsets[2] = true;

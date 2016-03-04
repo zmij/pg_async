@@ -142,13 +142,13 @@ connection_options::parse(std::string const& literal)
 }  // namespace tip
 
 tip::db::pg::dbalias
-operator"" _db(const char* v, size_t n)
+operator"" _db(const char* v, size_t)
 {
 	return tip::db::pg::dbalias{ std::string{v} };
 }
 
 tip::db::pg::connection_options
-operator"" _pg(const char* literal, size_t n)
+operator"" _pg(const char* literal, size_t)
 {
 	return tip::db::pg::connection_options::parse(literal);
 }

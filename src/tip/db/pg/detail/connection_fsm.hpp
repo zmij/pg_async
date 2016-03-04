@@ -344,14 +344,14 @@ struct connection_fsm_ :
 
 			//template < typename Event >
 			void
-			on_entry(events::begin const& evt, tran_fsm& tran)
+			on_entry(events::begin const&, tran_fsm& tran)
 			{
 				fsm_log() << "entering: start transaction";
 				tran.connection_->send_begin();
 			}
 			template < typename Event >
 			void
-			on_exit(Event const&, tran_fsm& tran)
+			on_exit(Event const&, tran_fsm&)
 			{ fsm_log() << "leaving: start transaction"; }
 			struct internal_transition_table : boost::mpl::vector<
 			/*				Event				Action		Guard	 */
@@ -454,7 +454,7 @@ struct connection_fsm_ :
 			typedef boost::msm::back::state_machine< simple_query_ > simple_query;
 			template < typename Event >
 			void
-			on_entry(Event const& q, tran_fsm& tran)
+			on_entry(Event const&, tran_fsm& tran)
 			{
 				fsm_log(logger::WARNING)
 						<< tip::util::MAGENTA << "entering: simple query (unexpected event)";
@@ -728,22 +728,22 @@ struct connection_fsm_ :
 				{
 					fsm_log() << "entering: parse";
 					fsm_log() << "Parse query " << fsm.query_.expression;
-					message parse(parse_tag);
-					parse.write(fsm.query_name_);
-					parse.write(fsm.query_.expression);
-					parse.write( (smallint)fsm.query_.param_types.size() );
+					message cmd(parse_tag);
+					cmd.write(fsm.query_name_);
+					cmd.write(fsm.query_.expression);
+					cmd.write( (smallint)fsm.query_.param_types.size() );
 					for (oids::type::oid_type oid : fsm.query_.param_types) {
-						parse.write( (integer)oid );
+						cmd.write( (integer)oid );
 					}
 
 					message describe(describe_tag);
 					describe.write('S');
 					describe.write(fsm.query_name_);
-					parse.pack(describe);
+					cmd.pack(describe);
 
-					parse.pack(message(sync_tag));
+					cmd.pack(message(sync_tag));
 
-					fsm.connection_->send(parse);
+					fsm.connection_->send(cmd);
 				}
 				template < typename Event, typename FSM >
 				void
@@ -766,30 +766,30 @@ struct connection_fsm_ :
 				on_entry( Event const&, extended_query& fsm )
 				{
 					fsm_log() << "entering: bind";
-					message bind(bind_tag);
-					bind.write(fsm.portal_name_);
-					bind.write(fsm.query_name_);
+					message cmd(bind_tag);
+					cmd.write(fsm.portal_name_);
+					cmd.write(fsm.query_name_);
 					if (!fsm.query_.params.empty()) {
-						auto out = bind.output();
+						auto out = cmd.output();
 						std::copy(fsm.query_.params.begin(), fsm.query_.params.end(), out);
 					} else {
-						bind.write((smallint)0); // parameter format codes
-						bind.write((smallint)0); // number of parameters
+						cmd.write((smallint)0); // parameter format codes
+						cmd.write((smallint)0); // number of parameters
 					}
 					if (fsm.connection_->is_prepared(fsm.query_name_)) {
 						row_description const& row =
 								fsm.connection_->get_prepared(fsm.query_name_);
-						bind.write((smallint)row.fields.size());
+						cmd.write((smallint)row.fields.size());
 						for (auto fd : row.fields) {
-							bind.write((smallint)fd.format_code);
+							cmd.write((smallint)fd.format_code);
 						}
 					} else {
-						bind.write((smallint)0); // no row description
+						cmd.write((smallint)0); // no row description
 					}
 
-					bind.pack(message(sync_tag));
+					cmd.pack(message(sync_tag));
 
-					fsm.connection_->send(bind);
+					fsm.connection_->send(cmd);
 				}
 				template < typename Event, typename FSM >
 				void
@@ -832,8 +832,7 @@ struct connection_fsm_ :
 	        {
 	            template < class EVT, class SourceState, class TargetState>
 	            bool
-				operator()(EVT const& evt, extended_query& fsm,
-						SourceState& src,TargetState& tgt)
+				operator()(EVT const&, extended_query& fsm, SourceState&,TargetState&)
 	            {
 	            	if (fsm.connection_) {
 	            		return fsm.connection_->is_prepared(fsm.query_name_);
@@ -1162,9 +1161,9 @@ struct connection_fsm_ :
 	}
 
 	void
-	set_prepared( std::string const& query, row_description const& row )
+	set_prepared( std::string const& query, row_description const& row_desc )
 	{
-		prepared_.insert(std::make_pair(query, row));
+		prepared_.insert(std::make_pair(query, row_desc));
 	}
 	row_description const&
 	get_prepared( std::string const& query_name ) const
@@ -1199,7 +1198,7 @@ struct connection_fsm_ :
 private:
 	virtual void do_notify_idle() {};
 	virtual void do_notify_terminated() {};
-	virtual void do_notify_error(error::connection_error const& e) {};
+	virtual void do_notify_error(error::connection_error const&) {};
 private:
 	connection&
 	fsm()
@@ -1236,7 +1235,7 @@ private:
 		}
 	}
 	void
-	handle_write(asio_config::error_code const& ec, size_t bytes_transferred)
+	handle_write(asio_config::error_code const& ec, size_t)
 	{
 		if (ec) {
 			// Socket error - force termination
@@ -1248,7 +1247,7 @@ private:
 	InputIter
 	copy(InputIter in, InputIter end, size_t max, OutputIter out)
 	{
-		for (int i = 0; i < max && in != end; ++i) {
+		for (size_t i = 0; i < max && in != end; ++i) {
 			*out++ = *in++;
 		}
 		return in;
@@ -1259,7 +1258,6 @@ private:
 	{
 		const size_t header_size = sizeof(integer) + sizeof(byte);
 	    while (max_bytes > 0) {
-	        size_t loop_beg = max_bytes;
 	        if (!message_) {
 	            message_.reset(new detail::message);
 	        }
@@ -1390,9 +1388,9 @@ private:
 					break;
 				}
 				case data_row_tag: {
-					row_data row;
-					if (m->read(row)) {
-						fsm().process_event(row);
+					row_data r;
+					if (m->read(r)) {
+						fsm().process_event(r);
 					} else {
 						// FIXME Process error
 						fsm_log(logger::ERROR) << "Failed to read data row";

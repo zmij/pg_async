@@ -143,7 +143,7 @@ operator << (local out, T const& v)
 		local_log(logger::event_severity sv = DEFAULT_SEVERITY) \
 		{ return local(LOG_CATEGORY, sv); }\
 	} \
-	using tip::log::logger;
+	using tip::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG(c, s) \
 	namespace { \
@@ -154,7 +154,7 @@ operator << (local out, T const& v)
 		local_log(logger::event_severity sv = DEFAULT_SEVERITY) \
 		{ return local(LOG_CATEGORY, sv); }\
 	} \
-	using tip::log::logger;
+	using tip::log::logger
 
 #define LOCAL_LOGGING_FACILITY_FUNC(c, s, f) \
 	namespace { \
@@ -165,7 +165,7 @@ operator << (local out, T const& v)
 		f(logger::event_severity sv = DEFAULT_SEVERITY) \
 		{ return local(LOG_CATEGORY, sv); }\
 	} \
-	using tip::log::logger;
+	using tip::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG_FUNC(c, s, f) \
 	namespace { \
@@ -176,6 +176,6 @@ operator << (local out, T const& v)
 		f(logger::event_severity sv = DEFAULT_SEVERITY) \
 		{ return local(LOG_CATEGORY, sv); }\
 	} \
-	using tip::log::logger;
+	using tip::log::logger
 
 #endif /* LIB_PG_ASYNC_INCLUDE_TIP_DB_PG_NULL_LOGGER_HPP_ */

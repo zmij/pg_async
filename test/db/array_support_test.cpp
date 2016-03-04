@@ -127,16 +127,16 @@ TEST(ArraySupport, DatabaseRoundtrip)
 		[&](transaction_ptr tran) {
 			query(tran,
 				"create temporary table pg_async_array_support(a integer[])")(
-			[](transaction_ptr t, resultset, bool) {
+			[](transaction_ptr, resultset, bool) {
 			},
 			[](error::db_error const&) {}
 			);
 			query(tran, "insert into pg_async_array_support values ($1::integer[])", in_v)(
-			[](transaction_ptr t, resultset, bool) {},
+			[](transaction_ptr, resultset, bool) {},
 			[](error::db_error const&) {}
 			);
 			query(tran, "select a from pg_async_array_support")(
-			[&res](transaction_ptr t, resultset r, bool) {
+			[&res](transaction_ptr, resultset r, bool) {
 				res = r;
 				db_service::stop();
 			},

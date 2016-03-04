@@ -86,6 +86,7 @@ private:
 			default:
 				break;
 		}
+		return false;
 	}
 
 	static char

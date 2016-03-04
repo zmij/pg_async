@@ -11,7 +11,10 @@
 
 #include "test-environment.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 LOCAL_LOGGING_FACILITY(PGTEST, DEBUG);
+#pragma GCC diagnostic pop
 
 namespace {
 
