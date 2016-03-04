@@ -14,6 +14,10 @@
 #include "db/config.hpp"
 #include "test-environment.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
+
 namespace asio_config = tip::db::pg::asio_config;
 
 LOCAL_LOGGING_FACILITY_FUNC(PGFSM, TRACE, test_log);
@@ -27,7 +31,7 @@ struct dummy_transport {
 	typedef asio_config::io_service_ptr io_service_ptr;
 	typedef std::function< void (asio_config::error_code const&) > connect_callback;
 
-	dummy_transport(io_service_ptr svc) {}
+	dummy_transport(io_service_ptr) {}
 
 	void
 	connect_async(connection_options const&, connect_callback cb)
@@ -50,14 +54,14 @@ struct dummy_transport {
 
 	template < typename BufferType, typename HandlerType >
 	void
-	async_read(BufferType& buffer, HandlerType handler)
+	async_read(BufferType&, HandlerType)
 	{
 		test_log() << "Dummy async read";
 	}
 
 	template < typename BufferType, typename HandlerType >
 	void
-	async_write(BufferType const& buffer, HandlerType handler)
+	async_write(BufferType const&, HandlerType)
 	{
 		test_log() << "Dummy async write";
 	}
@@ -186,10 +190,10 @@ test_normal_flow(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 
 	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
-	fsm_ptr c(new fsm_type(svc, client_options, {}));
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -222,10 +226,10 @@ test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 
 	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
-	fsm_ptr c(new fsm_type(svc, client_options, {}));
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -256,10 +260,10 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 
 	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
-	fsm_ptr c(new fsm_type(svc, client_options, {}));
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -291,11 +295,11 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 	typedef std::vector< char > buffer_type;
 
 	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
-	fsm_ptr c(new fsm_type(svc, client_options, {}));
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -350,3 +354,4 @@ TEST(FSM, ExecPrepared)
 	}
 }
 
+#pragma GCC diagnostic pop

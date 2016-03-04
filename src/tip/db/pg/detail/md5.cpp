@@ -215,7 +215,7 @@ void md5::update(std::istream& a_istream)
     }
 }
 
-void md5::update(std::istream& a_istream, uint32_t a_size)
+void md5::update(std::istream&, uint32_t)
 {
     // TODO
 }
@@ -274,6 +274,7 @@ void md5::digest_type::reset(const hex_str_value_type& a_hex_str_value)
         int n = sscanf(&a_hex_str_value[i*2], "%02x", &value);
 
         assert(n == 1 && value <= 0xff);
+        n++;
 
         the_value[i] = static_cast<uint8_t>(value);
     }
@@ -455,7 +456,7 @@ std::istream&
 operator >> (std::istream& s, md5::digest_type& a)
 {
   md5::digest_type::hex_str_value_type v;
-  if (s.gcount() >= sizeof(md5::digest_type::hex_str_value_type)) {
+  if ((size_t)s.gcount() >= sizeof(md5::digest_type::hex_str_value_type)) {
 	  s.read(v, sizeof(md5::digest_type::hex_str_value_type));
   }
   a.reset(v);

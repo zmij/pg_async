@@ -53,7 +53,8 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
 	}
 
 	impl(impl const& rhs)
-		: alias_(rhs.alias_), tran_(), expression_(rhs.expression_),
+		: enable_shared_from_this(rhs),
+		  alias_(rhs.alias_), tran_(), expression_(rhs.expression_),
 		  param_types_(rhs.param_types_), params_(rhs.params_)
 	{
 	}

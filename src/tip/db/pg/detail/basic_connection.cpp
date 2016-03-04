@@ -31,9 +31,9 @@ create_connection(asio_config::io_service_ptr svc,
 		connection_callbacks const& callbacks)
 {
 	typedef detail::concrete_connection< TransportType > connection_type;
-	typedef std::shared_ptr< connection_type > connection_ptr;
+	typedef std::shared_ptr< connection_type > concrete_connection_ptr;
 
-	connection_ptr conn(new connection_type(svc, co, callbacks));
+	concrete_connection_ptr conn(new connection_type(svc, co, callbacks));
 	conn->connect(opts);
 	return conn;
 }

@@ -23,10 +23,10 @@ db_error::db_error(char const* what_arg)
 }
 
 db_error::db_error(std::string const& message,
-		std::string severity,
-		std::string code,
-		std::string detail)
-	: std::runtime_error(message), severity(severity), code(code), detail(detail),
+		std::string s,
+		std::string c,
+		std::string d)
+	: std::runtime_error(message), severity(s), code(c), detail(d),
 	  sqlstate(sqlstate::code_to_state(code))
 {
 }
@@ -52,10 +52,8 @@ query_error::query_error(char const* what_arg)
 }
 
 query_error::query_error(std::string const& message,
-		std::string severity,
-		std::string code,
-		std::string detail)
-	: db_error(message, severity, code, detail)
+		std::string s, std::string c, std::string d)
+	: db_error(message, s, c, d)
 {
 }
 

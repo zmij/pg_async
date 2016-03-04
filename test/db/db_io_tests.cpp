@@ -12,8 +12,6 @@
 
 #include <gtest/gtest.h>
 
-LOCAL_LOGGING_FACILITY(PGTEST, TRACE);
-
 using namespace tip::db::pg;
 
 
@@ -26,7 +24,6 @@ class InvalidBoolParseTest : public ::testing::TestWithParam< std::string > {
 
 TEST_P(BoolParseTest, Parses)
 {
-	typedef tip::util::input_iterator_buffer buffer_type;
 	test_pair curr = GetParam();
 
 	bool val;
@@ -38,7 +35,6 @@ TEST_P(BoolParseTest, Parses)
 
 TEST_P(InvalidBoolParseTest, DoesntParse)
 {
-	typedef tip::util::input_iterator_buffer buffer_type;
 	std::string curr = GetParam();
 
 	bool val = true;

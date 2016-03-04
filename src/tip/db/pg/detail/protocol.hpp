@@ -106,7 +106,7 @@ public:
 	typedef std::pair<const_iterator, const_iterator> const_range;
 
 	/** Length type for the message */
-	typedef integer size_type;
+	typedef uinteger size_type;
 public:
 	/**
 	 * Construct message for reading from the stream

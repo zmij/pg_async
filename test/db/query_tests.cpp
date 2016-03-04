@@ -47,18 +47,18 @@ TEST(QueryTest, QueryInlay)
 				local_log() << "Query one finished";
 				EXPECT_TRUE(c.get());
 				query(c, "insert into pg_async_test values(1),(2),(3)").run_async(
-				[&](transaction_ptr c, resultset, bool){
+				[&](transaction_ptr c1, resultset, bool){
 					local_log() << "Query two finished";
-					EXPECT_TRUE(c.get());
-					query(c, "select * from pg_async_test").run_async(
-					[&](transaction_ptr c, resultset r, bool) {
+					EXPECT_TRUE(c1.get());
+					query(c1, "select * from pg_async_test").run_async(
+					[&](transaction_ptr c2, resultset r, bool) {
 						local_log() << "Query three finished";
-						EXPECT_TRUE(c.get());
+						EXPECT_TRUE(c2.get());
 						res = r;
-						query(c, "drop table pg_async_test").run_async(
-						[&](transaction_ptr c, resultset r, bool) {
+						query(c2, "drop table pg_async_test").run_async(
+						[&](transaction_ptr c3, resultset, bool) {
 							local_log() << "Query four finished";
-							EXPECT_TRUE(c.get());
+							EXPECT_TRUE(c3.get());
                             timer.cancel();
                             //c->commit();
 							db_service::stop();
@@ -133,7 +133,7 @@ TEST(QueryTest, QueryQueue)
 					FAIL();
 				});
 				query(tran, "drop table pg_async_test")
-				([&](transaction_ptr c, resultset r, bool) {
+				([&](transaction_ptr c, resultset, bool) {
 					local_log(logger::DEBUG) << "Query four finished";
 					EXPECT_TRUE(c.get());
 	                timer.cancel();
@@ -157,7 +157,7 @@ TEST(QueryTest, BasicResultParsing)
 	using namespace tip::db::pg;
 	if (!test::environment::test_database.empty() && !test::SCRIPT_SOURCE_DIR.empty()) {
 
-		resultset res;
+		//resultset res;
 
 		ASSERT_NO_THROW(db_service::add_connection(test::environment::test_database));
 		std::string script_name = test::SCRIPT_SOURCE_DIR + "results-parse-test.sql";
@@ -180,7 +180,7 @@ TEST(QueryTest, BasicResultParsing)
 			}
 			connection_options opts = connection_options::parse(test::environment::test_database);
 			query(opts.alias, script_str).run_async(
-			[&](transaction_ptr c, resultset res, bool complete) {
+			[&](transaction_ptr c, resultset res, bool) {
 				{
 					local_log() << "Received a resultset. Columns: " << res.columns_size()
 							<< " rows: " << res.size() << " empty: " << res.empty();
@@ -210,11 +210,6 @@ TEST(QueryTest, BasicResultParsing)
 
 						for (resultset::const_field_iterator f = row.begin(); f != row.end(); ++f) {
 							local << f.as< std::string >() << " ";
-						}
-					}
-					for (auto row: res) {
-						for (auto f : row) {
-							;
 						}
 					}
 				}

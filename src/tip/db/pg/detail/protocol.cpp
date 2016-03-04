@@ -225,7 +225,7 @@ message::read(std::string& val)
 bool
 message::read(std::string& val, size_t n)
 {
-	if (payload.end() - curr_ >= n) {
+	if (payload.end() - curr_ >= ::std::make_signed<size_t>::type(n)) {
 		for (size_t i = 0; i < n; ++i) {
 			val.push_back(*curr_++);
 		}
@@ -259,7 +259,7 @@ message::read(field_description& fd)
 bool
 message::read(row_data& row)
 {
-	integer len = length();
+	size_t len = length();
 	assert( len == size() && "Invalid message length");
 	local_log() << "Row data message size " << len;
 	if (len < sizeof(integer) + sizeof(smallint)) {
