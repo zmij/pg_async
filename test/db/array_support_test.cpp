@@ -81,7 +81,7 @@ TEST(ArraySupport, VectorIOTest)
 
 	{
 		buffer_type buffer;
-		int_array vals { 1, 2, 3 };
+		int_array vals {{ 1, 2, 3 }};
 		io::protocol_write< TEXT_DATA_FORMAT >(buffer, vals);
 		std::string check(buffer.begin(), buffer.end());
 		EXPECT_EQ("{1,2,3}", check);
@@ -96,18 +96,18 @@ TEST(ArraySupport, VectorIOTest)
 			os << "{5,6,7,8}";
 		}
 		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), vals);
-		EXPECT_EQ((int_array{ 5, 6, 7 }), vals);
+		EXPECT_EQ((int_array{{ 5, 6, 7 }}), vals);
 	}
 	{
 		buffer_type buffer;
-		int_array vals = {101,102,103};
+		int_array vals = {{101,102,103}};
 		{
 			vector_buff_type vbuff(buffer);
 			std::ostream os(&vbuff);
 			os << "{5,6}";
 		}
 		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), vals);
-		EXPECT_EQ((int_array{ 5, 6, 103 }), vals);
+		EXPECT_EQ((int_array{{ 5, 6, 103 }}), vals);
 	}
 }
 
