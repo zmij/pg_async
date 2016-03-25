@@ -308,7 +308,8 @@ public:
 
 		/**
 		 * Parse the value buffer to the type specified by value passed as
-		 * target. Will throw a value_is_null exception if the field is null.
+		 * target. Will throw a value_is_null exception if the field is null and
+		 * type is not nullable.
 		 * @tparam T type of target variable
 		 * @param val Target variable for the field value.
 		 * @return true if parsing the buffer was a success.
@@ -318,10 +319,8 @@ public:
 		bool
 		to( T& val ) const
 		{
-			if (is_null())
-				throw error::value_is_null(name());
-			return to_impl(val,
-					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
+			return to_nullable(val,
+					io::traits::is_nullable<T>() );
 		}
 
 		/**
@@ -380,6 +379,28 @@ public:
 			return as< T >();
 		}
 	private:
+		template < typename T >
+		bool
+		to_nullable(T& val, std::true_type const&) const
+		{
+			typedef io::traits::nullable_traits< T > nullable_traits;
+
+			if (is_null()) {
+				nullable_traits::set_null(val);
+				return true;
+			}
+			return to_impl(val,
+					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
+		}
+		template < typename T >
+		bool
+		to_nullable(T& val, std::false_type const&) const
+		{
+			if (is_null())
+				throw error::value_is_null(name());
+			return to_impl(val,
+					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
+		}
 		template < typename T >
 		bool
 		to_impl( T& val, std::true_type const& ) const

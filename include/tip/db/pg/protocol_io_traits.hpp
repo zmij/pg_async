@@ -82,6 +82,37 @@ struct has_parser : std::false_type {};
 template < typename T, protocol_data_format format >
 struct has_formatter : std::false_type {};
 
+template < typename T >
+struct is_nullable : ::std::false_type {};
+template < typename T >
+struct is_nullable < ::boost::optional< T > > : ::std::true_type {};
+
+template < typename T >
+struct nullable_traits {
+	inline static bool
+	is_null(T const& v)
+	{ return false; }
+
+	inline static void
+	set_null(T& v) {}
+};
+
+template < typename T >
+struct nullable_traits< ::boost::optional< T > > {
+	typedef ::boost::optional< T > value_type;
+
+	inline static bool
+	is_null(value_type const& v)
+	{
+		return !v.is_initialized();
+	}
+	inline static void
+	set_null(value_type& v)
+	{
+		value_type().swap(v);
+	}
+};
+
 }  // namespace traits
 
 template < typename T, protocol_data_format >
