@@ -37,13 +37,15 @@ struct time_grammar :
 		using qi::_3;
 		using qi::_4;
 		_2digits = qi::uint_parser< std::uint32_t, 10, 2, 2 >();
+		fractional_part = -('.' >> qi::long_);
 
-		time = (_2digits >> ':' >> _2digits >> ':' >> _2digits >> '.' >> qi::long_ )
+		time = (_2digits >> ':' >> _2digits >> ':' >> _2digits >> fractional_part )
 			[ _pass = (_1 < 24) && (_2 < 60) && (_3 < 60),
 			  _val = phx::construct< value_type >(_1, _2, _3, _4)];
 	}
 	boost::spirit::qi::rule< InputIterator, value_type()> time;
 	boost::spirit::qi::rule< InputIterator, std::uint32_t() > _2digits;
+	boost::spirit::qi::rule< InputIterator, std::uint64_t() > fractional_part;
 };
 
 template < typename InputIterator >
@@ -124,7 +126,10 @@ struct protocol_parser< boost::posix_time::ptime, TEXT_DATA_FORMAT > :
 		namespace parse = grammar::parse;
 
 		parse::datetime_grammar< InputIterator, value_type > grammar;
-		qi::parse(begin, end, grammar, base_type::value);
+		value_type tmp;
+		if (qi::parse(begin, end, grammar, tmp)) {
+			std::swap(tmp, base_type::value);
+		}
 		return begin;
 	}
 };
@@ -138,6 +143,23 @@ struct pgcpp_data_mapping< oids::type::timestamp > :
 template < >
 struct cpppg_data_mapping< boost::posix_time::ptime > :
 		detail::data_mapping_base< oids::type::timestamp, boost::posix_time::ptime > {};
+
+template <>
+struct is_nullable< boost::posix_time::ptime > : ::std::true_type {};
+
+template <>
+struct nullable_traits< boost::posix_time::ptime > {
+	inline static bool
+	is_null(boost::posix_time::ptime const& val)
+	{
+		return val.is_not_a_date_time();
+	}
+	inline static void
+	set_null(boost::posix_time::ptime& val)
+	{
+		val = boost::posix_time::ptime{};
+	}
+};
 //@}
 
 }  // namespace traits

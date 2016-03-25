@@ -37,7 +37,28 @@ struct nth_param {
 	static bool
 	write_value (std::vector<byte>& buffer, type const& value)
 	{
-		// TODO Reserve space
+		return write_value_impl(buffer, value, io::traits::is_nullable<type>{});
+	}
+
+	static integer
+	size(type const& value)
+	{
+		return size_impl(value, io::traits::is_nullable<type>{});
+	}
+private:
+	inline static bool
+	write_value_impl(std::vector<byte>& buffer, type const& value, ::std::true_type const&)
+	{
+		typedef io::traits::nullable_traits< type >	nullable_traits;
+		if (!nullable_traits::is_null(value)) {
+			return write_value_impl(buffer, value, ::std::false_type{});
+		}
+		// Write null marker
+		return io::protocol_write< BINARY_DATA_FORMAT >( buffer, (integer)-1 );
+	}
+	inline static bool
+	write_value_impl(std::vector<byte>& buffer, type const& value, ::std::false_type const&)
+	{
 		size_t buffer_pos = buffer.size();
 		// space for length
 		buffer.resize(buffer.size() + sizeof(integer));
@@ -54,11 +75,34 @@ struct nth_param {
 		return true;
 	}
 
-	static integer
-	size(type const& value)
+	/**
+	 * Output size of a nullable type
+	 * @param value
+	 * @param
+	 * @return
+	 */
+	inline static integer
+	size_impl(type const& value, ::std::true_type const&)
+	{
+		typedef io::traits::nullable_traits< type >	nullable_traits;
+		if (nullable_traits::is_null(value)) {
+			return sizeof(integer);
+		}
+		return size_impl(value, ::std::false_type{});
+	}
+
+	/**
+	 * Output size of a non-nullable type
+	 * @param value
+	 * @param
+	 * @return
+	 */
+	inline static integer
+	size_impl(type const& value, ::std::false_type const&)
 	{
 		return io::protocol_writer< data_format >(value).size() + sizeof(integer);
 	}
+
 };
 
 template < size_t Index, typename T >
