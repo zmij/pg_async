@@ -160,6 +160,9 @@ struct nullable_traits< boost::posix_time::ptime > {
 		val = boost::posix_time::ptime{};
 	}
 };
+
+template <>
+struct needs_quotes< boost::posix_time::ptime > : ::std::true_type {};
 //@}
 
 }  // namespace traits

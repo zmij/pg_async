@@ -45,19 +45,25 @@ INSTANTIATE_TEST_CASE_P(ArraySupport, ArrayParseTest,
 		test_param_type{
 			R"~({"foo",'bar','baz''bar'})~",
 			{ "foo", "bar", "baz'bar" }
+		},
+		test_param_type{
+			R"~({"","\\","\""})~",
+			{ "", "\\", "\"" }
 		}
 	)
 );
 
-TEST(ArraySupport, VectorIOTest)
+TEST(ArraySupport, BufferWriteTest)
 {
 	using namespace tip::db::pg;
 	typedef boost::iostreams::stream_buffer<
 			boost::iostreams::back_insert_device< std::vector<char> >>
 			vector_buff_type;
 	typedef std::vector< byte > buffer_type;
+
 	typedef std::vector< int > int_vector;
 	typedef std::array< int, 3 > int_array;
+	typedef std::vector< std::string > string_vector;
 
 	{
 		buffer_type buffer;
@@ -89,25 +95,52 @@ TEST(ArraySupport, VectorIOTest)
 
 	{
 		buffer_type buffer;
-		int_array vals;
+		string_vector vals { "one", "two", "three" };
+		io::protocol_write< TEXT_DATA_FORMAT >(buffer, vals);
+		std::string check(buffer.begin(), buffer.end());
+		EXPECT_EQ(R"~({"one","two","three"})~", check);
+	}
+}
+
+TEST(ArraySupport, BufferReadTest)
+{
+	using namespace tip::db::pg;
+	typedef boost::iostreams::stream_buffer<
+			boost::iostreams::back_insert_device< std::vector<char> >>
+			vector_buff_type;
+	typedef std::vector< byte > buffer_type;
+
+	typedef std::vector< int > int_vector;
+	typedef std::array< int, 3 > int_array;
+	//typedef std::vector< std::string > string_vector;
+
+	{
+		buffer_type buffer;
+		int_array a_vals;
+		int_vector v_vals;
 		{
 			vector_buff_type vbuff(buffer);
 			std::ostream os(&vbuff);
 			os << "{5,6,7,8}";
 		}
-		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), vals);
-		EXPECT_EQ((int_array{{ 5, 6, 7 }}), vals);
+		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), a_vals);
+		EXPECT_EQ((int_array{{ 5, 6, 7 }}), a_vals);
+		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), v_vals);
+		EXPECT_EQ((int_vector{ 5, 6, 7, 8 }), v_vals);
 	}
 	{
 		buffer_type buffer;
-		int_array vals = {{101,102,103}};
+		int_array a_vals = {{101,102,103}};
+		int_vector v_vals;
 		{
 			vector_buff_type vbuff(buffer);
 			std::ostream os(&vbuff);
 			os << "{5,6}";
 		}
-		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), vals);
-		EXPECT_EQ((int_array{{ 5, 6, 103 }}), vals);
+		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), a_vals);
+		EXPECT_EQ((int_array{{ 5, 6, 103 }}), a_vals);
+		io::protocol_read< TEXT_DATA_FORMAT >(buffer.begin(), buffer.end(), v_vals);
+		EXPECT_EQ((int_vector{ 5, 6 }), v_vals);
 	}
 }
 
@@ -154,6 +187,54 @@ TEST(ArraySupport, DatabaseRoundtrip)
 		ASSERT_EQ(1, res.size());
 		ASSERT_EQ(1, res.columns_size());
 		int_vector out_v;
+		res.front().to(out_v);
+		EXPECT_EQ(in_v, out_v);
+	}
+}
+
+TEST(ArraySupport, QuotedDatabaseRoundtrip)
+{
+	using namespace tip::db::pg;
+	if (!test::environment::test_database.empty()) {
+		db_service::add_connection(test::environment::test_database);
+		connection_options opts = connection_options::parse(test::environment::test_database);
+
+		typedef ::std::vector< ::std::string > string_vector;
+
+		string_vector in_v { "", "normal value", "\"\\", "\"double quoted value\"" };
+		resultset res;
+
+		db_service::begin(opts.alias,
+		[&](transaction_ptr tran) {
+			query(tran,
+				"create temporary table pg_async_array_support(a text[])")(
+			[](transaction_ptr, resultset, bool) {
+			},
+			[](error::db_error const&) {}
+			);
+			query(tran, "insert into pg_async_array_support values ($1::text[])", in_v)(
+			[](transaction_ptr, resultset, bool) {},
+			[](error::db_error const&) {}
+			);
+			query(tran, "select a from pg_async_array_support")(
+			[&res](transaction_ptr, resultset r, bool) {
+				res = r;
+				db_service::stop();
+			},
+			[](error::db_error const&) {
+				db_service::stop();
+			}
+			);
+		},
+		[](error::db_error const&) {
+			db_service::stop();
+		}
+		);
+		db_service::run();
+		ASSERT_FALSE(res.empty());
+		ASSERT_EQ(1, res.size());
+		ASSERT_EQ(1, res.columns_size());
+		string_vector out_v;
 		res.front().to(out_v);
 		EXPECT_EQ(in_v, out_v);
 	}

@@ -36,7 +36,7 @@ struct text_container_formatter : formatter_base< Container > {
 		element_iterator elem = base_type::value.begin();
 		element_iterator end = base_type::value.end();
 		while (elem != end) {
-			protocol_write< TEXT_DATA_FORMAT >(buffer, *elem);
+			quoted_write(buffer, *elem);
 			++elem;
 			if (elem != end)
 				buffer.push_back(',');

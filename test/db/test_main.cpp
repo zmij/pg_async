@@ -28,51 +28,59 @@ logger::event_severity log_level = logger::DEBUG;
 int
 main( int argc, char* argv[] )
 {
-	::testing::InitGoogleTest(&argc, argv);
+	try {
+		::testing::InitGoogleTest(&argc, argv);
 
-	using namespace tip::db::pg;
-	namespace po = boost::program_options;
-	logger::set_proc_name(argv[0]);
-	logger::set_stream(std::cerr);
-	po::options_description desc("Test options");
+		using namespace tip::db::pg;
+		namespace po = boost::program_options;
+		logger::set_proc_name(argv[0]);
+		logger::set_stream(std::cerr);
+		po::options_description desc("Test options");
 
-	desc.add_options()
-			("database,d", po::value<std::string>(&test::environment::test_database),
-					"database connection string")
-			("pool-size,s", po::value<int>(&test::environment::connection_pool)->default_value(4),
-					"connection pool size")
-			("threads,x", po::value<int>(&test::environment::num_threads)->default_value(10),
-					"requests threads number")
-			("requests,q", po::value<int>(&test::environment::num_requests)->default_value(10),
-					"number of requests per thread")
-			#ifdef WITH_TIP_LOG
-			("tip-log-level,v", po::value<logger::event_severity>(&log_level)->default_value(logger::INFO),
-					"log level (TRACE, DEBUG, INFO, WARNING, ERROR)")
-			#endif
-			("run-deadline", po::value<int>(&test::environment::deadline)->default_value(5),
-					"Maximum time to execute requests")
-			("log-colors", "output colored log")
-			("help,h", "show options description")
-	;
+		desc.add_options()
+				("database,d", po::value<std::string>(&test::environment::test_database),
+						"database connection string")
+				("pool-size,s", po::value<int>(&test::environment::connection_pool)->default_value(4),
+						"connection pool size")
+				("threads,x", po::value<int>(&test::environment::num_threads)->default_value(10),
+						"requests threads number")
+				("requests,q", po::value<int>(&test::environment::num_requests)->default_value(10),
+						"number of requests per thread")
+				#ifdef WITH_TIP_LOG
+				("tip-log-level,v", po::value<logger::event_severity>(&log_level)->default_value(logger::INFO),
+						"log level (TRACE, DEBUG, INFO, WARNING, ERROR)")
+				#endif
+				("run-deadline", po::value<int>(&test::environment::deadline)->default_value(5),
+						"Maximum time to execute requests")
+				("log-colors", "output colored log")
+				("help,h", "show options description")
+		;
 
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
+		po::variables_map vm;
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
 
-	if (vm.count("help")) {
-		std::cout << desc << "\n";
-		return 0;
+		if (vm.count("help")) {
+			std::cout << desc << "\n";
+			return 0;
+		}
+
+		if (test::environment::num_requests < 1) test::environment::num_requests = 1;
+		if (test::environment::num_threads < 1) test::environment::num_threads = 1;
+		if (test::environment::connection_pool < 1) test::environment::connection_pool = 1;
+
+		#ifdef WITH_TIP_LOG
+		logger::min_severity(log_level);
+		logger::use_colors(vm.count("log-colors"));
+		#endif
+
+		return RUN_ALL_TESTS();
+	} catch (::std::exception const& e) {
+		std::cerr << "Error running tests " << e.what() << "\n";
+		return 1;
+	} catch (...) {
+		std::cerr << "Unexpected error running tests\n";
+		return 1;
 	}
-
-	if (test::environment::num_requests < 1) test::environment::num_requests = 1;
-	if (test::environment::num_threads < 1) test::environment::num_threads = 1;
-	if (test::environment::connection_pool < 1) test::environment::connection_pool = 1;
-
-	#ifdef WITH_TIP_LOG
-	logger::min_severity(log_level);
-	logger::use_colors(vm.count("log-colors"));
-	#endif
-
-	return RUN_ALL_TESTS();
 }
 
