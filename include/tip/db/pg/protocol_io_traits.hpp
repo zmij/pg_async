@@ -840,6 +840,100 @@ struct protocol_parser< boost::optional< T >, BINARY_DATA_FORMAT > :
 	}
 };
 
+namespace traits {
+
+template < typename T >
+struct needs_quotes : ::std::false_type {};
+template < typename T >
+struct needs_escapes : ::std::false_type {};
+
+template <>
+struct needs_quotes< ::std::string > : ::std::true_type {};
+template <>
+struct needs_escapes< ::std::string > : ::std::true_type {};
+
+}  // namespace traits
+
+namespace detail {
+
+template < typename T >
+struct escaped_formatter_impl;
+
+template <>
+struct escaped_formatter_impl< ::std::string > : detail::formatter_base< ::std::string >{
+	typedef detail::formatter_base< ::std::string > base_type;
+	typedef base_type::value_type					value_type;
+
+	escaped_formatter_impl(value_type const& v) : base_type{v} {}
+
+	bool
+	operator()(::std::vector<byte>& buffer)
+	{
+		for (auto c : base_type::value) {
+			switch (c) {
+				case '"':
+				case '\\':
+					buffer.push_back('\\');
+					break;
+			}
+			buffer.push_back(c);
+		}
+		return true;
+	}
+};
+
+}  // namespace details
+
+template < typename T >
+using escaped_formatter = typename ::std::conditional<
+	traits::needs_escapes< T >::value,
+	detail::escaped_formatter_impl< T >,
+	protocol_formatter< T, TEXT_DATA_FORMAT >
+>::type;
+
+namespace detail {
+
+template < typename T >
+struct quoted_formatter_impl {
+	typedef escaped_formatter< T >				base_formatter;
+	typedef traits::nullable_traits< T >		nullable_traits;
+	typedef typename base_formatter::value_type	value_type;
+	enum : char {
+		QUOTE = '"'
+	};
+
+	quoted_formatter_impl(value_type const& v) : fmt_{v} {}
+
+	bool
+	operator()(::std::vector<byte>& buffer)
+	{
+		buffer.push_back(QUOTE);
+		if (!nullable_traits::is_null(fmt_.value))
+			fmt_(buffer);
+		buffer.push_back(QUOTE);
+		return true;
+	}
+private:
+	base_formatter fmt_;
+};
+
+}  // namespace details
+
+template < typename T >
+using quoted_formatter = typename ::std::conditional<
+	traits::needs_quotes< T >::value,
+	detail::quoted_formatter_impl< T >,
+	protocol_formatter< T, TEXT_DATA_FORMAT >
+>::type;
+
+template < typename T >
+bool
+quoted_write(std::vector<byte>& buffer, T const& val)
+{
+	typedef quoted_formatter< typename ::std::decay<T>::type > formatter_type;
+	return formatter_type{val}(buffer);
+}
+
 }  // namespace io
 }  // namespace pg
 }  // namespace db
