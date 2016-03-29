@@ -65,7 +65,7 @@ struct date_grammar :
 		_4digits = qi::uint_parser< std::uint32_t, 10, 4, 4 >();
 		date = (_4digits >> "-" >> _2digits >> "-" >> _2digits)
 			[
-			 	 _pass = _3 < 32,
+			 	 _pass = (1400 <= _1) && (_1 <= 10000) && (_3 < 32),
 				 phx::try_[
 					_val = phx::construct< value_type > (_1, _2, _3)
 				].catch_all[
