@@ -52,7 +52,8 @@ TEST(QueryTest, QueryInlay)
 					EXPECT_TRUE(c1.get());
 					query(c1, "select * from pg_async_test").run_async(
 					[&](transaction_ptr c2, resultset r, bool) {
-						local_log() << "Query three finished";
+						local_log() << "Query three finished. Result columns "
+								<< r.columns_size() << " rows " << r.size();
 						EXPECT_TRUE(c2.get());
 						res = r;
 						query(c2, "drop table pg_async_test").run_async(
@@ -77,6 +78,7 @@ TEST(QueryTest, QueryInlay)
 		}
 		db_service::run();
 
+		local_log() << "Queries done";
 		EXPECT_EQ(1, res.columns_size());
 		EXPECT_EQ(3, res.size());
 	}
