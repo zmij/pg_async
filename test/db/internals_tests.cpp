@@ -143,7 +143,9 @@ TEST( ConnectionTest, ConnectionPool )
 		timer.async_wait([&](asio_config::error_code const& ec){
 			if (!ec) {
 				local_log(logger::WARNING) << "Connection pool test timer expired";
-				pool->close([](){});
+				pool->close([](){
+					local_log(logger::DEBUG) << "Connection pool closed on timer command";
+				});
 				timer.cancel();
 				if (!io_service->stopped())
 					io_service->stop();
@@ -174,12 +176,17 @@ TEST( ConnectionTest, ConnectionPool )
 									<< " completed: " << std::boolalpha << complete;
 							local_log(logger::DEBUG) << "Sent requests: " << sent_count
 									<< " Received results: " << res_count;
-							if (complete)
+							if (complete) {
+								local_log(logger::DEBUG) << "Commiting transaction";
 								t1->commit();
+							}
 
 							if (res_count >= req_count * thread_count) {
-								pool->close([](){});
-								timer.cancel();
+								local_log(logger::DEBUG) << "Done all roundtrip tests";
+								pool->close([&timer](){
+									local_log(logger::DEBUG) << "Connection pool closed";
+									timer.cancel();
+								});
 							}
 						}, [](error::db_error const&){} );
 					},

@@ -201,7 +201,7 @@ connection_pool::get_connection(transaction_callback const& conn_cb,
 				<< (util::CLEAR) << (util::RED | util::BRIGHT)
 				<< alias()
 				<< logger::severity_color()
-				<< " queue size " << queue_.size() + 1  << " (enqueue)";;
+				<< " queue size " << queue_.size() + 1  << " (enqueue)";
 		if (!closed_ && connections_.size() < pool_size_) {
 			create_new_connection();
 		}
@@ -228,8 +228,10 @@ connection_pool::close_connections() {
 	local_log() << "Close connection pool "
 			<< (util::CLEAR) << (util::RED | util::BRIGHT)
 			<< alias()
-			<< logger::severity_color();
+			<< logger::severity_color()
+			<< " pool size " << connections_.size();
 	if (connections_.size() > 0) {
+		lock_type lock(mutex_);
 		connections_container copy = connections_;
 		for ( auto c : copy ) {
 			c->terminate();

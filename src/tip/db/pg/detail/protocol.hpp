@@ -299,6 +299,11 @@ struct row_data {
 	data_buffer data;
 	null_map_type null_map;
 
+	row_data() = default;
+	row_data(row_data&&) = default;
+	row_data&
+	operator = (row_data&&) = default;
+
 	size_type
 	size() const; /**< Number of fields in the row */
 
