@@ -60,6 +60,19 @@ struct row_description {
 	mutable std::vector<field_description> fields;
 };
 
+struct row_event {
+	std::shared_ptr< row_data > data;
+
+	row_event() : data(std::make_shared< row_data >()) {}
+
+	row_data&
+	row() { return *data; }
+
+	row_data
+	move_row() const { return ::std::move(*data); }
+	// TODO Move accessor
+};
+
 struct no_data {}; // Prepared query doesn't return data
 
 struct terminate {};
@@ -68,9 +81,18 @@ namespace flags {
 struct in_transaction{};
 }  // namespace flags
 
+struct connection_base_state {
+	virtual ~connection_base_state() {}
+
+	virtual ::std::string const&
+	state_name() const = 0;
+};
+
 template < typename TransportType, typename SharedType >
 struct connection_fsm_ :
-		public boost::msm::front::state_machine_def< connection_fsm_< TransportType, SharedType > >,
+		public boost::msm::front::state_machine_def<
+			connection_fsm_< TransportType, SharedType >,
+			connection_base_state >,
 		public std::enable_shared_from_this< SharedType > {
 
 	//@{
@@ -87,7 +109,8 @@ struct connection_fsm_ :
 	/** @name Misc typedefs */
 	typedef TransportType transport_type;
 	typedef SharedType shared_type;
-	typedef boost::msm::back::state_machine< connection_fsm_< transport_type, shared_type > > connection;
+	typedef boost::msm::back::state_machine<
+			connection_fsm_< transport_type, shared_type > > connection;
 	typedef std::shared_ptr< message > message_ptr;
 	typedef std::map< std::string, row_description > prepared_statements_map;
 	typedef std::shared_ptr< result_impl > result_ptr;
@@ -100,7 +123,7 @@ struct connection_fsm_ :
 		operator() (error::connection_error const& err, connection& fsm,
 				SourceState&, TargetState&)
 		{
-			fsm_log(logger::ERROR) << "connection::on_connection_error Error: "
+			fsm.log(logger::ERROR) << "connection::on_connection_error Error: "
 					<< err.what();
 			fsm.notify_error(err);
 		}
@@ -110,7 +133,7 @@ struct connection_fsm_ :
 		void
 		operator() (terminate const&, connection& fsm, SourceState&, TargetState&)
 		{
-			fsm_log() << "connection: disconnect";
+			fsm.log() << "connection: disconnect";
 			fsm.send(message(terminate_tag));
 			fsm.close_transport();
 		}
@@ -118,7 +141,7 @@ struct connection_fsm_ :
 	//@}
 	//@{
 	/** @name States */
-	struct unplugged : public boost::msm::front::state<> {
+	struct unplugged : public boost::msm::front::state< connection_base_state > {
 		typedef boost::mpl::vector<
 				terminate,
 				events::begin,
@@ -127,20 +150,33 @@ struct connection_fsm_ :
 				events::execute,
 				events::execute_prepared
 			> deferred_events;
+
+		::std::string const&
+		state_name() const override
+		{
+			static const ::std::string name = "unplugged";
+			return name;
+		}
 	};
 
-	struct terminated : boost::msm::front::terminate_state<> {
+	struct terminated : boost::msm::front::terminate_state< connection_base_state > {
 		template < typename Event >
 		void
 		on_entry(Event const&, connection& fsm)
 		{
-			fsm_log() << "entering: terminated";
+			fsm.log() << "entering: terminated";
 			fsm.send(message(terminate_tag));
 			fsm.notify_terminated();
 		}
+		::std::string const&
+		state_name() const override
+		{
+			static const ::std::string name = "terminated";
+			return name;
+		}
 	};
 
-	struct t_conn : public boost::msm::front::state<> {
+	struct t_conn : public boost::msm::front::state< connection_base_state > {
 		typedef boost::mpl::vector<
 				terminate,
 				events::begin,
@@ -152,25 +188,31 @@ struct connection_fsm_ :
 		void
 		on_entry(connection_options const& opts, connection& fsm)
 		{
-			fsm_log() << "entering: transport connecting";
+			fsm.log() << "entering: transport connecting";
 			fsm.connect_transport(opts);
 		}
 
-		template < typename Event, typename FSM >
+		template < typename Event >
 		void
-		on_entry(Event const&, FSM&)
-		{ fsm_log(logger::WARNING) << "entering: transport connecting - unknown variant"; }
+		on_entry(Event const&, connection& fsm)
+		{ fsm.log(logger::WARNING) << "entering: transport connecting - unknown variant"; }
 
 		template < typename Event >
 		void
 		on_exit(Event const&, connection& fsm)
 		{
-			fsm_log() << "leaving:  transport connecting";
+			fsm.log() << "leaving:  transport connecting";
 			fsm.start_read();
+		}
+		::std::string const&
+		state_name() const override
+		{
+			static const ::std::string name = "transport connecting";
+			return name;
 		}
 	};
 
-	struct authn : public boost::msm::front::state<> {
+	struct authn : public boost::msm::front::state< connection_base_state > {
 		typedef boost::mpl::vector<
 				terminate,
 				events::begin,
@@ -183,13 +225,13 @@ struct connection_fsm_ :
 		void
 		on_entry(Event const&, connection& fsm)
 		{
-			fsm_log() << "entering: authenticating";
+			fsm.log() << "entering: authenticating";
 			fsm.send_startup_message();
 		}
-		template < typename Event, typename FSM >
+		template < typename Event >
 		void
-		on_exit(Event const&, FSM&)
-		{ fsm_log() << "leaving: authenticating"; }
+		on_exit(Event const&, connection& fsm)
+		{ fsm.log() << "leaving: authenticating"; }
 
 		struct handle_authn_event {
 			template < typename SourceState, typename TargetState >
@@ -237,29 +279,43 @@ struct connection_fsm_ :
 		struct internal_transition_table : boost::mpl::vector<
 			Internal< authn_event, handle_authn_event,	none >
 		> {};
+
+		::std::string const&
+		state_name() const override
+		{
+			static const ::std::string name = "authenticating";
+			return name;
+		}
 	};
 
-	struct idle : public boost::msm::front::state<> {
+	struct idle : public boost::msm::front::state< connection_base_state > {
 		template < typename Event >
 		void
 		on_entry(Event const&, connection& fsm)
 		{
-			fsm_log() << "entering: idle";
+			fsm.log() << "entering: idle";
 			fsm.notify_idle();
 		}
-		template < typename Event, typename FSM >
+		template < typename Event >
 		void
-		on_exit(Event const&, FSM&)
-		{ fsm_log() << "leaving: idle"; }
+		on_exit(Event const&, connection& fsm)
+		{ fsm.log() << "leaving: idle"; }
 
 		struct internal_transition_table : boost::mpl::vector<
 		/*				Event			Action		Guard	 */
 		/*			+-----------------+-----------+---------+*/
 			Internal< ready_for_query,	none,		none 	>
 		> {};
+
+		::std::string const&
+		state_name() const override
+		{
+			static const ::std::string name = "idle";
+			return name;
+		}
 	};
 
-	struct transaction_ : public boost::msm::front::state_machine_def<transaction_> {
+	struct transaction_ : public boost::msm::front::state_machine_def<transaction_, connection_base_state> {
 		typedef boost::mpl::vector< terminate > deferred_events;
 		typedef boost::mpl::vector< flags::in_transaction > flag_list;
 		typedef boost::msm::back::state_machine< transaction_ > tran_fsm;
@@ -267,13 +323,19 @@ struct connection_fsm_ :
 		typedef std::shared_ptr< pg::transaction > transaction_ptr;
 		typedef std::weak_ptr< pg::transaction > transaction_weak_ptr;
 
+		::std::string const&
+		state_name() const override
+		{
+			static const ::std::string name = "transaction";
+			return name;
+		}
 		//@{
 		/** @name Transaction entry-exit */
 		void
 		on_entry(events::begin const& evt, connection& fsm)
 		{
-			fsm_log() << "entering: transaction";
 			connection_ = &fsm;
+			connection_->log() << "entering: transaction";
 			connection_->in_transaction_ = true;
 			callbacks_ = evt;
 		}
@@ -281,7 +343,7 @@ struct connection_fsm_ :
 		void
 		on_exit(Event const&, FSM&)
 		{
-			fsm_log() << "leaving: transaction";
+			connection_->log() << "leaving: transaction";
 			tran_object_.reset();
 			connection_->in_transaction_ = false;
 			callbacks_ = events::begin{};
@@ -297,44 +359,44 @@ struct connection_fsm_ :
 		struct transaction_started {
 			template < typename Event, typename SourceState, typename TargetState >
 			void
-			operator() (Event const&, tran_fsm& tran, SourceState&, TargetState&)
+			operator() (Event const&, tran_fsm& fsm, SourceState&, TargetState&)
 			{
-				fsm_log() << "transaction::transaction_started";
-				tran.notify_started();
+				fsm.connection_->log() << "transaction::transaction_started";
+				fsm.notify_started();
 			}
 		};
 		struct commit_transaction {
 			template < typename SourceState, typename TargetState >
 			void
-			operator() (events::commit const&, tran_fsm& tran, SourceState&, TargetState&)
+			operator() (events::commit const&, tran_fsm& fsm, SourceState&, TargetState&)
 			{
-				fsm_log() << "transaction::commit_transaction";
-				tran.connection_->send_commit();
+				fsm.connection_->log() << "transaction::commit_transaction";
+				fsm.connection_->send_commit();
 			}
 		};
 		struct rollback_transaction {
 			template < typename SourceState, typename TargetState >
 			void
-			operator() (events::rollback const&, tran_fsm& tran, SourceState&, TargetState&)
+			operator() (events::rollback const&, tran_fsm& fsm, SourceState&, TargetState&)
 			{
-				fsm_log() << "transaction::rollback_transaction";
-				tran.connection_->send_rollback();
-				tran.notify_error(error::query_error("Transaction rolled back"));
+				fsm.connection_->log() << "transaction::rollback_transaction";
+				fsm.connection_->send_rollback();
+				fsm.notify_error(error::query_error("Transaction rolled back"));
 			}
 
 			template < typename Event, typename SourceState, typename TargetState >
 			void
-			operator() (Event const&, tran_fsm& tran, SourceState&, TargetState&)
+			operator() (Event const&, tran_fsm& fsm, SourceState&, TargetState&)
 			{
-				fsm_log() << "transaction::rollback_transaction (on error)";
-				tran.connection_->send_rollback();
-				tran.notify_error(error::query_error("Transaction rolled back"));
+				fsm.connection_->log() << "transaction::rollback_transaction (on error)";
+				fsm.connection_->send_rollback();
+				fsm.notify_error(error::query_error("Transaction rolled back"));
 			}
 		};
 		//@}
 		//@{
 		/** @name Transaction sub-states */
-		struct starting : public boost::msm::front::state<> {
+		struct starting : public boost::msm::front::state< connection_base_state > {
 			typedef boost::mpl::vector<
 					events::execute,
 					events::execute_prepared,
@@ -342,17 +404,23 @@ struct connection_fsm_ :
 					events::rollback
 				> deferred_events;
 
-			//template < typename Event >
-			void
-			on_entry(events::begin const&, tran_fsm& tran)
+			::std::string const&
+			state_name() const override
 			{
-				fsm_log() << "entering: start transaction";
-				tran.connection_->send_begin();
+				static const ::std::string name = "transaction starting";
+				return name;
+			}
+
+			void
+			on_entry(events::begin const&, tran_fsm& fsm)
+			{
+				fsm.connection_->log() << "entering: start transaction";
+				fsm.connection_->send_begin();
 			}
 			template < typename Event >
 			void
-			on_exit(Event const&, tran_fsm&)
-			{ fsm_log() << "leaving: start transaction"; }
+			on_exit(Event const&, tran_fsm& fsm)
+			{ fsm.connection_->log() << "leaving: start transaction"; }
 			struct internal_transition_table : boost::mpl::vector<
 			/*				Event				Action		Guard	 */
 			/*			+---------------------+-----------+---------+*/
@@ -360,28 +428,35 @@ struct connection_fsm_ :
 			> {};
 		};
 
-		struct idle : public boost::msm::front::state<> {
-			template < typename Event, typename FSM >
-			void
-			on_entry(Event const&, FSM&)
-			{ fsm_log() << "entering: idle (transaction)"; }
-			template < typename Event, typename FSM >
-			void
-			on_exit(Event const&, FSM&)
-			{ fsm_log() << "leaving: idle (transaction)"; }
-			void
-			on_exit(error::query_error const& err, tran_fsm& tran)
+		struct idle : public boost::msm::front::state< connection_base_state > {
+			::std::string const&
+			state_name() const override
 			{
-				fsm_log() << tip::util::MAGENTA
+				static const ::std::string name = "idle (transaction)";
+				return name;
+			}
+
+			template < typename Event >
+			void
+			on_entry(Event const&, tran_fsm& fsm)
+			{ fsm.connection_->log() << "entering: idle (transaction)"; }
+			template < typename Event >
+			void
+			on_exit(Event const&, tran_fsm& fsm)
+			{ fsm.connection_->log() << "leaving: idle (transaction)"; }
+			void
+			on_exit(error::query_error const& err, tran_fsm& fsm)
+			{
+				fsm.connection_->log() << tip::util::MAGENTA
 						<< "leaving: idle (transaction) (query_error)";
-				tran.notify_error(err);
+				fsm.notify_error(err);
 			}
 			void
-			on_exit(error::client_error const& err, tran_fsm& tran)
+			on_exit(error::client_error const& err, tran_fsm& fsm)
 			{
-				fsm_log() << tip::util::MAGENTA
+				fsm.connection_->log() << tip::util::MAGENTA
 						<< "leaving: idle (transaction) (client_error)";
-				tran.notify_error(err);
+				fsm.notify_error(err);
 			}
 
 			struct internal_transition_table : boost::mpl::vector<
@@ -392,15 +467,22 @@ struct connection_fsm_ :
 			> {};
 		};
 
-		struct tran_error : public boost::msm::front::state<> {
-			template < typename Event, typename FSM >
+		struct tran_error : public boost::msm::front::state< connection_base_state > {
+			::std::string const&
+			state_name() const override
+			{
+				static const ::std::string name = "transaction error";
+				return name;
+			}
+
+			template < typename Event >
 			void
-			on_entry(Event const&, FSM&)
-			{ fsm_log() << "entering: tran_error"; }
-			template < typename Event, typename FSM >
+			on_entry(Event const&, tran_fsm& fsm)
+			{ fsm.connection_->log() << "entering: tran_error"; }
+			template < typename Event >
 			void
-			on_exit(Event const&, FSM&)
-			{ fsm_log() << "leaving: tran_error"; }
+			on_exit(Event const&, tran_fsm& fsm)
+			{ fsm.connection_->log() << "leaving: tran_error"; }
 			struct internal_transition_table : boost::mpl::vector<
 			/*				Event				Action					Guard	 */
 			/*			+---------------------+-----------------------+---------+*/
@@ -408,33 +490,38 @@ struct connection_fsm_ :
 				Internal< events::rollback,		none,					none	>
 			> {};
 		};
-		struct exiting : public boost::msm::front::state<> {
-			template < typename Event, typename FSM >
-			void
-			on_entry(Event const&, FSM&)
+		struct exiting : public boost::msm::front::state< connection_base_state > {
+			::std::string const&
+			state_name() const override
 			{
-				fsm_log() << "entering: exit transaction";
+				static const ::std::string name = "exiting transaction";
+				return name;
+			}
+
+			template < typename Event >
+			void
+			on_entry(Event const&, tran_fsm& fsm)
+			{
+				fsm.connection_->log() << "entering: exit transaction";
 				callback_ = notification_callback();
 			}
-			template < typename FSM >
 			void
-			on_entry(events::commit const& evt, FSM &)
+			on_entry(events::commit const& evt, tran_fsm& fsm)
 			{
-				fsm_log() << "entering: exit transaction (commit)";
+				fsm.connection_->log() << "entering: exit transaction (commit)";
 				callback_ = evt.callback;
 			}
-			template < typename FSM >
 			void
-			on_entry(events::rollback const& evt, FSM &)
+			on_entry(events::rollback const& evt, tran_fsm& fsm)
 			{
-				fsm_log() << "entering: exit transaction (rollback)";
+				fsm.connection_->log() << "entering: exit transaction (rollback)";
 				callback_ = evt.callback;
 			}
-			template < typename Event, typename FSM >
+			template < typename Event >
 			void
-			on_exit(Event const&, FSM&)
+			on_exit(Event const&, tran_fsm& fsm)
 			{
-				fsm_log() << "leaving: exit transaction";
+				fsm.connection_->log() << "leaving: exit transaction";
 				if (callback_) {
 					callback_();
 				}
@@ -450,22 +537,28 @@ struct connection_fsm_ :
 			notification_callback callback_;
 		};
 
-		struct simple_query_ : public boost::msm::front::state_machine_def<simple_query_> {
+		struct simple_query_ : public boost::msm::front::state_machine_def<simple_query_, connection_base_state> {
 			typedef boost::msm::back::state_machine< simple_query_ > simple_query;
+			::std::string const&
+			state_name() const override
+			{
+				static const ::std::string name = "simple query";
+				return name;
+			}
 			template < typename Event >
 			void
 			on_entry(Event const&, tran_fsm& tran)
 			{
-				fsm_log(logger::WARNING)
-						<< tip::util::MAGENTA << "entering: simple query (unexpected event)";
 				connection_ = tran.connection_;
+				connection_->log(logger::WARNING)
+						<< tip::util::MAGENTA << "entering: simple query (unexpected event)";
 			}
 			void
 			on_entry(events::execute const& q, tran_fsm& tran)
 			{
-				fsm_log() << tip::util::MAGENTA << "entering: simple query (execute event)";
-				fsm_log() << "Execute query: " << q.expression;
 				connection_ = tran.connection_;
+				connection_->log() << tip::util::MAGENTA << "entering: simple query (execute event)";
+				connection_->log() << "Execute query: " << q.expression;
 				tran_ = &tran;
 				query_ = q;
 				message m(query_tag);
@@ -476,14 +569,14 @@ struct connection_fsm_ :
 			void
 			on_exit(Event const&, FSM&)
 			{
-				fsm_log() << tip::util::MAGENTA << "leaving: simple query";
+				connection_->log() << tip::util::MAGENTA << "leaving: simple query";
 				query_ = events::execute();
 			}
 			template < typename FSM >
 			void
 			on_exit(error::query_error const& err, FSM&)
 			{
-				fsm_log() << tip::util::MAGENTA << "leaving: simple query (query_error)";
+				connection_->log() << tip::util::MAGENTA << "leaving: simple query (query_error)";
 				tran_->notify_error(*this, err);
 				query_ = events::execute();
 			}
@@ -491,7 +584,7 @@ struct connection_fsm_ :
 			void
 			on_exit(error::client_error const& err, FSM&)
 			{
-				fsm_log() << tip::util::MAGENTA << "leaving: simple query (client_error)";
+				connection_->log() << tip::util::MAGENTA << "leaving: simple query (client_error)";
 				tran_->notify_error(err);
 				query_ = events::execute();
 			}
@@ -505,21 +598,29 @@ struct connection_fsm_ :
 
 			//@{
 			/** @name Simple query sub-states */
-			struct waiting : public boost::msm::front::state<> {
-				template < typename Event, typename FSM >
+			struct waiting : public boost::msm::front::state< connection_base_state > {
+				::std::string const&
+				state_name() const override
+				{
+					static const ::std::string name = "waiting";
+					return name;
+				}
+
+				template < typename Event >
 				void
-				on_entry(Event const&, FSM&)
-				{ fsm_log() << "entering: waiting"; }
-				template < typename Event, typename FSM >
+				on_entry(Event const&, simple_query& fsm)
+				{ fsm.connection_->log() << "entering: waiting"; }
+				template < typename Event >
 				void
-				on_exit(Event const&, FSM&)
-				{ fsm_log() << "leaving: waiting"; }
+				on_exit(Event const&, simple_query& fsm)
+				{ fsm.connection_->log() << "leaving: waiting"; }
+
 				struct non_select_result {
 					void
 					operator()(command_complete const& evt, simple_query& fsm,
 							waiting&, waiting&)
 					{
-						fsm_log() << "Non-select query complete "
+						fsm.connection_->log() << "Non-select query complete "
 								<< evt.command_tag;
 						// FIXME Non-select query result
 						fsm.tran_->notify_result(fsm, result_ptr(new result_impl), true);
@@ -531,8 +632,15 @@ struct connection_fsm_ :
 				> {};
 			};
 
-			struct fetch_data : public boost::msm::front::state<> {
+			struct fetch_data : public boost::msm::front::state< connection_base_state > {
 				typedef boost::mpl::vector< ready_for_query > deferred_events;
+
+				::std::string const&
+				state_name() const override
+				{
+					static const ::std::string name = "fetch_data";
+					return name;
+				}
 
 				fetch_data() : result_( new result_impl ) {}
 
@@ -543,9 +651,9 @@ struct connection_fsm_ :
 
 				template < typename FSM >
 				void
-				on_entry(row_description const& rd, FSM&)
+				on_entry(row_description const& rd, simple_query& fsm)
 				{
-					fsm_log() << "entering: fetch_data column count: "
+					fsm.connection_->log() << "entering: fetch_data column count: "
 							<< rd.fields.size();
 					result_.reset(new result_impl); // TODO Number of resultset
 					result_->row_description().swap(rd.fields);
@@ -555,7 +663,7 @@ struct connection_fsm_ :
 				void
 				on_exit(Event const&, simple_query& fsm)
 				{
-					fsm_log() << "leaving: fetch_data result size: "
+					fsm.connection_->log() << "leaving: fetch_data result size: "
 							<< result_->size();
 					fsm.tran_->notify_result(fsm, resultset(result_), true);
 				}
@@ -563,20 +671,21 @@ struct connection_fsm_ :
 				void
 				on_exit(error::db_error const& err, simple_query& fsm)
 				{
-					fsm_log() << "leaving: fetch_data on error";
+					fsm.connection_->log() << "leaving: fetch_data on error";
 				}
 
 				struct parse_data_row {
 					template < typename FSM, typename TargetState >
 					void
-					operator() (row_data const& row, FSM&, fetch_data& fetch, TargetState&)
+					operator() (row_event const& row, FSM&, fetch_data& fetch, TargetState&)
 					{
-						fetch.result_->rows().push_back(row);
+						// TODO Move the data from event
+						fetch.result_->rows().push_back(row.move_row());
 					}
 				};
 
 				struct internal_transition_table : boost::mpl::vector<
-					Internal< row_data,	parse_data_row,	none >
+					Internal< row_event,	parse_data_row,	none >
 				> {};
 
 				result_ptr result_;
@@ -598,11 +707,18 @@ struct connection_fsm_ :
 		};
 		typedef boost::msm::back::state_machine< simple_query_ > simple_query;
 
-		struct extended_query_ : public boost::msm::front::state_machine_def<extended_query_> {
+		struct extended_query_ : public boost::msm::front::state_machine_def<extended_query_, connection_base_state> {
 			typedef boost::msm::back::state_machine< extended_query_ > extended_query;
 
 			extended_query_() : connection_(nullptr), tran_(nullptr), row_limit_(0),
 					result_(new result_impl) {}
+
+			::std::string const&
+			state_name() const override
+			{
+				static const ::std::string name = "extended query";
+				return name;
+			}
 
 			template < typename Event, typename FSM >
 			void
@@ -611,8 +727,8 @@ struct connection_fsm_ :
 			void
 			on_entry(events::execute_prepared const& q, tran_fsm& tran)
 			{
-				fsm_log() << tip::util::MAGENTA << "entering: extended query";
 				connection_ = tran.connection_;
+				connection_->log() << tip::util::MAGENTA << "entering: extended query";
 				tran_ = &tran;
 				query_ = q;
 				std::ostringstream os;
@@ -630,14 +746,14 @@ struct connection_fsm_ :
 			void
 			on_exit(Event const&, FSM&)
 			{
-				fsm_log() << tip::util::MAGENTA << "leaving: extended query";
+				connection_->log() << tip::util::MAGENTA << "leaving: extended query";
 				query_ = events::execute_prepared();
 			}
 			template < typename FSM >
 			void
 			on_exit(error::query_error const& err, FSM&)
 			{
-				fsm_log() << tip::util::MAGENTA << "leaving: extended query (query_error)";
+				connection_->log() << tip::util::MAGENTA << "leaving: extended query (query_error)";
 				tran_->notify_error(*this, err);
 				query_ = events::execute_prepared();
 			}
@@ -645,7 +761,7 @@ struct connection_fsm_ :
 			void
 			on_exit(error::client_error const& err, FSM&)
 			{
-				fsm_log() << tip::util::MAGENTA << "leaving: extended query (client_error)";
+				connection_->log() << tip::util::MAGENTA << "leaving: extended query (client_error)";
 				tran_->notify_error(err);
 				query_ = events::execute_prepared();
 			}
@@ -693,10 +809,10 @@ struct connection_fsm_ :
 			struct parse_data_row {
 				template < typename SourceState, typename TargetState >
 				void
-				operator() (row_data const& row, extended_query& fsm,
+				operator() (row_event const& row, extended_query& fsm,
 						SourceState&, TargetState&)
 				{
-					fsm.result_->rows().push_back(row);
+					fsm.result_->rows().push_back(row.move_row());
 				}
 			};
 			struct complete_execution {
@@ -705,7 +821,7 @@ struct connection_fsm_ :
 				operator() (command_complete const& complete, extended_query& fsm,
 						SourceState&, TargetState&)
 				{
-					fsm_log() << "Execute complete " << complete.command_tag
+					fsm.connection_->log() << "Execute complete " << complete.command_tag
 							<< " resultset columns "
 							<< fsm.result_->row_description().size()
 							<< " rows " << fsm.result_->size();
@@ -715,9 +831,22 @@ struct connection_fsm_ :
 			//@}
 			//@{
 			/** @name Extended query sub-states */
-			struct prepare : public boost::msm::front::state<> {};
+			struct prepare : public boost::msm::front::state< connection_base_state > {
+				::std::string const&
+				state_name() const override
+				{
+					static const ::std::string name = "prepare";
+					return name;
+				}
+			};
 
-			struct parse : public boost::msm::front::state<> {
+			struct parse : public boost::msm::front::state< connection_base_state > {
+				::std::string const&
+				state_name() const override
+				{
+					static const ::std::string name = "parse";
+					return name;
+				}
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
@@ -726,8 +855,8 @@ struct connection_fsm_ :
 				void
 				on_entry(Event const&, extended_query& fsm)
 				{
-					fsm_log() << "entering: parse";
-					fsm_log() << "Parse query " << fsm.query_.expression;
+					fsm.connection_->log() << "entering: parse";
+					fsm.connection_->log() << "Parse query " << fsm.query_.expression;
 					message cmd(parse_tag);
 					cmd.write(fsm.query_name_);
 					cmd.write(fsm.query_.expression);
@@ -745,10 +874,10 @@ struct connection_fsm_ :
 
 					fsm.connection_->send(cmd);
 				}
-				template < typename Event, typename FSM >
+				template < typename Event >
 				void
-				on_exit(Event const&, FSM&)
-				{ fsm_log() << "leaving: parse"; }
+				on_exit(Event const&, extended_query& fsm)
+				{ fsm.connection_->log() << "leaving: parse"; }
 
 				struct internal_transition_table : boost::mpl::vector<
 					Internal< row_description,	store_prepared_desc,	none >,
@@ -756,7 +885,13 @@ struct connection_fsm_ :
 				> {};
 			};
 
-			struct bind : public boost::msm::front::state<> {
+			struct bind : public boost::msm::front::state< connection_base_state > {
+				::std::string const&
+				state_name() const override
+				{
+					static const ::std::string name = "bind";
+					return name;
+				}
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
@@ -765,7 +900,7 @@ struct connection_fsm_ :
 				void
 				on_entry( Event const&, extended_query& fsm )
 				{
-					fsm_log() << "entering: bind";
+					fsm.connection_->log() << "entering: bind";
 					message cmd(bind_tag);
 					cmd.write(fsm.portal_name_);
 					cmd.write(fsm.query_name_);
@@ -797,7 +932,13 @@ struct connection_fsm_ :
 				{ fsm_log() << "leaving: bind"; }
 			};
 
-			struct exec : public boost::msm::front::state<> {
+			struct exec : public boost::msm::front::state< connection_base_state > {
+				::std::string const&
+				state_name() const override
+				{
+					static const ::std::string name = "exec";
+					return name;
+				}
 				template < typename Event, typename FSM >
 				void
 				on_entry(Event const&, FSM&)
@@ -806,21 +947,21 @@ struct connection_fsm_ :
 				void
 				on_entry( Event const&, extended_query& fsm )
 				{
-					fsm_log() << "entering: execute";
-					fsm_log() << "Execute prepared query: " << fsm.query_.expression;
+					fsm.connection_->log() << "entering: execute";
+					fsm.connection_->log() << "Execute prepared query: " << fsm.query_.expression;
 					message execute(execute_tag);
 					execute.write(fsm.portal_name_);
 					execute.write(fsm.row_limit_);
 					execute.pack(message(sync_tag));
 					fsm.connection_->send(execute);
 				}
-				template < typename Event, typename FSM >
+				template < typename Event >
 				void
-				on_exit(Event const&, FSM&)
-				{ fsm_log() << "leaving: execute"; }
+				on_exit(Event const&, extended_query& fsm)
+				{ fsm.connection_->log() << "leaving: execute"; }
 
 				struct internal_transition_table : boost::mpl::vector<
-					Internal< row_data,			parse_data_row,			none >,
+					Internal< row_event,		parse_data_row,			none >,
 					Internal< command_complete, complete_execution, 	none >
 				> {};
 			};
@@ -898,9 +1039,12 @@ struct connection_fsm_ :
 
 		template < typename Event, typename FSM >
 		void
-		no_transition(Event const& e, FSM&, int state)
+		no_transition(Event const& e, FSM& fsm, int state)
 		{
-			fsm_log(logger::DEBUG) << "No transition from state " << state
+			connection_base_state* s = fsm.get_state_by_id(state);
+			connection_->log(logger::DEBUG)
+					<< "No transition from state " << state
+					<< " (" << (s ? s->state_name() : "unknown") << ")"
 					<< " on event " << typeid(e).name() << " (in transaction)";
 		}
 		//@}
@@ -914,22 +1058,22 @@ struct connection_fsm_ :
 				try {
 					callbacks_.started(t);
 				} catch (error::query_error const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Transaction started handler throwed a query_error:"
 							<< e.what();
 					connection_->process_event(e);
 				} catch (error::db_error const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Transaction started handler throwed a db_error: "
 							<< e.what();
 					connection_->process_event(e);
 				} catch (std::exception const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Transaction started handler throwed an exception: "
 							<< e.what();
 					connection_->process_event(error::client_error(e));
 				} catch (...) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Transaction started handler throwed an unknown exception";
 					connection_->process_event(error::client_error("Unknown exception"));
 				}
@@ -943,22 +1087,22 @@ struct connection_fsm_ :
 				try {
 					state.query_.result(res, complete);
 				} catch (error::query_error const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Query result handler throwed a query_error: "
 							<< e.what();
 					connection_->process_event(e);
 				} catch (error::db_error const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Query result handler throwed a db_error: "
 							<< e.what();
 					connection_->process_event(e);
 				} catch (std::exception const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Query result handler throwed an exception: "
 							<< e.what();
 					connection_->process_event(error::client_error(e));
 				} catch (...) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Query result handler throwed an unknown exception";
 					connection_->process_event(error::client_error("Unknown exception"));
 				}
@@ -974,11 +1118,11 @@ struct connection_fsm_ :
 				try {
 					callbacks_.error(qe);
 				} catch (std::exception const& e) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Transaction error handler throwed an exception: "
 							<< e.what();
 				} catch (...) {
-					fsm_log(logger::ERROR)
+					connection_->log(logger::ERROR)
 							<< "Transaction error handler throwed an unknown exception.";
 				}
 			}
@@ -991,19 +1135,18 @@ struct connection_fsm_ :
 				try {
 					state.query_.error(qe);
 				} catch (std::exception const& e) {
-					fsm_log()
+					connection_->log()
 							<< "Query error handler throwed an exception: "
 							<< e.what();
 					notify_error(qe);
 					notify_error(error::client_error(e));
 				} catch (...) {
-					fsm_log()
-							<< "Query error handler throwed an unexpected exception";
+					connection_->log() << "Query error handler throwed an unexpected exception";
 					notify_error(qe);
 					notify_error(error::client_error("Unknown exception"));
 				}
 			} else {
-				fsm_log(logger::WARNING) << "No query error handler";
+				connection_->log(logger::WARNING) << "No query error handler";
 				notify_error(qe);
 			}
 		}
@@ -1022,9 +1165,12 @@ struct connection_fsm_ :
 		/*		Start			Event				Next			Action						Guard					  */
 		/*  +-----------------+-------------------+---------------+---------------------------+---------------------+ */
 	    Row <	unplugged,		connection_options,	t_conn,			none,						none				>,
+		Row <	unplugged,		terminate,			terminated,		none,						none				>,
+
 	    Row <	t_conn,			complete,			authn,			none,						none				>,
 	    Row <	t_conn,			error::
 	    						connection_error,	terminated,		on_connection_error,		none				>,
+
 	    Row <	authn,			ready_for_query,	idle,			none,						none				>,
 	    Row <	authn,			error::
 	    						connection_error,	terminated,		on_connection_error,		none				>,
@@ -1038,13 +1184,16 @@ struct connection_fsm_ :
 	    Row <	transaction,	ready_for_query,	idle,			none,						none				>,
 	    Row <	transaction,	error::
 	    						connection_error,	terminated,		on_connection_error,		none				>
+    	//Row <	transaction,	terminate,			terminated,		disconnect,					none				>
 	> {};
 	//@}
 	template < typename Event, typename FSM >
 	void
-	no_transition(Event const& e, FSM&, int state)
+	no_transition(Event const& e, FSM& fsm, int state)
 	{
-		fsm_log(logger::DEBUG) << "No transition from state " << state
+		connection_base_state* s = fsm.get_state_by_id(state);
+		log(logger::DEBUG) << "No transition from state " << state
+				<< " (" << (s ? s->state_name() : "unknown") << ")"
 				<< " on event " << typeid(e).name();
 	}
 
@@ -1061,12 +1210,26 @@ struct connection_fsm_ :
 	//@{
 	connection_fsm_(io_service_ptr svc, client_options_type const& co)
 		: shared_base(), transport_(svc), client_opts_(co), strand_(*svc),
-		  serverPid_(0), serverSecret_(0), in_transaction_(false)
+		  serverPid_(0), serverSecret_(0), in_transaction_(false),
+		  connection_number_{ next_connection_number() }
 	{
 		incoming_.prepare(8192); // FIXME Magic number, move to configuration
 	}
 	virtual ~connection_fsm_() {}
 	//@}
+
+	::std::string const&
+	state_name() const override
+	{
+		static const ::std::string name = "connection fsm";
+		return name;
+	}
+
+	size_t
+	number() const
+	{
+		return connection_number_;
+	}
 
 	void
 	connect_transport(connection_options const& opts)
@@ -1112,6 +1275,7 @@ struct connection_fsm_ :
 	void
 	send_begin()
 	{
+		log() << "Send begin";
 		message m(query_tag);
 		m.write("begin");
 		send(m);
@@ -1119,6 +1283,7 @@ struct connection_fsm_ :
 	void
 	send_commit()
 	{
+		log() << "Send commit";
 		message m(query_tag);
 		m.write("commit");
 		send(m);
@@ -1126,6 +1291,7 @@ struct connection_fsm_ :
 	void
 	send_rollback()
 	{
+		log() << "Send rollback";
 		message m(query_tag);
 		m.write("rollback");
 		send(m);
@@ -1195,6 +1361,12 @@ struct connection_fsm_ :
 	void
 	notify_error(error::connection_error const& e) { do_notify_error(e); }
 	//@}
+
+	::tip::log::local
+	log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY)
+	{
+		return fsm_log(s) << "Conn# " << connection_number_ << ": ";
+	}
 private:
 	virtual void do_notify_idle() {};
 	virtual void do_notify_terminated() {};
@@ -1320,7 +1492,7 @@ private:
 				case command_complete_tag: {
 					command_complete cmpl;
 					m->read(cmpl.command_tag);
-					fsm_log() << "Command complete ("
+					log() << "Command complete ("
 							<< cmpl.command_tag << ")";
 					fsm().process_event(cmpl);
 					break;
@@ -1334,7 +1506,7 @@ private:
 					notice_message msg;
 					m->read(msg);
 
-					fsm_log(logger::ERROR) << "Error " << msg ;
+					log(logger::ERROR) << "Error " << msg ;
 					error::query_error err(msg.message, msg.severity,
 							msg.sqlstate, msg.detail);
 					fsm().process_event(err);
@@ -1347,20 +1519,20 @@ private:
 					m->read(key);
 					m->read(value);
 
-					fsm_log() << "Parameter " << key << " = " << value;
+					log() << "Parameter " << key << " = " << value;
 					client_opts_[key] = value;
 					break;
 				}
 				case notice_response_tag : {
 					notice_message msg;
 					m->read(msg);
-					fsm_log(logger::INFO) << "Notice " << msg;
+					log(logger::INFO) << "Notice " << msg;
 					break;
 				}
 				case ready_for_query_tag: {
 					char stat(0);
 					m->read(stat);
-					fsm_log() << "Database "
+					log() << "Database "
 						<< (util::CLEAR) << (util::RED | util::BRIGHT)
 						<< conn_opts_.uri
 						<< "[" << conn_opts_.database << "]"
@@ -1379,7 +1551,7 @@ private:
 						if (m->read(fd)) {
 							rd.fields.push_back(fd);
 						} else {
-							fsm_log(logger::ERROR)
+							log(logger::ERROR)
 									<< "Failed to read field description " << i;
 							// FIXME Process error
 						}
@@ -1388,25 +1560,25 @@ private:
 					break;
 				}
 				case data_row_tag: {
-					row_data r;
-					if (m->read(r)) {
+					row_event r;
+					if (m->read(r.row())) {
 						fsm().process_event(r);
 					} else {
 						// FIXME Process error
-						fsm_log(logger::ERROR) << "Failed to read data row";
+						log(logger::ERROR) << "Failed to read data row";
 					}
 					break;
 				}
 				case parse_complete_tag: {
-					fsm_log() << "Parse complete";
+					log() << "Parse complete";
 					break;
 				}
 				case parameter_desription_tag: {
-					fsm_log() << "Parameter descriptions";
+					log() << "Parameter descriptions";
 					break;
 				}
 				case bind_complete_tag: {
-					fsm_log() << "Bind complete";
+					log() << "Bind complete";
 					break;
 				}
 				case no_data_tag: {
@@ -1415,7 +1587,8 @@ private:
 				}
 				default: {
 				    {
-				        fsm_log(logger::DEBUG) << "Unhandled message "
+				        log(logger::DEBUG)
+				        		<< "Unhandled message "
 				        		<< (util::MAGENTA | util::BRIGHT)
 				        		<< (char)tag
 				        		<< logger::severity_color();
@@ -1425,6 +1598,13 @@ private:
 			}
 
 	    }
+	}
+
+	static size_t
+	next_connection_number()
+	{
+		static std::atomic<size_t> _number{0};
+		return _number++;
 	}
 private:
 	friend class transaction_;
@@ -1443,6 +1623,8 @@ private:
 	prepared_statements_map prepared_;
 
 	bool in_transaction_;
+
+	size_t connection_number_;
 protected:
 	connection_options conn_opts_;
 };
@@ -1468,6 +1650,7 @@ public:
 	}
 	virtual ~concrete_connection() {}
 private:
+	using fsm_type::log;
 	//@{
 	/** @name State machine abstract interface implementation */
 	virtual void
@@ -1476,7 +1659,7 @@ private:
 		if (callbacks_.idle) {
 			callbacks_.idle(fsm_type::shared_from_this());
 		} else {
-			fsm_log(logger::WARNING) << "No connection idle callback";
+			log(logger::WARNING) << "No connection idle callback";
 		}
 	}
 	virtual void
@@ -1485,18 +1668,18 @@ private:
 		if (callbacks_.terminated) {
 			callbacks_.terminated(fsm_type::shared_from_this());
 		} else {
-			fsm_log() << "No connection terminated callback";
+			log() << "No connection terminated callback";
 		}
 		callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
 	}
 	virtual void
 	do_notify_error(error::connection_error const& e)
 	{
-		fsm_log(logger::ERROR) << "Connection error " << e.what();
+		log(logger::ERROR) << "Connection error " << e.what();
 		if (callbacks_.error) {
 			callbacks_.error(connection_ptr(), e);
 		} else {
-			fsm_log(logger::ERROR) << "No connection_error callback";
+			log(logger::ERROR) << "No connection_error callback";
 		}
 	}
 	//@}
@@ -1522,7 +1705,7 @@ private:
 	do_begin(events::begin const& evt)
 	{
 		if (fsm_type::in_transaction()) {
-			fsm_log(logger::ERROR) << "Cannot begin transaction: already in transaction";
+			log(logger::ERROR) << "Cannot begin transaction: already in transaction";
 			throw error::db_error("Already in transaction");
 		}
 		fsm_type::process_event(evt);
@@ -1532,7 +1715,7 @@ private:
 	do_commit(notification_callback cb)
 	{
 		if (!fsm_type::in_transaction()) {
-			fsm_log(logger::ERROR) << "Cannot commit transaction: not in transaction";
+			log(logger::ERROR) << "Cannot commit transaction: not in transaction";
 			throw error::db_error("Not in transaction");
 		}
 		fsm_type::process_event(events::commit{cb});
@@ -1542,7 +1725,7 @@ private:
 	do_rollback(notification_callback cb)
 	{
 		if (!fsm_type::in_transaction()) {
-			fsm_log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
+			log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
 			throw error::db_error("Not in transaction");
 		}
 		fsm_type::process_event(events::rollback{cb});

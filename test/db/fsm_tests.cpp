@@ -140,28 +140,47 @@ TEST(DummyFSM, SimpleQueryMode)
 	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
+	test_log() << "Connect";
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query());	// authn		-> idle
 
 	// Begin transaction
+	test_log() << "Begin transaction";
 	c->process_event(begin());		// idle			-> transaction::starting
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
+	test_log() << "Execute simple query";
 	c->process_event(execute{ "bla" });		// transaction -> simple query
+	test_log() << "Row description";
 	c->process_event(row_description()); // waiting -> fetch_data
 	for (int i = 0; i < 10; ++i) {
-		c->process_event(row_data());
+		test_log() << "Data row";
+		c->process_event(row_event());
 	}
+	test_log() << "Command complete";
 	c->process_event(complete());	// fetch_data -> waiting
 
+	test_log() << "Row description";
 	c->process_event(row_description()); // waiting -> fetch_data
 	for (int i = 0; i < 10; ++i) {
-		c->process_event(row_data());
+		test_log() << "Data row";
+		c->process_event(row_event());
 	}
+	test_log() << "Command complete";
 	c->process_event(complete());	// fetch_data -> waiting
 
+	test_log() << "Terminate (should be deferred)";
+	c->process_event(terminate{});  // defer event
+
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query()); // simple query -> transaction::idle
-	c->process_event(commit());		// transaction::idle -> transaction::exiting
+	test_log() << "Commit";
+	c->process_event(complete());	// fetch_data -> waiting
+	test_log() << "Command complete";
+	c->process_event(complete());	// fetch_data -> waiting
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query());	// transaction -> idle
 }
 
