@@ -644,12 +644,14 @@ struct connection_fsm_ :
 
 				fetch_data() : result_( new result_impl ) {}
 
-				template < typename Event, typename FSM >
+				template < typename Event >
 				void
-				on_entry(Event const&, FSM&)
-				{ fsm_log() << "entering: fetch_data (unexpected event)"; }
+				on_entry(Event const& evt, simple_query& fsm)
+				{
+					fsm.connection_->log() << "entering: fetch_data (unexpected event) "
+							<< typeid(evt).name();
+				}
 
-				template < typename FSM >
 				void
 				on_entry(row_description const& rd, simple_query& fsm)
 				{
