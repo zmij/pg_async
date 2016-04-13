@@ -24,57 +24,57 @@ namespace detail {
 struct connection_pool;
 
 class database_impl : private boost::noncopyable {
-	typedef std::shared_ptr<connection_pool> connection_pool_ptr;
-	typedef std::map<dbalias, connection_pool_ptr> pools_map;
+    typedef std::shared_ptr<connection_pool> connection_pool_ptr;
+    typedef std::map<dbalias, connection_pool_ptr> pools_map;
 public:
-	database_impl(size_t pool_size, client_options_type const& defaults);
-	virtual ~database_impl();
+    database_impl(size_t pool_size, client_options_type const& defaults);
+    virtual ~database_impl();
 
-	void
-	set_defaults(size_t pool_size, client_options_type const& defaults);
+    void
+    set_defaults(size_t pool_size, client_options_type const& defaults);
 
-	void
-	add_connection(std::string const& connection_string,
-			db_service::optional_size pool_size = db_service::optional_size(),
-			client_options_type const& params = client_options_type());
-	void
-	add_connection(connection_options options,
-			db_service::optional_size pool_size = db_service::optional_size(),
-			client_options_type const& params = client_options_type());
+    void
+    add_connection(std::string const& connection_string,
+            db_service::optional_size pool_size = db_service::optional_size(),
+            client_options_type const& params = client_options_type());
+    void
+    add_connection(connection_options options,
+            db_service::optional_size pool_size = db_service::optional_size(),
+            client_options_type const& params = client_options_type());
 
-	void
-	get_connection(dbalias const&, transaction_callback const&,
-			error_callback const&);
+    void
+    get_connection(dbalias const&, transaction_callback const&,
+            error_callback const&, transaction_mode const&);
 
-	void
-	run();
+    void
+    run();
 
-	void
-	stop();
+    void
+    stop();
 
-	asio_config::io_service_ptr
-	io_service()
-	{
-		return service_;
-	}
+    asio_config::io_service_ptr
+    io_service()
+    {
+        return service_;
+    }
 private:
-	connection_pool_ptr
-	add_pool(connection_options const&,
-			db_service::optional_size = db_service::optional_size(),
-			client_options_type const& = {});
+    connection_pool_ptr
+    add_pool(connection_options const&,
+            db_service::optional_size = db_service::optional_size(),
+            client_options_type const& = {});
 
-	asio_config::io_service_ptr	service_;
-	size_t						pool_size_;
+    asio_config::io_service_ptr    service_;
+    size_t                        pool_size_;
 
-	pools_map					connections_;
-	client_options_type			defaults_;
+    pools_map                    connections_;
+    client_options_type            defaults_;
 
-	enum state_type {
-		running,
-		closing,
-		closed
-	};
-	state_type					state_;
+    enum state_type {
+        running,
+        closing,
+        closed
+    };
+    state_type                    state_;
 };
 
 } /* namespace detail */
