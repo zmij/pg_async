@@ -393,6 +393,29 @@ struct connection_fsm_ :
                 fsm.notify_error(error::query_error("Transaction rolled back"));
             }
         };
+
+        struct tran_finished {
+            template < typename SourceState, typename TargetState >
+            void
+            operator() (events::execute const& evt, tran_fsm& fsm, SourceState&, TargetState&)
+            {
+                fsm.connection_->log(logger::WARNING)
+                        << "Execute event queued after transaction close";
+                if (evt.error) {
+                    evt.error( error::transaction_closed{} );
+                }
+            }
+            template < typename SourceState, typename TargetState >
+            void
+            operator() (events::execute_prepared const& evt, tran_fsm& fsm, SourceState&, TargetState&)
+            {
+                fsm.connection_->log(logger::WARNING)
+                        << "Execute prepared event queued after transaction close";
+                if (evt.error) {
+                    evt.error( error::transaction_closed{} );
+                }
+            }
+        };
         //@}
         //@{
         /** @name Transaction sub-states */
@@ -462,7 +485,7 @@ struct connection_fsm_ :
             struct internal_transition_table : boost::mpl::vector<
             /*                Event                Action                    Guard     */
             /*            +---------------------+-----------------------+---------+*/
-                Internal< command_complete,        none,                    none     >,
+                Internal< command_complete,       none,                    none     >,
                 Internal< ready_for_query,        none,                    none     >
             > {};
         };
@@ -484,10 +507,10 @@ struct connection_fsm_ :
             on_exit(Event const&, tran_fsm& fsm)
             { fsm.connection_->log() << "leaving: tran_error"; }
             struct internal_transition_table : boost::mpl::vector<
-            /*                Event                Action                    Guard     */
+            /*                Event              Action                    Guard     */
             /*            +---------------------+-----------------------+---------+*/
                 Internal< events::commit,        none,                    none    >,
-                Internal< events::rollback,        none,                    none    >
+                Internal< events::rollback,      none,                    none    >
             > {};
         };
         struct exiting : public boost::msm::front::state< connection_base_state > {
@@ -529,9 +552,11 @@ struct connection_fsm_ :
             struct internal_transition_table : boost::mpl::vector<
             /*                Event                Action                    Guard     */
             /*            +---------------------+-----------------------+---------+*/
-                Internal< command_complete,        none,                    none     >,
-                Internal< events::commit,        none,                    none    >,
-                Internal< events::rollback,        none,                    none    >
+                Internal< command_complete,        none,                    none    >,
+                Internal< events::commit,          none,                    none    >,
+                Internal< events::rollback,        none,                    none    >,
+                Internal< events::execute,         tran_finished,           none    >,
+                Internal< events::execute_prepared,tran_finished,           none    >
             > {};
 
             notification_callback callback_;
@@ -1018,25 +1043,25 @@ struct connection_fsm_ :
         struct transition_table : boost::mpl::vector<
             /*        Start            Event                Next            Action                        Guard                  */
             /*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
-             Row<    starting,        ready_for_query,    idle,            transaction_started,        none            >,
+             Row<    starting,        ready_for_query,      idle,           transaction_started,        none            >,
             /*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
-             Row<    idle,            events::commit,        exiting,        commit_transaction,            none            >,
-             Row<    idle,            events::rollback,    exiting,        rollback_transaction,        none            >,
-             Row<    idle,            error::query_error,    exiting,        rollback_transaction,        none            >,
-             Row<    idle,            error::client_error,exiting,        rollback_transaction,        none            >,
+             Row<    idle,            events::commit,       exiting,        commit_transaction,            none            >,
+             Row<    idle,            events::rollback,     exiting,        rollback_transaction,        none            >,
+             Row<    idle,            error::query_error,   exiting,        rollback_transaction,        none            >,
+             Row<    idle,            error::client_error,  exiting,        rollback_transaction,        none            >,
             /*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
-             Row<    idle,            events::execute,    simple_query,    none,                        none            >,
-             Row<    simple_query,    ready_for_query,    idle,            none,                        none            >,
-             Row<    simple_query,    error::query_error,    tran_error,        none,                        none            >,
-             Row<    simple_query,    error::client_error,tran_error,        none,                        none            >,
+             Row<    idle,            events::execute,      simple_query,   none,                        none            >,
+             Row<    simple_query,    ready_for_query,      idle,           none,                        none            >,
+             Row<    simple_query,    error::query_error,   tran_error,     none,                        none            >,
+             Row<    simple_query,    error::client_error,  tran_error,     none,                        none            >,
             /*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
              Row<    idle,            events::
-                                           execute_prepared,    extended_query,    none,                        none            >,
-             Row<    extended_query,    ready_for_query,    idle,            none,                        none            >,
-              Row<    extended_query,    error::query_error,    tran_error,        none,                        none            >,
-              Row<    extended_query,    error::client_error,tran_error,        none,                        none            >,
+                                          execute_prepared, extended_query, none,                        none            >,
+             Row<    extended_query,    ready_for_query,    idle,           none,                        none            >,
+             Row<    extended_query,    error::query_error, tran_error,     none,                        none            >,
+             Row<    extended_query,    error::client_error,tran_error,     none,                        none            >,
             /*  +-----------------+-------------------+-----------+---------------------------+---------------------+ */
-             Row<     tran_error,        ready_for_query,    exiting,        rollback_transaction,        none            >
+             Row<    tran_error,      ready_for_query,      exiting,        rollback_transaction,        none            >
         > {};
 
         template < typename Event, typename FSM >
