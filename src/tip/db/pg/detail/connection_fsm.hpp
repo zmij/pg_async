@@ -402,7 +402,12 @@ struct connection_fsm_ :
                 fsm.connection_->log(logger::WARNING)
                         << "Execute event queued after transaction close";
                 if (evt.error) {
-                    evt.error( error::transaction_closed{} );
+                    try {
+                        evt.error( error::transaction_closed{} );
+                    } catch (...) {
+                        // Ignore handler error
+                        fsm.connection_->log(logger::WARNING) << "Exception in execute error handler";
+                    }
                 }
             }
             template < typename SourceState, typename TargetState >
@@ -412,7 +417,12 @@ struct connection_fsm_ :
                 fsm.connection_->log(logger::WARNING)
                         << "Execute prepared event queued after transaction close";
                 if (evt.error) {
-                    evt.error( error::transaction_closed{} );
+                    try {
+                        evt.error( error::transaction_closed{} );
+                    } catch (...) {
+                        // Ignore handler error
+                        fsm.connection_->log(logger::WARNING) << "Exception in execute prepared error handler";
+                    }
                 }
             }
         };
@@ -526,7 +536,7 @@ struct connection_fsm_ :
             on_entry(Event const&, tran_fsm& fsm)
             {
                 fsm.connection_->log() << "entering: exit transaction";
-                callback_ = notification_callback();
+                callback_ = notification_callback{};
             }
             void
             on_entry(events::commit const& evt, tran_fsm& fsm)
@@ -546,7 +556,14 @@ struct connection_fsm_ :
             {
                 fsm.connection_->log() << "leaving: exit transaction";
                 if (callback_) {
-                    callback_();
+                    try {
+                        callback_();
+                    } catch(...) {
+                        // Ignore handler error
+                        fsm.connection_->log(logger::WARNING)
+                                << "Exception in notify handler on exit transaction";
+                    }
+                    callback_ = notification_callback{};
                 }
             }
             struct internal_transition_table : boost::mpl::vector<
@@ -1223,6 +1240,13 @@ struct connection_fsm_ :
                 << " (" << (s ? s->state_name() : "unknown") << ")"
                 << " on event " << typeid(e).name();
     }
+    template< typename Event, typename FSM >
+    void
+    exception_caught(Event const&, FSM&, ::std::exception& e)
+    {
+        log(logger::WARNING) << "Exception escaped all catch handlers "
+                << e.what();
+    }
 
     //@{
     typedef asio_config::io_service_ptr io_service_ptr;
@@ -1381,11 +1405,24 @@ struct connection_fsm_ :
     //@{
     /** @connection events notifications */
     void
-    notify_idle() { do_notify_idle(); }
+    notify_idle()
+    {
+        try {
+            do_notify_idle();
+        } catch (...) {
+            // Ignore handler error
+            log(logger::WARNING) << "Exception in on idle handler";
+        }
+    }
     void
     notify_terminated()
     {
-        do_notify_terminated();
+        try {
+            do_notify_terminated();
+        } catch (...) {
+            // Ignore handler error
+            log(logger::WARNING) << "Exception in terminated handler";
+        }
     }
     void
     notify_error(error::connection_error const& e) { do_notify_error(e); }
