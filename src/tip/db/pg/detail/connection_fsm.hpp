@@ -404,6 +404,8 @@ struct connection_fsm_ :
                 if (evt.error) {
                     try {
                         evt.error( error::transaction_closed{} );
+                    } catch (::std::exception const& e) {
+                        fsm.connection_->log(logger::WARNING) << "Exception in execute error handler " << e.what();
                     } catch (...) {
                         // Ignore handler error
                         fsm.connection_->log(logger::WARNING) << "Exception in execute error handler";
@@ -419,6 +421,8 @@ struct connection_fsm_ :
                 if (evt.error) {
                     try {
                         evt.error( error::transaction_closed{} );
+                    } catch (::std::exception const& e) {
+                        fsm.connection_->log(logger::WARNING) << "Exception in execute prepared error handler " << e.what();
                     } catch (...) {
                         // Ignore handler error
                         fsm.connection_->log(logger::WARNING) << "Exception in execute prepared error handler";
@@ -558,10 +562,11 @@ struct connection_fsm_ :
                 if (callback_) {
                     try {
                         callback_();
+                    } catch (::std::exception const& e) {
+                        fsm.connection_->log(logger::WARNING) << "Exception in notify handler on exit transaction " << e.what();
                     } catch(...) {
                         // Ignore handler error
-                        fsm.connection_->log(logger::WARNING)
-                                << "Exception in notify handler on exit transaction";
+                        fsm.connection_->log(logger::WARNING) << "Exception in notify handler on exit transaction";
                     }
                     callback_ = notification_callback{};
                 }
@@ -1409,6 +1414,8 @@ struct connection_fsm_ :
     {
         try {
             do_notify_idle();
+        } catch (::std::exception const& e) {
+            log(logger::WARNING) << "Exception in on idle handler " << e.what();
         } catch (...) {
             // Ignore handler error
             log(logger::WARNING) << "Exception in on idle handler";
@@ -1419,6 +1426,8 @@ struct connection_fsm_ :
     {
         try {
             do_notify_terminated();
+        } catch (::std::exception const& e) {
+            log(logger::WARNING) << "Exception in terminated handler " << e.what();
         } catch (...) {
             // Ignore handler error
             log(logger::WARNING) << "Exception in terminated handler";
