@@ -1035,12 +1035,12 @@ struct connection_fsm_ :
             /** @todo Row limits and portal suspended state */
             /** @todo Exit on error handling */
             struct transition_table : boost::mpl::vector<
-                /*        Start            Event                Next            Action            Guard                  */
+                /*        Start         Event               Next            Action            Guard                  */
                 /*  +-----------------+-------------------+---------------+---------------+---------------------+ */
-                 Row<    prepare,        none,                parse,            none,            Not<is_prepared>    >,
-                 Row<    prepare,        none,                bind,            skip_parsing,    is_prepared            >,
-                 Row<    parse,            ready_for_query,    bind,            none,            none                >,
-                 Row<    bind,            ready_for_query,    exec,            none,            none                >
+                 Row<    prepare,       none,               parse,          none,            Not<is_prepared>    >,
+                 Row<    prepare,       none,               bind,           skip_parsing,    is_prepared         >,
+                 Row<    parse,         ready_for_query,    bind,           none,            none                >,
+                 Row<    bind,          ready_for_query,    exec,           none,            none                >
             >{};
             //@}
 
