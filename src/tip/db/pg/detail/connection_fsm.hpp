@@ -69,7 +69,12 @@ struct row_event {
     row() { return *data; }
 
     row_data
-    move_row() const { return ::std::move(*data); }
+    move_row() const
+    {
+        row_data rd;
+        rd.swap(*data);
+        return rd;
+    }
     // TODO Move accessor
 };
 
