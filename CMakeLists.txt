@@ -62,15 +62,23 @@ add_subdirectory(lib/log)
 endif()
 endif()
 
+if(NOT AFSM_INCLUDE_DIR)
+add_subdirectory(lib/afsm)
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
+    ${METAPUSHKIN_INCLUDE_DIR}
+    ${AFSM_INCLUDE_DIR}
     ${TIP_UTIL_INCLUDE_DIRS}
     ${TIP_LOG_INCLUDE_DIRS}
 )
+
+link_directories(${TIP_LOG_LINK_DIR})
 
 if (USE_TIP_LOG)
     add_definitions(-DWITH_TIP_LOG)
