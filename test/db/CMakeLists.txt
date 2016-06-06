@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+option(TEST_PG_ASYNC_FSM "Build test for pg_async FSM" OFF)
+
 configure_file(config.in.hpp config.hpp)
 
 # Test SQL script files
@@ -18,13 +20,12 @@ foreach(sql_file ${test_pg_SQL})
     )
 endforeach()
 
-add_custom_target(test-sql-scripts 
+add_custom_target(test-sql-scripts
     DEPENDS ${test_pg_SQL}
     COMMENT "Copy test SQL scripts"
 )
 
-set(test_pg_SRCS 
-    fsm_tests.cpp
+set(test_pg_SRCS
     internals_tests.cpp
     db_io_tests.cpp
     query_tests.cpp
@@ -35,12 +36,16 @@ set(test_pg_SRCS
     test-environment.cpp
 )
 
+if(TEST_PG_ASYNC_FSM)
+    list(APPEND test_pg_SRCS fsm_tests.cpp)
+endif()
+
 set(PGTEST test-pg-async)
 
 add_executable( ${PGTEST} ${test_pg_SRCS})
 
 target_link_libraries(
-    ${PGTEST} 
+    ${PGTEST}
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     ${GTEST_LIBRARIES}
     ${PGASYNC_LIB_NAME}

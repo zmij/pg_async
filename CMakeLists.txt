@@ -1,7 +1,7 @@
-#	CMakeLists.txt for pg_async library
-#	
-#	@author zmij
-#	@date Jul 18, 2015
+#    CMakeLists.txt for pg_async library
+#
+#    @author zmij
+#    @date Jul 18, 2015
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -34,13 +34,13 @@ option(USE_BOOST_ASIO "Use Boost.Asio instead of Standalone Asio library" ON)
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules" )
 
 if (USE_BOOST_ASIO)
-set(BOOST_COMPONENTS 
+set(BOOST_COMPONENTS
     system
     thread
 )
 find_package(Boost 1.58 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 set(
-    ASIO_LIBRARIES 
+    ASIO_LIBRARIES
     ${Boost_SYSTEM_LIBRARIES}
     ${Boost_THREAD_LIBRARIES}
 )
@@ -56,15 +56,29 @@ if(NOT TIP_UTIL_INCLUDE_DIRS)
     set(TIP_UTIL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/util/include)
 endif()
 
+if(USE_TIP_LOG)
+if(NOT TIP_LOG_INCLUDE_DIRS)
+add_subdirectory(lib/log)
+endif()
+endif()
+
+if(NOT AFSM_INCLUDE_DIR)
+add_subdirectory(lib/afsm)
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
+    ${METAPUSHKIN_INCLUDE_DIR}
+    ${AFSM_INCLUDE_DIR}
     ${TIP_UTIL_INCLUDE_DIRS}
     ${TIP_LOG_INCLUDE_DIRS}
 )
+
+link_directories(${TIP_LOG_LINK_DIR})
 
 if (USE_TIP_LOG)
     add_definitions(-DWITH_TIP_LOG)
