@@ -29,6 +29,8 @@ set(test_pg_SRCS
     db_io_tests.cpp
     query_tests.cpp
     errors_tests.cpp
+    array_support_test.cpp
+    timestamp_io_test.cpp
     test_main.cpp
     test-environment.cpp
 )
@@ -41,19 +43,27 @@ target_link_libraries(
     ${PGTEST} 
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     ${GTEST_LIBRARIES}
-    tip-pgsql
+    ${PGASYNC_LIB_NAME}
 )
 
 if (TEST_DATABASE)
     set(TEST_ARGS
-        -b'${TEST_DATABASE}' -s2 -x4 -q10 --run-deadline=1
+        "-d${TEST_DATABASE}" -s2 -x4 -q10 --run-deadline=1
     )
 else()
     set(TEST_ARGS)
 endif()
 
+if (GTEST_XML_OUTPUT)
+    set (
+        TEST_ARGS ${TEST_ARGS}
+        --gtest_output=xml:test-pg-async-detail.xml
+    )
+endif()
+
+
 add_test(
-    NAME pg-async-test
+    NAME test-pg-async
     COMMAND ${PGTEST} ${TEST_ARGS}
 )
 

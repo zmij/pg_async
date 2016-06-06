@@ -11,7 +11,7 @@
 #include <memory>
 
 #include <boost/noncopyable.hpp>
-#include <boost/asio.hpp>
+#include <tip/db/pg/asio_config.hpp>
 
 #include <tip/db/pg/database.hpp>
 
@@ -28,67 +28,71 @@ namespace detail {
 /**
  * Container of connections to the same database
  */
-class connection_pool : public std::enable_shared_from_this<connection_pool>,
-		private boost::noncopyable {
+class connection_pool : public ::std::enable_shared_from_this<connection_pool>,
+        private boost::noncopyable {
 public:
-	typedef boost::asio::io_service io_service;
+    using io_service_ptr = asio_config::io_service_ptr;
 
-	typedef std::vector<connection_ptr> connections_container;
-	typedef std::queue<connection_ptr> connections_queue;
+    using connections_container = ::std::vector<connection_ptr>;
+    using connections_queue = ::std::queue<connection_ptr>;
 
-	typedef std::pair<transaction_callback, error_callback> request_callbacks;
-	typedef std::queue< request_callbacks > request_callbacks_queue;
+    using request_callbacks_queue = ::std::queue< events::begin >;
 
-	typedef std::recursive_mutex mutex_type;
-	typedef std::lock_guard<mutex_type> lock_type;
+    using mutex_type = ::std::recursive_mutex;
+    using lock_type = ::std::lock_guard<mutex_type>;
 
-	typedef std::shared_ptr<connection_pool> connection_pool_ptr;
+    using connection_pool_ptr = ::std::shared_ptr<connection_pool>;
 public:
-	// TODO Error handlers
+    // TODO Error handlers
 private:
-	connection_pool(io_service& service, size_t pool_size,
-			connection_options const& co,
-			client_options_type const&);
+    connection_pool(io_service_ptr service, size_t pool_size,
+            connection_options const& co,
+            client_options_type const&);
 public:
-	static connection_pool_ptr
-	create(io_service& service, size_t pool_size,
-			connection_options const& co,
-			client_options_type const& = client_options_type());
+    static connection_pool_ptr
+    create(io_service_ptr service, size_t pool_size,
+            connection_options const& co,
+            client_options_type const& = client_options_type());
 
-	~connection_pool();
+    ~connection_pool();
 
-	dbalias const&
-	alias() const
-	{ return co_.alias; }
+    dbalias const&
+    alias() const
+    { return co_.alias; }
 
-	void
-	get_connection(transaction_callback const&, error_callback const&);
+    void
+    get_connection(transaction_callback const&, error_callback const&,
+            transaction_mode const&);
 
-	void
-	close();
+    void
+    close(simple_callback);
 private:
-	void
-	create_new_connection();
-	void
-	connection_ready(connection_ptr c);
-	void
-	connection_terminated(connection_ptr c);
-	void
-	connection_error(connection_ptr c, error::connection_error const& ec);
+    void
+    create_new_connection();
+    void
+    connection_ready(connection_ptr c);
+    void
+    connection_terminated(connection_ptr c);
+    void
+    connection_error(connection_ptr c, error::connection_error const& ec);
+
+    void
+    close_connections();
 private:
-	io_service& 			service_;
-	size_t					pool_size_;
-	connection_options		co_;
-	client_options_type		params_;
+    io_service_ptr          service_;
+    size_t                  pool_size_;
+    connection_options      co_;
+    client_options_type     params_;
 
-	mutex_type				mutex_;
+    mutex_type              mutex_;
 
-	connections_container	connections_;
-	connections_queue		ready_connections_;
+    connections_container   connections_;
+    connections_queue       ready_connections_;
 
-	request_callbacks_queue	waiting_;
+    request_callbacks_queue queue_;
 
-	bool					closed_;
+    bool                    closed_;
+    simple_callback         closed_callback_;
 };
 
 } /* namespace detail */

@@ -185,49 +185,6 @@ public:
 	//@}
 public:
 	//@{
-	/** @name Column-related interface */
-	size_type
-	columns_size() const; /**< Column count */
-
-	row_description_type const&
-	row_description() const;
-	/**
-	 * Get the index of field with name
-	 * @param name the field name
-	 * @return if found, index in the range of [0..columns_size). If not found - npos
-	 */
-	size_type
-	index_of_name(std::string const& name) const;
-
-	/**
-	 * Get the field description of field by it's index.
-	 * @param col_index field index, must be in range of [0..columns_size)
-	 * @return constant reference to the field description
-	 * @throws out_of_range exception
-	 */
-	field_description const&
-	field(size_type col_index) const;
-
-	/**
-	 * Get the field description of field by it's name.
-	 * @param name name of the field. must be present in the result set.
-	 * @return constant reference to the field description
-	 * @throws out_of_range exception
-	 */
-	field_description const&
-	field(std::string const& name) const;
-
-	/**
-	 * Get the name of field by it's index
-	 * @param col_index field index, must be in range of [0..columns_size)
-	 * @return the name of the field.
-	 * @throws out_of_range exception
-	 */
-	std::string const&
-	field_name(size_type col_index) const;
-	//@}
-public:
-	//@{
 	/** @name Data access classes */
 	/**
 	 * Represents a data row in the result set.
@@ -351,7 +308,8 @@ public:
 
 		/**
 		 * Parse the value buffer to the type specified by value passed as
-		 * target. Will throw a value_is_null exception if the field is null.
+		 * target. Will throw a value_is_null exception if the field is null and
+		 * type is not nullable.
 		 * @tparam T type of target variable
 		 * @param val Target variable for the field value.
 		 * @return true if parsing the buffer was a success.
@@ -361,10 +319,8 @@ public:
 		bool
 		to( T& val ) const
 		{
-			if (is_null())
-				throw error::value_is_null(name());
-			return to_impl(val,
-					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
+			return to_nullable(val,
+					io::traits::is_nullable<T>() );
 		}
 
 		/**
@@ -423,6 +379,28 @@ public:
 			return as< T >();
 		}
 	private:
+		template < typename T >
+		bool
+		to_nullable(T& val, std::true_type const&) const
+		{
+			typedef io::traits::nullable_traits< T > nullable_traits;
+
+			if (is_null()) {
+				nullable_traits::set_null(val);
+				return true;
+			}
+			return to_impl(val,
+					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
+		}
+		template < typename T >
+		bool
+		to_nullable(T& val, std::false_type const&) const
+		{
+			if (is_null())
+				throw error::value_is_null(name());
+			return to_impl(val,
+					io::traits::has_parser<T, BINARY_DATA_FORMAT>() );
+		}
 		template < typename T >
 		bool
 		to_impl( T& val, std::true_type const& ) const
@@ -687,6 +665,49 @@ public:
 		const_field_iterator&
 		advance(difference_type distance);
 	}; // const_field_iterator
+	//@}
+public:
+	//@{
+	/** @name Column-related interface */
+	row::size_type
+	columns_size() const; /**< Column count */
+
+	row_description_type const&
+	row_description() const;
+	/**
+	 * Get the index of field with name
+	 * @param name the field name
+	 * @return if found, index in the range of [0..columns_size). If not found - npos
+	 */
+	size_type
+	index_of_name(std::string const& name) const;
+
+	/**
+	 * Get the field description of field by it's index.
+	 * @param col_index field index, must be in range of [0..columns_size)
+	 * @return constant reference to the field description
+	 * @throws out_of_range exception
+	 */
+	field_description const&
+	field(size_type col_index) const;
+
+	/**
+	 * Get the field description of field by it's name.
+	 * @param name name of the field. must be present in the result set.
+	 * @return constant reference to the field description
+	 * @throws out_of_range exception
+	 */
+	field_description const&
+	field(std::string const& name) const;
+
+	/**
+	 * Get the name of field by it's index
+	 * @param col_index field index, must be in range of [0..columns_size)
+	 * @return the name of the field.
+	 * @throws out_of_range exception
+	 */
+	std::string const&
+	field_name(size_type col_index) const;
 	//@}
 private:
 	friend class row;

@@ -21,16 +21,16 @@ namespace error {
  */
 class db_error : public std::runtime_error {
 public:
-	explicit db_error( std::string const& what_arg );
-	explicit db_error( char const* what_arg );
-	db_error(std::string const& message,
-			std::string severity,
-			std::string code,
-			std::string detail);
-	std::string		severity;
-	std::string		code;
-	std::string		detail;
-	sqlstate::code	sqlstate;
+    explicit db_error( std::string const& what_arg );
+    explicit db_error( char const* what_arg );
+    db_error(std::string const& message,
+            std::string severity,
+            std::string code,
+            std::string detail);
+    std::string        severity;
+    std::string        code;
+    std::string        detail;
+    sqlstate::code    sqlstate;
 };
 
 /**
@@ -39,8 +39,8 @@ public:
  */
 class connection_error : public db_error {
 public:
-	explicit connection_error( std::string const&);
-	explicit connection_error( char const* what_arg );
+    explicit connection_error( std::string const&);
+    explicit connection_error( char const* what_arg );
 };
 
 /**
@@ -48,14 +48,19 @@ public:
  */
 class query_error : public db_error {
 public:
-	explicit query_error( std::string const&);
-	explicit query_error( char const* what_arg );
+    explicit query_error( std::string const&);
+    explicit query_error( char const* what_arg );
 
-	query_error(std::string const& message,
-		std::string severity,
-		std::string code,
-		std::string detail
-	);
+    query_error(std::string const& message,
+        std::string severity,
+        std::string code,
+        std::string detail
+    );
+};
+
+class transaction_closed : public query_error {
+public:
+    transaction_closed() : query_error("Transaction already closed") {}
 };
 
 /**
@@ -65,9 +70,9 @@ public:
  */
 class client_error : public db_error {
 public:
-	explicit client_error( std::string const& );
-	explicit client_error( char const*);
-	explicit client_error( std::exception const&);
+    explicit client_error( std::string const& );
+    explicit client_error( char const*);
+    explicit client_error( std::exception const&);
 };
 
 /**
@@ -75,7 +80,7 @@ public:
  */
 class value_is_null : public db_error {
 public:
-	explicit value_is_null(std::string const& field_name);
+    explicit value_is_null(std::string const& field_name);
 };
 
 }  // namespace error

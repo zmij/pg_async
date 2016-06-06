@@ -18,25 +18,6 @@ namespace tip {
 namespace db {
 namespace pg {
 
-#ifdef WITH_TIP_LOG
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGRESULT";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
-#endif
-
-
 const resultset::size_type resultset::npos = std::numeric_limits<resultset::size_type>::max();
 const resultset::row::size_type resultset::row::npos = std::numeric_limits<resultset::row::size_type>::max();
 
@@ -116,7 +97,7 @@ resultset::const_row_iterator::advance(difference_type distance)
 	if (*this) {
 		// movement is defined only for valid iterators
 		difference_type target = distance + row_index_;
-		if (target < 0 || target > result_->size()) {
+		if (target < 0 || static_cast<resultset::size_type>(target) >  result_->size()) {
 			// invalidate the iterator
 			row_index_ = npos;
 		} else {
@@ -192,7 +173,7 @@ resultset::const_field_iterator::advance(difference_type distance)
 	if (*this) {
 		// movement is defined only for valid iterators
 		difference_type target = distance + field_index_;
-		if (target < 0 || target > result_->size()) {
+		if (target < 0 || target > result_->columns_size()) {
 			// invalidate the iterator
 			field_index_ = row::npos;
 		} else {
@@ -285,7 +266,7 @@ resultset::operator [](size_type index) const
 	return row(this, index);
 }
 
-resultset::size_type
+resultset::row::size_type
 resultset::columns_size() const
 {
 	return pimpl_->row_description().size();

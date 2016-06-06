@@ -4,6 +4,22 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+# Set all log default level
+if(NOT PGASYNC_LOG_ALL)
+    set(PGASYNC_LOG_ALL OFF)
+endif()
+
+set(LOG_CATEGORIES SERVICE CONNECTION QUERY INTERNALS)
+
+foreach(category ${LOG_CATEGORIES})
+    if (NOT PGASYNC_LOG_${category})
+        set(PGASYNC_LOG_${category} ${PGASYNC_LOG_ALL})
+    endif()
+endforeach()
+
+configure_file(log_config.in.hpp log_config.hpp)
+configure_file(version.in.hpp version.hpp)
+
 set(
     pgsql_lib_SRCS
     common.cpp
@@ -25,25 +41,23 @@ set(
     detail/connection_pool.cpp
 )
 
-add_library(tip-pgsql SHARED ${pgsql_lib_SRCS})
+add_library(${PGASYNC_LIB_NAME} SHARED ${pgsql_lib_SRCS})
 set_target_properties(
-    tip-pgsql PROPERTIES
+    ${PGASYNC_LIB_NAME} PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
 
 set(pgsql_lib_LIBRARIES
-    ${Boost_SYSTEM_LIBRARIES}
-    ${Boost_THREAD_LIBRARIES}
-    ${Boost_REGEX_LIBRARIES}
+    ${ASIO_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
-    ${TIP_LOG_LIBRARY}
+    ${TIP_LOG_LIB}
 )
 
-target_link_libraries(tip-pgsql ${pgsql_lib_LIBRARIES})
+target_link_libraries(${PGASYNC_LIB_NAME} ${pgsql_lib_LIBRARIES})
 
 install (
-    TARGETS tip-pgsql
+    TARGETS ${PGASYNC_LIB_NAME}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )

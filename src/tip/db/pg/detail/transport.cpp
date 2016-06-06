@@ -17,25 +17,12 @@ namespace db {
 namespace pg {
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "POSTGRE";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(POSTGRE, config::CONNECTION_LOG);
 
 //****************************************************************************
 // tcp_layer
-tcp_transport::tcp_transport(io_service& service) :
-		resolver_(service), socket(service), connect_()
+tcp_transport::tcp_transport(io_service_ptr service) :
+		resolver_(*service), socket(*service)
 {
 }
 
@@ -48,7 +35,6 @@ tcp_transport::connect_async(connection_options const& conn, connect_callback cb
 	if (conn.schema != "tcp") {
 		throw error::connection_error("Wrong connection schema for TCP transport");
 	}
-	connect_ = cb;
 	std::string host = conn.uri;
 	std::string svc = "5432";
 	std::string::size_type pos = conn.uri.find(":");
@@ -59,31 +45,27 @@ tcp_transport::connect_async(connection_options const& conn, connect_callback cb
 
 	tcp::resolver::query query (host, svc);
 	resolver_.async_resolve(query, boost::bind(&tcp_transport::handle_resolve,
-				this,
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::iterator
-			));
+				this, _1, _2, cb ));
 
 }
 
 void
 tcp_transport::handle_resolve(error_code const& ec,
-                 	  			tcp::resolver::iterator endpoint_iterator)
+			tcp::resolver::iterator endpoint_iterator, connect_callback cb)
 {
 	if (!ec) {
-		boost::asio::async_connect(socket, endpoint_iterator,
+		ASIO_NAMESPACE::async_connect(socket, endpoint_iterator,
 				boost::bind( &tcp_transport::handle_connect,
-						this,
-						boost::asio::placeholders::error));
+						this, _1, cb));
 	} else {
-		connect_(ec);
+		cb(ec);
 	}
 }
 
 void
-tcp_transport::handle_connect(error_code const& ec)
+tcp_transport::handle_connect(error_code const& ec, connect_callback cb)
 {
-	connect_(ec);
+	cb(ec);
 }
 
 bool
@@ -102,8 +84,8 @@ tcp_transport::close()
 //----------------------------------------------------------------------------
 // socket_transport implementation
 //----------------------------------------------------------------------------
-socket_transport::socket_transport(io_service& service)
-	: socket(service)
+socket_transport::socket_transport(io_service_ptr service)
+	: socket(*service)
 {
 }
 
@@ -111,11 +93,10 @@ void
 socket_transport::connect_async(connection_options const& conn,
 		connect_callback cb)
 {
-	using boost::asio::local::stream_protocol;
+	using asio_config::stream_protocol;
 	if (conn.schema != "socket") {
 		throw error::connection_error("Wrong connection schema for TCP transport");
 	}
-	connect_ = cb;
 	std::string uri = conn.uri;
 
 	if (uri.empty()) {

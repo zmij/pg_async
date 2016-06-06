@@ -32,6 +32,11 @@ set(
     pg/detail/protocol_parsers.hpp
 )
 
+set(
+    pg_async_io_DHRS
+    pg/io/bytea.hpp
+)
+
 install(
     FILES ${pg_async_root_HDRS}
     DESTINATION include/tip/db
@@ -45,4 +50,9 @@ install(
 install(
     FILES ${pg_async_detail_HDRS}
     DESTINATION include/tip/db/pg/detail
+)
+
+install(
+    FILES ${pg_async_io_HDRS}
+    DESTINATION include/tip/db/pg/io
 )

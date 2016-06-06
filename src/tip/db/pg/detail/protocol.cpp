@@ -8,10 +8,11 @@
 #include <tip/db/pg/detail/protocol.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/protocol_io_traits.hpp>
+//#include <tip/db/pg/asio_config.hpp>
 
 #include <tip/db/pg/log.hpp>
 
-#include <boost/asio/buffer.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -27,21 +28,7 @@ namespace db {
 namespace pg {
 namespace detail {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "POSTGRE";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+LOCAL_LOGGING_FACILITY_CFG(POSTGRE, config::INTERNALS_LOG);
 
 namespace {
 	tag_set_type FRONTEND_COMMANDS {
@@ -238,7 +225,7 @@ message::read(std::string& val)
 bool
 message::read(std::string& val, size_t n)
 {
-	if (payload.end() - curr_ >= n) {
+	if (payload.end() - curr_ >= ::std::make_signed<size_t>::type(n)) {
 		for (size_t i = 0; i < n; ++i) {
 			val.push_back(*curr_++);
 		}
@@ -272,9 +259,9 @@ message::read(field_description& fd)
 bool
 message::read(row_data& row)
 {
-	integer len = length();
+	size_t len = length();
 	assert( len == size() && "Invalid message length");
-	local_log(logger::OFF) << "Row data message size " << len;
+	local_log() << "Row data message size " << len;
 	if (len < sizeof(integer) + sizeof(smallint)) {
 		std::cerr << "Size of invalid data row message is " << len << "\n";
 		assert ( len >= sizeof(integer) + sizeof(smallint) && "Invalid data row message");

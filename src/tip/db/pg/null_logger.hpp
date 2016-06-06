@@ -134,5 +134,48 @@ operator << (local out, T const& v)
 }  // namespace log
 }  // namespace tip
 
+#define LOCAL_LOGGING_FACILITY(c, s) \
+	namespace { \
+		using namespace tip::log; \
+		const std::string LOG_CATEGORY = #c;	\
+		logger::event_severity DEFAULT_SEVERITY = logger::s; \
+		local \
+		local_log(logger::event_severity sv = DEFAULT_SEVERITY) \
+		{ return local(LOG_CATEGORY, sv); }\
+	} \
+	using tip::log::logger
+
+#define LOCAL_LOGGING_FACILITY_CFG(c, s) \
+	namespace { \
+		using namespace tip::log; \
+		const std::string LOG_CATEGORY = #c;	\
+		logger::event_severity DEFAULT_SEVERITY = s; \
+		local \
+		local_log(logger::event_severity sv = DEFAULT_SEVERITY) \
+		{ return local(LOG_CATEGORY, sv); }\
+	} \
+	using tip::log::logger
+
+#define LOCAL_LOGGING_FACILITY_FUNC(c, s, f) \
+	namespace { \
+		using namespace tip::log; \
+		const std::string LOG_CATEGORY = #c;	\
+		logger::event_severity DEFAULT_SEVERITY = logger::s; \
+		local \
+		f(logger::event_severity sv = DEFAULT_SEVERITY) \
+		{ return local(LOG_CATEGORY, sv); }\
+	} \
+	using tip::log::logger
+
+#define LOCAL_LOGGING_FACILITY_CFG_FUNC(c, s, f) \
+	namespace { \
+		using namespace tip::log; \
+		const std::string LOG_CATEGORY = #c;	\
+		logger::event_severity DEFAULT_SEVERITY = s; \
+		local \
+		f(logger::event_severity sv = DEFAULT_SEVERITY) \
+		{ return local(LOG_CATEGORY, sv); }\
+	} \
+	using tip::log::logger
 
 #endif /* LIB_PG_ASYNC_INCLUDE_TIP_DB_PG_NULL_LOGGER_HPP_ */

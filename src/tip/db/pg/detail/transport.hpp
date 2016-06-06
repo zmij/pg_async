@@ -8,7 +8,7 @@
 #ifndef LIB_PG_ASYNC_SRC_TIP_DB_PG_DETAIL_TRANSPORT_HPP_
 #define LIB_PG_ASYNC_SRC_TIP_DB_PG_DETAIL_TRANSPORT_HPP_
 
-#include <boost/asio.hpp>
+#include <tip/db/pg/asio_config.hpp>
 #include <tip/db/pg/common.hpp>
 
 namespace tip {
@@ -17,13 +17,13 @@ namespace pg {
 namespace detail {
 
 struct tcp_transport {
-	typedef boost::asio::io_service io_service;
-	typedef boost::asio::ip::tcp tcp;
-	typedef boost::system::error_code error_code;
-	typedef std::function< void (boost::system::error_code const&) > connect_callback;
+	typedef asio_config::io_service_ptr io_service_ptr;
+	typedef asio_config::tcp tcp;
+	typedef asio_config::error_code error_code;
+	typedef std::function< void (error_code const&) > connect_callback;
 	typedef tcp::socket socket_type;
 
-	tcp_transport(io_service&);
+	tcp_transport(io_service_ptr);
 
 	void
 	connect_async(connection_options const&, connect_callback);
@@ -38,36 +38,36 @@ struct tcp_transport {
 	void
 	async_read(BufferType& buffer, HandlerType handler)
 	{
-		boost::asio::async_read(socket, buffer,
-				boost::asio::transfer_at_least(1), handler);
+		ASIO_NAMESPACE::async_read(socket, buffer,
+				ASIO_NAMESPACE::transfer_at_least(1), handler);
 	}
 
 	template < typename BufferType, typename HandlerType >
 	void
 	async_write(BufferType const& buffer, HandlerType handler)
 	{
-		boost::asio::async_write(socket, buffer, handler);
+		ASIO_NAMESPACE::async_write(socket, buffer, handler);
 	}
 private:
 	tcp::resolver resolver_;
-	connect_callback connect_;
 	socket_type socket;
 
 
 	void
 	handle_resolve(error_code const& ec,
-					tcp::resolver::iterator endpoint_iterator);
+					tcp::resolver::iterator endpoint_iterator,
+					connect_callback);
 	void
-	handle_connect(error_code const& ec);
+	handle_connect(error_code const& ec, connect_callback);
 };
 
 struct socket_transport {
-	typedef boost::asio::io_service io_service;
-	typedef boost::asio::local::stream_protocol::socket socket_type;
-	typedef boost::system::error_code error_code;
-	typedef std::function< void (boost::system::error_code const&) > connect_callback;
+	typedef asio_config::io_service_ptr io_service_ptr;
+	typedef asio_config::stream_protocol::socket socket_type;
+	typedef asio_config::error_code error_code;
+	typedef std::function< void (error_code const&) > connect_callback;
 
-	socket_transport(io_service&);
+	socket_transport(io_service_ptr);
 
 	void
 	connect_async(connection_options const&, connect_callback);
@@ -81,18 +81,17 @@ struct socket_transport {
 	void
 	async_read(BufferType& buffer, HandlerType handler)
 	{
-		boost::asio::async_read(socket, buffer,
-				boost::asio::transfer_at_least(1), handler);
+		ASIO_NAMESPACE::async_read(socket, buffer,
+				ASIO_NAMESPACE::transfer_at_least(1), handler);
 	}
 
 	template < typename BufferType, typename HandlerType >
 	void
 	async_write(BufferType const& buffer, HandlerType handler)
 	{
-		boost::asio::async_write(socket, buffer, handler);
+		ASIO_NAMESPACE::async_write(socket, buffer, handler);
 	}
 private:
-	connect_callback connect_;
 	socket_type socket;
 };
 

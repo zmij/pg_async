@@ -14,22 +14,7 @@ namespace tip {
 namespace db {
 namespace pg {
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGTRAN";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
-
+LOCAL_LOGGING_FACILITY_CFG(PGTRAN, config::QUERY_LOG);
 
 transaction::transaction(connection_ptr conn)
 	: connection_(conn), finished_(false)
@@ -38,7 +23,6 @@ transaction::transaction(connection_ptr conn)
 
 transaction::~transaction()
 {
-	local_log() << (util::MAGENTA | util::BRIGHT) << "transaction::~transaction()";
 	if (!finished_ && connection_->in_transaction()) {
 		local_log(logger::WARNING) << "Transaction object abandoned, rolling back";
 		connection_->rollback();
@@ -58,17 +42,17 @@ transaction::in_transaction() const
 }
 
 void
-transaction::commit()
+transaction::commit(notification_callback cb)
 {
 	finished_ = true;
-	connection_->commit();
+	connection_->commit(cb);
 }
 
 void
-transaction::rollback()
+transaction::rollback(notification_callback cb)
 {
 	finished_ = true;
-	connection_->rollback();
+	connection_->rollback(cb);
 }
 void
 transaction::execute(std::string const& query, query_result_callback result,

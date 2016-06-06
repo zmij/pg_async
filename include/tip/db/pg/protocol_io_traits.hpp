@@ -17,9 +17,11 @@
 #include <type_traits>
 #include <boost/optional.hpp>
 
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/pg_types.hpp>
-#include <tip/util/streambuf.hpp>
 
 namespace tip {
 namespace db {
@@ -72,6 +74,46 @@ template <> struct protocol_binary_selector<double> : floating_point_binary_type
 //@}
 
 }  // namespace detail
+
+namespace traits {
+
+template < typename T, protocol_data_format format >
+struct has_parser : std::false_type {};
+template < typename T, protocol_data_format format >
+struct has_formatter : std::false_type {};
+
+template < typename T >
+struct is_nullable : ::std::false_type {};
+template < typename T >
+struct is_nullable < ::boost::optional< T > > : ::std::true_type {};
+
+template < typename T >
+struct nullable_traits {
+	inline static bool
+	is_null(T const& v)
+	{ return false; }
+
+	inline static void
+	set_null(T& v) {}
+};
+
+template < typename T >
+struct nullable_traits< ::boost::optional< T > > {
+	typedef ::boost::optional< T > value_type;
+
+	inline static bool
+	is_null(value_type const& v)
+	{
+		return !v.is_initialized();
+	}
+	inline static void
+	set_null(value_type& v)
+	{
+		value_type().swap(v);
+	}
+};
+
+}  // namespace traits
 
 template < typename T, protocol_data_format >
 struct protocol_parser;
@@ -126,6 +168,8 @@ template < protocol_data_format F, typename T, typename InputIterator >
 InputIterator
 protocol_read(InputIterator begin, InputIterator end, T& value)
 {
+	static_assert(traits::has_parser<T, F>::value == true,
+			"Type doesn't have an appropriate parser");
 	return typename protocol_io_traits< T, F >::parser_type(value)(begin, end);
 }
 
@@ -161,6 +205,8 @@ template < protocol_data_format F, typename T >
 bool
 protocol_write(std::vector<byte>& buffer, T const& value)
 {
+	static_assert(traits::has_formatter<T, F>::value == true,
+			"Type doesn't have an appropriate formatter");
 	return protocol_writer<F>(value)(buffer);
 }
 
@@ -178,6 +224,8 @@ template < protocol_data_format F, typename T, typename OutputIterator >
 bool
 protocol_write(OutputIterator out, T const& value)
 {
+	static_assert(traits::has_formatter<T, F>::value == true,
+			"Type doesn't have an appropriate formatter");
 	return protocol_writer<F>(value)(out);
 }
 
@@ -330,37 +378,46 @@ struct pgcpp_data_mapping : detail::data_mapping_base< TypeOid, std::string > {}
  */
 template < typename T >
 struct cpppg_data_mapping : detail::data_mapping_base < oids::type::unknown, T > {};
+template < typename T >
+struct cpppg_data_mapping< boost::optional< T > > : cpppg_data_mapping< T > {};
 
 //@{
 /** @name parser and formatter traits */
+struct __io_meta_function_helper {
+	template <typename T> __io_meta_function_helper(T const&);
+};
+
+std::false_type
+operator << (std::ostream const&, __io_meta_function_helper const&);
+std::false_type
+operator >> (std::istream const&, __io_meta_function_helper const&);
+
 template <typename T>
 struct has_input_operator {
 private:
-	static void test(...);
-	template < typename U > static bool test(U&);
+	static std::false_type test(std::false_type);
+	static std::true_type test(std::istream&);
+
 	static std::istream& is;
 	static T& val;
 public:
 	static constexpr bool value = std::is_same<
-			decltype( test( std::declval< std::istream& >() >> std::declval< T& >()) ),
-			bool
-		>::type::value;
+			decltype( test( is >> val ) ), std::true_type >::type::value;
 };
 
 template <typename T>
 struct has_output_operator {
 private:
-	static void test(...);
-	template < typename U > static bool test(U&);
+	static std::false_type test(std::false_type);
+	static std::true_type test(std::ostream&);
+
+	static std::ostream& os;
+	static T const& val;
 public:
 	static constexpr bool value = std::is_same<
-			decltype( test( std::declval< std::ostream& >() << std::declval< T >() ) ),
-			bool
-		>::type::value;
+			decltype( test( os << val) ), std::true_type >::type::value;
 };
 
-template < typename T, protocol_data_format format >
-struct has_parser : std::false_type {};
 template < typename T >
 struct has_parser< T, TEXT_DATA_FORMAT >
 	: std::integral_constant< bool, has_input_operator< T >::value > {};
@@ -368,8 +425,6 @@ template < > struct has_parser< smallint, BINARY_DATA_FORMAT > : std::true_type 
 template < > struct has_parser< integer, BINARY_DATA_FORMAT > : std::true_type {};
 template < > struct has_parser< bigint, BINARY_DATA_FORMAT > : std::true_type {};
 
-template < typename T, protocol_data_format format >
-struct has_formatter : std::false_type {};
 template < typename T >
 struct has_formatter< T, TEXT_DATA_FORMAT >
 	: std::integral_constant< bool, has_output_operator< T >::value > {};
@@ -379,7 +434,18 @@ template < > struct has_formatter< bigint, BINARY_DATA_FORMAT > : std::true_type
 //@}
 
 //@{
+/** @name IO metafunctions tests */
 struct ___no_inout_test {};
+
+static_assert(has_input_operator<___no_inout_test>::value == false,
+		"Input operator test OK");
+static_assert(has_output_operator<___no_inout_test>::value == false,
+		"Output operator test OK");
+
+static_assert(has_parser<___no_inout_test, TEXT_DATA_FORMAT>::value == false,
+		"Text parser test is OK");
+static_assert(has_formatter<___no_inout_test, TEXT_DATA_FORMAT>::value == false,
+		"Text formatter test is OK");
 //@}
 
 /**
@@ -390,7 +456,8 @@ struct best_parser {
 private:
 	static constexpr bool has_binary_parser = has_parser<T, BINARY_DATA_FORMAT>::value;
 public:
-	static constexpr protocol_data_format value = has_binary_parser ? BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
+	static constexpr protocol_data_format value = has_binary_parser ?
+			BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
 	typedef protocol_parser< T, value > type;
 };
 
@@ -494,6 +561,10 @@ template < typename T >
 struct protocol_formatter< T, TEXT_DATA_FORMAT > : detail::formatter_base< T > {
     typedef detail::formatter_base< T > base_type;
     typedef typename base_type::value_type value_type;
+    typedef std::vector<byte> buffer_type;
+    typedef boost::iostreams::stream_buffer<
+    		boost::iostreams::back_insert_device< buffer_type >
+    	> streambuffer_type;
     
     protocol_formatter(value_type const& val) : base_type(val) {}
     
@@ -507,10 +578,9 @@ struct protocol_formatter< T, TEXT_DATA_FORMAT > : detail::formatter_base< T > {
     bool
     operator()(std::vector<char>& buffer)
     {
-    	std::ostringstream os;
+    	streambuffer_type sbuff(buffer);
+    	std::ostream os(&sbuff);
     	os << base_type::value;
-        auto str = os.str();
-    	std::copy(str.begin(), str.end(), std::back_inserter(buffer));
     	return true;
     }
 };
@@ -613,9 +683,9 @@ struct protocol_formatter< std::string, TEXT_DATA_FORMAT > :
         return out.good();
     }
     bool
-    operator()(std::vector<char>& buffer)
+    operator()(std::vector<byte>& buffer)
     {
-    	auto iter = std::copy(base_type::value.begin(), base_type::value.end(),
+    	std::copy(base_type::value.begin(), base_type::value.end(),
     			std::back_inserter(buffer));
     	return true;
     }
@@ -707,7 +777,7 @@ struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > :
 	operator() (std::istream& in)
 	{
 		element_type tmp;
-		if (query_parse(tmp)(in)) {
+		if (protocol_reader(tmp)(in)) {
 			base_type::value = value_type(tmp);
 		} else {
 			base_type::value = value_type();
@@ -719,7 +789,7 @@ struct protocol_parser< boost::optional< T >, TEXT_DATA_FORMAT > :
 	operator() (buffer_type& buffer)
 	{
 		element_type tmp;
-		if (query_parse(tmp)(buffer)) {
+		if (protocol_reader(tmp)(buffer)) {
 			base_type::value = value_type(tmp);
 		} else {
 			base_type::value = value_type();
@@ -770,53 +840,99 @@ struct protocol_parser< boost::optional< T >, BINARY_DATA_FORMAT > :
 	}
 };
 
-/**
- * @brief Protocol parser specialization for bytea (binary string), text data format
- */
+namespace traits {
+
+template < typename T >
+struct needs_quotes : ::std::false_type {};
+template < typename T >
+struct needs_escapes : ::std::false_type {};
+
 template <>
-struct protocol_parser< bytea, TEXT_DATA_FORMAT > :
-		detail::parser_base< bytea > {
-	typedef detail::parser_base< bytea > base_type;
-	typedef base_type::value_type value_type;
-	typedef tip::util::input_iterator_buffer buffer_type;
+struct needs_quotes< ::std::string > : ::std::true_type {};
+template <>
+struct needs_escapes< ::std::string > : ::std::true_type {};
 
-	protocol_parser(value_type& v) : base_type(v) {}
+}  // namespace traits
 
-	size_t
-	size() const
+namespace detail {
+
+template < typename T >
+struct escaped_formatter_impl;
+
+template <>
+struct escaped_formatter_impl< ::std::string > : detail::formatter_base< ::std::string >{
+	typedef detail::formatter_base< ::std::string > base_type;
+	typedef base_type::value_type					value_type;
+
+	escaped_formatter_impl(value_type const& v) : base_type{v} {}
+
+	bool
+	operator()(::std::vector<byte>& buffer)
 	{
-		return base_type::value.data.size();
+		for (auto c : base_type::value) {
+			switch (c) {
+				case '"':
+				case '\\':
+					buffer.push_back('\\');
+					break;
+			}
+			buffer.push_back(c);
+		}
+		return true;
 	}
-	bool
-	operator() (std::istream& in);
-
-	bool
-	operator() (buffer_type& buffer);
-
-	template < typename InputIterator >
-	InputIterator
-	operator()( InputIterator begin, InputIterator end );
 };
 
-/**
- * @brief Protocol parser specialization for bytea (binary string), binary data format
- */
-template <>
-struct protocol_parser< bytea, BINARY_DATA_FORMAT > :
-		detail::parser_base< bytea > {
-	typedef detail::parser_base< bytea > base_type;
-	typedef base_type::value_type value_type;
+}  // namespace details
 
-	protocol_parser(value_type& val) : base_type(val) {}
-	size_t
-	size() const
+template < typename T >
+using escaped_formatter = typename ::std::conditional<
+	traits::needs_escapes< T >::value,
+	detail::escaped_formatter_impl< T >,
+	protocol_formatter< T, TEXT_DATA_FORMAT >
+>::type;
+
+namespace detail {
+
+template < typename T >
+struct quoted_formatter_impl {
+	typedef escaped_formatter< T >				base_formatter;
+	typedef traits::nullable_traits< T >		nullable_traits;
+	typedef typename base_formatter::value_type	value_type;
+	enum : char {
+		QUOTE = '"'
+	};
+
+	quoted_formatter_impl(value_type const& v) : fmt_{v} {}
+
+	bool
+	operator()(::std::vector<byte>& buffer)
 	{
-		return base_type::value.data.size();
+		buffer.push_back(QUOTE);
+		if (!nullable_traits::is_null(fmt_.value))
+			fmt_(buffer);
+		buffer.push_back(QUOTE);
+		return true;
 	}
-	template < typename InputIterator >
-	InputIterator
-	operator()( InputIterator begin, InputIterator end );
+private:
+	base_formatter fmt_;
 };
+
+}  // namespace details
+
+template < typename T >
+using quoted_formatter = typename ::std::conditional<
+	traits::needs_quotes< T >::value,
+	detail::quoted_formatter_impl< T >,
+	protocol_formatter< T, TEXT_DATA_FORMAT >
+>::type;
+
+template < typename T >
+bool
+quoted_write(std::vector<byte>& buffer, T const& val)
+{
+	typedef quoted_formatter< typename ::std::decay<T>::type > formatter_type;
+	return formatter_type{val}(buffer);
+}
 
 }  // namespace io
 }  // namespace pg
@@ -824,6 +940,8 @@ struct protocol_parser< bytea, BINARY_DATA_FORMAT > :
 }  // namespace tip
 
 #include <tip/db/pg/protocol_io_traits.inl>
+// Common datatypes implementation includes
+#include <tip/db/pg/io/bytea.hpp>
 #include <tip/db/pg/datatype_mapping.hpp>
 
 #endif /* TIP_DB_PG_PROTOCOL_IO_TRAITS_HPP_ */

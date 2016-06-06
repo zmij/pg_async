@@ -10,44 +10,33 @@
 #include <tip/db/pg/detail/transport.hpp>
 #include <tip/db/pg/query.hpp>
 
-#include <boost/system/error_code.hpp>
-
 #include <tip/db/pg/log.hpp>
 #include "db/config.hpp"
 #include "test-environment.hpp"
 
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGFSM";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-test_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
+namespace asio_config = tip::db::pg::asio_config;
+
+LOCAL_LOGGING_FACILITY_FUNC(PGFSM, TRACE, test_log);
+
 namespace tip {
 namespace db {
 namespace pg {
 namespace detail {
 
 struct dummy_transport {
-	typedef boost::asio::io_service io_service;
-	typedef std::function< void (boost::system::error_code const&) > connect_callback;
+	typedef asio_config::io_service_ptr io_service_ptr;
+	typedef std::function< void (asio_config::error_code const&) > connect_callback;
 
-	dummy_transport(io_service& svc) {}
+	dummy_transport(io_service_ptr) {}
 
 	void
 	connect_async(connection_options const&, connect_callback cb)
 	{
-		boost::system::error_code ec;
+		asio_config::error_code ec;
 		cb(ec);
 	}
 
@@ -65,14 +54,14 @@ struct dummy_transport {
 
 	template < typename BufferType, typename HandlerType >
 	void
-	async_read(BufferType& buffer, HandlerType handler)
+	async_read(BufferType&, HandlerType)
 	{
 		test_log() << "Dummy async read";
 	}
 
 	template < typename BufferType, typename HandlerType >
 	void
-	async_write(BufferType const& buffer, HandlerType handler)
+	async_write(BufferType const&, HandlerType)
 	{
 		test_log() << "Dummy async write";
 	}
@@ -97,8 +86,8 @@ tip::db::pg::client_options_type client_options {
 
 TEST(DummyFSM, NormalFlow)
 {
-	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -128,8 +117,8 @@ TEST(DummyFSM, NormalFlow)
 
 TEST(DummyFSM, TerminateTran)
 {
-	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -147,39 +136,58 @@ TEST(DummyFSM, TerminateTran)
 
 TEST(DummyFSM, SimpleQueryMode)
 {
-	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
+	test_log() << "Connect";
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query());	// authn		-> idle
 
 	// Begin transaction
+	test_log() << "Begin transaction";
 	c->process_event(begin());		// idle			-> transaction::starting
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query());	// transaction::starting -> transaction::idle
 
+	test_log() << "Execute simple query";
 	c->process_event(execute{ "bla" });		// transaction -> simple query
+	test_log() << "Row description";
 	c->process_event(row_description()); // waiting -> fetch_data
 	for (int i = 0; i < 10; ++i) {
-		c->process_event(row_data());
+		test_log() << "Data row";
+		c->process_event(row_event());
 	}
+	test_log() << "Command complete";
 	c->process_event(complete());	// fetch_data -> waiting
 
+	test_log() << "Row description";
 	c->process_event(row_description()); // waiting -> fetch_data
 	for (int i = 0; i < 10; ++i) {
-		c->process_event(row_data());
+		test_log() << "Data row";
+		c->process_event(row_event());
 	}
+	test_log() << "Command complete";
 	c->process_event(complete());	// fetch_data -> waiting
 
+	test_log() << "Terminate (should be deferred)";
+	c->process_event(terminate{});  // defer event
+
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query()); // simple query -> transaction::idle
-	c->process_event(commit());		// transaction::idle -> transaction::exiting
+	test_log() << "Commit";
+	c->process_event(complete());	// fetch_data -> waiting
+	test_log() << "Command complete";
+	c->process_event(complete());	// fetch_data -> waiting
+	test_log() << "Ready for query";
 	c->process_event(ready_for_query());	// transaction -> idle
 }
 
 TEST(DummyFSM, ExtendedQueryMode)
 {
-	boost::asio::io_service svc;
-	fsm_ptr c( new fsm(std::ref(svc), client_options, {}) );
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	fsm_ptr c( new fsm(svc, client_options, {}) );
 	c->start();
 	//	Connection
 	c->process_event("main=tcp://user:password@localhost:5432[db]"_pg);		// unplugged 	-> t_conn
@@ -201,10 +209,10 @@ test_normal_flow(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 
-	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -214,7 +222,7 @@ test_normal_flow(tip::db::pg::connection_options const& opts)
 	c->process_event(commit());
 	c->process_event(terminate());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, NormalFlow)
@@ -237,10 +245,10 @@ test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 
-	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -248,7 +256,7 @@ test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 	c->process_event(terminate());
 	c->process_event(rollback());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, PreliminaryTerminate)
@@ -271,10 +279,10 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 
-	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -283,7 +291,7 @@ test_error_in_query(tip::db::pg::connection_options const& opts)
 	c->process_event(execute{ "select * from _shouldnt_be_there_" });
 	c->process_event(terminate());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, ErrorInSimpleQuery)
@@ -306,11 +314,11 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 {
 	using namespace tip::db::pg;
 	typedef concrete_connection< TransportType > fsm_type;
-	typedef std::shared_ptr< fsm_type > fsm_ptr;
+	typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
 	typedef std::vector< char > buffer_type;
 
-	boost::asio::io_service svc;
-	fsm_ptr c(new fsm_type(std::ref(svc), client_options, {}));
+	::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
+	transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
 
 	c->start();
 	c->process_event(opts);
@@ -348,7 +356,7 @@ test_exec_prepared(tip::db::pg::connection_options const& opts)
 	c->process_event(commit());
 	c->process_event(terminate());
 
-	svc.run();
+	svc->run();
 }
 
 TEST(FSM, ExecPrepared)
@@ -365,3 +373,4 @@ TEST(FSM, ExecPrepared)
 	}
 }
 
+#pragma GCC diagnostic pop

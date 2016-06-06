@@ -31,6 +31,8 @@ public:
 	typedef std::shared_ptr<basic_connection> connection_ptr;
 	typedef basic_connection* pointer;
 	typedef basic_connection const* const_pointer;
+
+	typedef std::function< void() > notification_callback;
 public:
 	transaction(connection_ptr);
 	~transaction();
@@ -74,9 +76,9 @@ public:
 	in_transaction() const;
 
 	void
-	commit();
+	commit(notification_callback = notification_callback());
 	void
-	rollback();
+	rollback(notification_callback = notification_callback());
 
 	void
 	execute(std::string const& query, query_result_callback,

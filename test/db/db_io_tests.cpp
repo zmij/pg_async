@@ -12,22 +12,6 @@
 
 #include <gtest/gtest.h>
 
-
-namespace {
-/** Local logging facility */
-using namespace tip::log;
-
-const std::string LOG_CATEGORY = "PGTEST";
-logger::event_severity DEFAULT_SEVERITY = logger::TRACE;
-local
-local_log(logger::event_severity s = DEFAULT_SEVERITY)
-{
-	return local(LOG_CATEGORY, s);
-}
-
-}  // namespace
-// For more convenient changing severity, eg local_log(logger::WARNING)
-using tip::log::logger;
 using namespace tip::db::pg;
 
 
@@ -40,7 +24,6 @@ class InvalidBoolParseTest : public ::testing::TestWithParam< std::string > {
 
 TEST_P(BoolParseTest, Parses)
 {
-	typedef tip::util::input_iterator_buffer buffer_type;
 	test_pair curr = GetParam();
 
 	bool val;
@@ -52,7 +35,6 @@ TEST_P(BoolParseTest, Parses)
 
 TEST_P(InvalidBoolParseTest, DoesntParse)
 {
-	typedef tip::util::input_iterator_buffer buffer_type;
 	std::string curr = GetParam();
 
 	bool val = true;
@@ -102,23 +84,24 @@ TEST_P(ByteaTextParseTest, Parses)
 {
 	test_pair curr = GetParam();
 	bytea val;
-
+	static_assert(io::traits::has_parser<bytea, TEXT_DATA_FORMAT>::value,
+			"Bytea has a text parser" );
 	EXPECT_NE(
 			curr.first.begin(),
 			io::protocol_read< TEXT_DATA_FORMAT >(curr.first.begin(),
 					curr.first.end(), val));
-	EXPECT_EQ(curr.second, val.data.size());
+	EXPECT_EQ(curr.second, val.size());
 }
 
 TEST_P(InvalieByteaTextParseTest, DoesntParse)
 {
 	std::string curr = GetParam();
-	bytea val { {1, 2, 3, 4} };
+	bytea val { 1, 2, 3, 4 };
 
 	EXPECT_EQ(
 			curr.begin(),
 			io::protocol_read< TEXT_DATA_FORMAT >(curr.begin(), curr.end(), val));
-	EXPECT_EQ(4, val.data.size()); // Not modified
+	EXPECT_EQ(4, val.size()); // Not modified
 }
 
 INSTANTIATE_TEST_CASE_P(IOTest,

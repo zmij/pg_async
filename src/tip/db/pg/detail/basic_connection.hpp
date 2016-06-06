@@ -10,6 +10,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <tip/db/pg/asio_config.hpp>
 #include <tip/db/pg/detail/protocol.hpp>
 
 namespace boost {
@@ -33,98 +34,97 @@ typedef std::shared_ptr< basic_connection > basic_connection_ptr;
 typedef std::function < void (basic_connection_ptr) > connection_event_callback;
 typedef std::function < void (basic_connection_ptr, error::connection_error) > connection_error_callback;
 typedef std::function< void (resultset, bool) > query_internal_callback;
+typedef std::function< void() > notification_callback;
 
 struct connection_callbacks {
-	connection_event_callback	idle;
-	connection_event_callback	terminated;
-	connection_error_callback	error;
+    connection_event_callback    idle;
+    connection_event_callback    terminated;
+    connection_error_callback    error;
 };
 
 namespace events {
-struct begin {
-	// TODO Transaction isolation etc
-	transaction_callback	started;
-	error_callback			error;
+struct commit {
+    notification_callback       callback;
 };
-
-struct commit {};
-struct rollback {};
+struct rollback {
+    notification_callback       callback;
+};
 
 struct execute {
-	std::string				expression;
-	query_internal_callback	result;
-	query_error_callback	error;
+    std::string                 expression;
+    query_internal_callback     result;
+    query_error_callback        error;
 };
 struct execute_prepared {
-	std::string 			expression;
-	type_oid_sequence 		param_types;
-	std::vector< byte > 	params;
-	query_internal_callback	result;
-	query_error_callback	error;
+    std::string                 expression;
+    type_oid_sequence           param_types;
+    std::vector< byte >         params;
+    query_internal_callback     result;
+    query_error_callback        error;
 };
 
 }
 
 class basic_connection : public boost::noncopyable {
 public:
-	typedef boost::asio::io_service io_service;
+    typedef asio_config::io_service_ptr io_service_ptr;
 public:
-	static basic_connection_ptr
-	create(io_service& svc, connection_options const&,
-			client_options_type const&, connection_callbacks const&);
+    static basic_connection_ptr
+    create(io_service_ptr svc, connection_options const&,
+            client_options_type const&, connection_callbacks const&);
 public:
-	virtual ~basic_connection();
+    virtual ~basic_connection();
 
-	void
-	connect(connection_options const&);
+    void
+    connect(connection_options const&);
 
-	dbalias const&
-	alias() const;
+    dbalias const&
+    alias() const;
 
-	void
-	begin(events::begin const&);
-	void
-	commit();
-	void
-	rollback();
+    void
+    begin(events::begin const&);
+    void
+    commit(notification_callback = notification_callback());
+    void
+    rollback(notification_callback = notification_callback());
 
-	bool
-	in_transaction() const;
+    bool
+    in_transaction() const;
 
-	void
-	execute(events::execute const&);
-	void
-	execute(events::execute_prepared const&);
+    void
+    execute(events::execute const&);
+    void
+    execute(events::execute_prepared const&);
 
-	void
-	terminate();
+    void
+    terminate();
 protected:
-	basic_connection();
+    basic_connection();
 
 private:
-	virtual void
-	do_connect(connection_options const& ) = 0;
+    virtual void
+    do_connect(connection_options const& ) = 0;
 
-	virtual dbalias const&
-	get_alias() const = 0;
+    virtual dbalias const&
+    get_alias() const = 0;
 
-	virtual bool
-	is_in_transaction() const = 0;
+    virtual bool
+    is_in_transaction() const = 0;
 
-	virtual void
-	do_begin(events::begin const&) = 0;
-	virtual void
-	do_commit() = 0;
-	virtual void
-	do_rollback() = 0;
+    virtual void
+    do_begin(events::begin const&) = 0;
+    virtual void
+    do_commit(notification_callback) = 0;
+    virtual void
+    do_rollback(notification_callback) = 0;
 
-	virtual void
-	do_execute(events::execute const&) = 0;
-	virtual void
-	do_execute(events::execute_prepared const&) = 0;
+    virtual void
+    do_execute(events::execute const&) = 0;
+    virtual void
+    do_execute(events::execute_prepared const&) = 0;
 
-	virtual void
-	do_terminate() = 0;
+    virtual void
+    do_terminate() = 0;
 };
 
 }  // namespace pg
