@@ -1,14 +1,15 @@
-#    CMakeLists.txt for tip-log library
+#    CMakeLists.txt for afsm library
 #
 #    @author zmij
 #    @date Nov 30, 2015
 
 cmake_minimum_required(VERSION 2.6)
 
-if (NOT PROJECT_PREFIX)
-    set(PROJECT_PREFIX tip)
-endif()
-set(_pname ${PROJECT_PREFIX}-log)
+# Set library name here
+set(lib_name metapushkin)
+string(TOUPPER ${lib_name} LIB_NAME)
+
+set(_pname ${lib_name})
 if (PROJECT_VERSION)
     set(_pversion ${PROJECT_VERSION})
 else()
@@ -23,17 +24,20 @@ else()
     set(PROJECT_VERSION ${_pversion})
 endif()
 
+option(BUILD_TESTS "Build test programs" ON)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_definitions("-std=c++11")
+add_definitions(-Wall -Werror -Wextra -pedantic -Weffc++)
 
-set(TIP_LOG_LIB ${PROJECT_PREFIX}-log)
-
-add_subdirectory(include/tip)
-add_subdirectory(src)
+# Add subdirectories here
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()
 
 get_directory_property(has_parent PARENT_DIRECTORY)
 if (has_parent)
-    set(TIP_LOG_LIB ${PROJECT_PREFIX}-log CACHE INTERNAL "Name of tip log library target")
-    set(TIP_LOG_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "Path to tip log library includes" )
-    set(TIP_LOG_LINK_DIR ${CMAKE_CURRENT_BINARY_DIR}/src CACHE INTERNAL "Path to tip log binary dir")
+    set(${LIB_NAME}_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE
+        INTERNAL "Path to metapushkin libaray includes" )
 endif()
