@@ -98,7 +98,7 @@ struct connection_base_state {
     void
     on_enter(Event&&, FSM&)
     {
-        log(logger::DEBUG) << "entering " << (tip::util::MAGENTA | tip::util::BRIGHT)
+        log() << "entering " << (tip::util::MAGENTA | tip::util::BRIGHT)
                 << state_name();
     }
 
@@ -106,7 +106,7 @@ struct connection_base_state {
     void
     on_exit(Event&&, FSM&)
     {
-        log(logger::DEBUG) << "exiting "  << (tip::util::MAGENTA | tip::util::BRIGHT)
+        log() << "exiting "  << (tip::util::MAGENTA | tip::util::BRIGHT)
                 << state_name();
     }
 };
@@ -356,31 +356,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         using transaction_ptr = std::shared_ptr< pg::transaction >;
         using transaction_weak_ptr = std::weak_ptr< pg::transaction >;
 
-        ::std::string
-        state_name() const override
-        {
-            return "transaction " + fsm().current_state_base().state_name();
-        }
-        //@{
-        /** @name Transaction entry-exit */
-        void
-        on_enter(events::begin const& evt, connection_fsm_type& fsm)
-        {
-            log() << "entering: transaction";
-            connection().in_transaction_ = true;
-            callbacks_ = evt;
-        }
-        template < typename Event, typename FSM >
-        void
-        on_exit(Event const&, FSM&)
-        {
-            log() << "leaving: transaction";
-            tran_object_.reset();
-            connection().in_transaction_ = false;
-            callbacks_ = events::begin{};
-        }
-        //@}
-
         //@{
         /** State forwards */
         struct tran_error;
@@ -606,15 +581,21 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             on_exit(Event const&, transaction_fsm_type& fsm)
             {
                 fsm.log(logger::DEBUG) << "leaving: exit transaction";
+
                 if (callback_) {
-                    try {
-                        callback_();
-                    } catch (::std::exception const& e) {
-                        fsm.log(logger::WARNING) << "Exception in notify handler on exit transaction " << e.what();
-                    } catch(...) {
-                        // Ignore handler error
-                        fsm.log(logger::WARNING) << "Exception in notify handler on exit transaction";
-                    }
+                    auto cb = callback_;
+                    fsm.connection().async_notify(
+                        [cb](){
+                            try {
+                                cb();
+                            } catch (::std::exception const& e) {
+                                fsm_log(logger::WARNING) << "Exception in notify handler on exit transaction " << e.what();
+                            } catch(...) {
+                                // Ignore handler error
+                                fsm_log(logger::WARNING) << "Exception in notify handler on exit transaction";
+                            }
+                        }
+                    );
                     callback_ = notification_callback{};
                 }
             }
@@ -1212,28 +1193,33 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         notify_result(Source& state, resultset res, bool complete)
         {
             if (state.query_.result) {
-                try {
-                    state.query_.result(res, complete);
-                } catch (error::query_error const& e) {
-                    log(logger::ERROR)
-                            << "Query result handler throwed a query_error: "
-                            << e.what();
-                    connection().process_event(e);
-                } catch (error::db_error const& e) {
-                    log(logger::ERROR)
-                            << "Query result handler throwed a db_error: "
-                            << e.what();
-                    connection().process_event(e);
-                } catch (std::exception const& e) {
-                    log(logger::ERROR)
-                            << "Query result handler throwed an exception: "
-                            << e.what();
-                    connection().process_event(error::client_error(e));
-                } catch (...) {
-                    log(logger::ERROR)
-                            << "Query result handler throwed an unknown exception";
-                    connection().process_event(error::client_error("Unknown exception"));
-                }
+                auto result_cb = state.query_.result;
+                auto conn = connection().shared_from_this();
+                connection().async_notify(
+                [conn, result_cb, res, complete](){
+                    try {
+                        result_cb(res, complete);
+                    } catch (error::query_error const& e) {
+                        conn->log(logger::ERROR)
+                                << "Query result handler throwed a query_error: "
+                                << e.what();
+                        conn->process_event(e);
+                    } catch (error::db_error const& e) {
+                        conn->log(logger::ERROR)
+                                << "Query result handler throwed a db_error: "
+                                << e.what();
+                        conn->process_event(e);
+                    } catch (std::exception const& e) {
+                        conn->log(logger::ERROR)
+                                << "Query result handler throwed an exception: "
+                                << e.what();
+                        conn->process_event(error::client_error(e));
+                    } catch (...) {
+                        conn->log(logger::ERROR)
+                                << "Query result handler throwed an unknown exception";
+                        conn->process_event(error::client_error("Unknown exception"));
+                    }
+                });
             }
         }
 
@@ -1243,16 +1229,21 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             if (callbacks_.error) {
                 // If the async error handler throws an exception
                 // all we can do - log the error.
-                try {
-                    callbacks_.error(qe);
-                } catch (std::exception const& e) {
-                    log(logger::ERROR)
-                            << "Transaction error handler throwed an exception: "
-                            << e.what();
-                } catch (...) {
-                    log(logger::ERROR)
-                            << "Transaction error handler throwed an unknown exception.";
-                }
+                auto error_cb = callbacks_.error;
+                auto conn = connection().shared_from_this();
+                connection().async_notify(
+                [error_cb, conn, qe](){
+                    try {
+                        error_cb(qe);
+                    } catch (std::exception const& e) {
+                        conn->log(logger::ERROR)
+                                << "Transaction error handler throwed an exception: "
+                                << e.what();
+                    } catch (...) {
+                        conn->log(logger::ERROR)
+                                << "Transaction error handler throwed an unknown exception.";
+                    }
+                });
             }
         }
         template < typename State >
@@ -1291,6 +1282,31 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         connection_fsm_type const&
         connection() const
         { return fsm().enclosing_fsm(); }
+
+        ::std::string
+        state_name() const override
+        {
+            return "transaction " + fsm().current_state_base().state_name();
+        }
+        //@{
+        /** @name Transaction entry-exit */
+        void
+        on_enter(events::begin const& evt, connection_fsm_type& fsm)
+        {
+            log(logger::DEBUG) << "entering: transaction";
+            connection().in_transaction_ = true;
+            callbacks_ = evt;
+        }
+        template < typename Event, typename FSM >
+        void
+        on_exit(Event const&, FSM&)
+        {
+            log(logger::DEBUG) << "leaving: transaction";
+            tran_object_.reset();
+            connection().in_transaction_ = false;
+            callbacks_ = events::begin{};
+        }
+        //@}
 
         ::tip::log::local
         log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const override
@@ -1350,8 +1366,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
 
     //@{
     connection_fsm_def(io_service_ptr svc, client_options_type const& co)
-        : shared_base(), transport_(svc), client_opts_(co), strand_(*svc),
-          serverPid_(0), serverSecret_(0), in_transaction_(false),
+        : shared_base(), io_service_{svc}, transport_{svc},
+          client_opts_{co}, strand_{*svc},
+          serverPid_{0}, serverSecret_{0}, in_transaction_{false},
           connection_number_{ next_connection_number() }
     {
         incoming_.prepare(8192); // FIXME Magic number, move to configuration
@@ -1519,6 +1536,13 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     }
     void
     notify_error(error::connection_error const& e) { do_notify_error(e); }
+
+    template < typename Handler >
+    void
+    async_notify(Handler&& h)
+    {
+        io_service_->post( ::std::forward<Handler>(h) );
+    }
     //@}
 
     ::tip::log::local
@@ -1766,26 +1790,27 @@ private:
         return _number++;
     }
 private:
-    friend class transaction_;
-    transport_type transport_;
+    friend class transaction;
+    asio_config::io_service_ptr     io_service_;
+    transport_type                  transport_;
 
-    client_options_type client_opts_;
+    client_options_type             client_opts_;
 
     asio_config::io_service::strand strand_;
-    ASIO_NAMESPACE::streambuf incoming_;
+    ASIO_NAMESPACE::streambuf       incoming_;
 
-    message_ptr message_;
+    message_ptr                     message_;
 
-    integer serverPid_;
-    integer    serverSecret_;
+    integer                         serverPid_;
+    integer                         serverSecret_;
 
-    prepared_statements_map prepared_;
+    prepared_statements_map         prepared_;
 
-    bool in_transaction_;
+    ::std::atomic<bool>             in_transaction_;
 
-    size_t connection_number_;
+    size_t                          connection_number_;
 protected:
-    connection_options conn_opts_;
+    connection_options              conn_opts_;
 };
 
 //----------------------------------------------------------------------------
