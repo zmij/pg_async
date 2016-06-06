@@ -45,7 +45,8 @@ struct connection_observer {
     void
     processed_in_state(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << typeid(Event).name() << ": processed in state";
+        fsm.log() << typeid(Event).name() << ": processed in state "
+                << fsm.state_name();
     }
 
     template < typename FSM, typename Event >

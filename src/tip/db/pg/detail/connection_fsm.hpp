@@ -269,21 +269,21 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             operator() (authn_event const& evt, connection_fsm_type& fsm, SourceState&, TargetState&)
             {
-                fsm_log() << "authn: handle auth_event";
+                fsm.log() << "authn: handle auth_event";
                 switch (evt.state) {
                     case OK: {
-                        fsm_log() << "Authenticated with postgre server";
+                        fsm.log() << "Authenticated with postgre server";
                         break;
                     }
                     case Cleartext : {
-                        fsm_log() << "Cleartext password requested";
+                        fsm.log() << "Cleartext password requested";
                         message pm(password_message_tag);
                         pm.write(fsm.options().password);
                         fsm.send(pm);
                         break;
                     }
                     case MD5Password: {
-                        fsm_log() << "MD5 password requested";
+                        fsm.log() << "MD5 password requested";
                         // Read salt
                         std::string salt;
                         evt.message->read(salt, 4);
@@ -578,7 +578,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             ::std::string
             state_name() const override
             {
-                static const ::std::string name = "exit transaction";
+                static const ::std::string name = "exit";
                 return name;
             }
 
@@ -586,26 +586,26 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_enter(Event const&, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: exit transaction";
+                fsm.log(logger::DEBUG) << "entering: exit transaction";
                 callback_ = notification_callback{};
             }
             void
             on_enter(events::commit const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: exit transaction (commit)";
+                fsm.log(logger::DEBUG) << "entering: exit transaction (commit)";
                 callback_ = evt.callback;
             }
             void
             on_enter(events::rollback const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: exit transaction (rollback)";
+                fsm.log(logger::DEBUG) << "entering: exit transaction (rollback)";
                 callback_ = evt.callback;
             }
             template < typename Event >
             void
             on_exit(Event const&, transaction_fsm_type& fsm)
             {
-                fsm.log() << "leaving: exit transaction";
+                fsm.log(logger::DEBUG) << "leaving: exit transaction";
                 if (callback_) {
                     try {
                         callback_();
@@ -1798,7 +1798,6 @@ class concrete_connection : public basic_connection,
 public:
     using transport_type = TransportType;
     using this_type = concrete_connection< transport_type >;
-private:
     using fsm_type =
             ::afsm::state_machine<
                  connection_fsm_def< ::std::mutex, transport_type, this_type >,

@@ -28,8 +28,8 @@ namespace pg {
 namespace detail {
 
 struct dummy_transport {
-    typedef asio_config::io_service_ptr io_service_ptr;
-    typedef std::function< void (asio_config::error_code const&) > connect_callback;
+    using io_service_ptr = asio_config::io_service_ptr;
+    using connect_callback = std::function< void (asio_config::error_code const&) >;
 
     dummy_transport(io_service_ptr) {}
 
@@ -67,6 +67,40 @@ struct dummy_transport {
     }
 
 };
+
+namespace static_tests {
+
+using fsm_type = concrete_connection<dummy_transport>;
+using transaction_fsm_type = ::afsm::state<
+        fsm_type::state_definition_type::transaction, fsm_type >;
+using simple_query_fsm_type = ::afsm::state<
+        transaction_fsm_type::state_definition_type::simple_query, transaction_fsm_type >;
+using fetch_data_fsm_type = ::afsm::state<
+        simple_query_fsm_type::state_definition_type::fetch_data, simple_query_fsm_type >;
+
+static_assert(!::std::is_same<fetch_data_fsm_type::handled_events, void>::value,
+        "Handled events for fetch data is not void");
+static_assert(!::std::is_same<fetch_data_fsm_type::internal_events, void>::value,
+        "Internal events for fetch data is not void");
+static_assert(fetch_data_fsm_type::handled_events::size == 1,
+        "Fetch data handles one event internally");
+static_assert(fetch_data_fsm_type::internal_events::size == 1,
+        "Fetch data handles one event internally");
+static_assert(!::std::is_same< fetch_data_fsm_type::state_definition_type::internal_transitions, void >::value,
+        "Fetch data has internal transitions table");
+static_assert(::psst::meta::contains<row_event, fetch_data_fsm_type::internal_events>::value,
+        "Row event is handled internally");
+
+static_assert(::afsm::detail::event_process_selector<
+        row_event, fetch_data_fsm_type::internal_events,
+        fetch_data_fsm_type::deferred_events>::value
+            == ::afsm::actions::event_process_result::process, "");
+static_assert(::afsm::detail::event_process_selector<
+        row_event, fetch_data_fsm_type::handled_events,
+        fetch_data_fsm_type::deferred_events>::value
+            == ::afsm::actions::event_process_result::process, "");
+}  /* namespace static_tests */
+
 }  // namespace detail
 }  // namespace pg
 }  // namespace db
@@ -75,8 +109,11 @@ struct dummy_transport {
 using namespace tip::db::pg::detail;
 using namespace tip::db::pg::events;
 
-typedef concrete_connection<dummy_transport> fsm;
-typedef std::shared_ptr<fsm> fsm_ptr;
+using fsm = concrete_connection<dummy_transport>;
+using fsm_ptr = std::shared_ptr<fsm>;
+
+
+
 tip::db::pg::client_options_type client_options {
     {"client_encoding",         "UTF8"},
     {"application_name",         "pg_async"},
@@ -204,8 +241,8 @@ void
 test_normal_flow(tip::db::pg::connection_options const& opts)
 {
     using namespace tip::db::pg;
-    typedef concrete_connection< TransportType > fsm_type;
-    typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
+    using fsm_type = concrete_connection< TransportType >;
+    using transport_fsm_ptr = std::shared_ptr< fsm_type >;
 
     ::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
     transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
@@ -239,8 +276,8 @@ void
 test_preliminary_terminate(tip::db::pg::connection_options const& opts)
 {
     using namespace tip::db::pg;
-    typedef concrete_connection< TransportType > fsm_type;
-    typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
+    using fsm_type = concrete_connection< TransportType >;
+    using transport_fsm_ptr = std::shared_ptr< fsm_type >;
 
     ::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
     transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
@@ -272,8 +309,8 @@ void
 test_error_in_query(tip::db::pg::connection_options const& opts)
 {
     using namespace tip::db::pg;
-    typedef concrete_connection< TransportType > fsm_type;
-    typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
+    using fsm_type = concrete_connection< TransportType >;
+    using transport_fsm_ptr = std::shared_ptr< fsm_type >;
 
     ::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
     transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
@@ -306,9 +343,9 @@ void
 test_exec_prepared(tip::db::pg::connection_options const& opts)
 {
     using namespace tip::db::pg;
-    typedef concrete_connection< TransportType > fsm_type;
-    typedef std::shared_ptr< fsm_type > transport_fsm_ptr;
-    typedef std::vector< char > buffer_type;
+    using fsm_type = concrete_connection< TransportType >;
+    using transport_fsm_ptr = std::shared_ptr< fsm_type >;
+    using buffer_type = std::vector< char >;
 
     ::asio_config::io_service_ptr svc(std::make_shared<::asio_config::io_service>());
     transport_fsm_ptr c(new fsm_type(svc, client_options, {}));
