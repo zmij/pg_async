@@ -52,14 +52,14 @@ endif()
 find_package(Threads REQUIRED)
 add_definitions("-std=c++11")
 
-if(NOT TIP_UTIL_INCLUDE_DIRS)
-    set(TIP_UTIL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/util/include)
-endif()
-
 if(USE_TIP_LOG)
 if(NOT TIP_LOG_INCLUDE_DIRS)
 add_subdirectory(lib/log)
 endif()
+endif()
+
+if(NOT TIP_UTIL_INCLUDE_DIRS)
+    set(TIP_UTIL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/util/include)
 endif()
 
 if(NOT AFSM_INCLUDE_DIR)
@@ -77,8 +77,6 @@ include_directories(
     ${TIP_UTIL_INCLUDE_DIRS}
     ${TIP_LOG_INCLUDE_DIRS}
 )
-
-link_directories(${TIP_LOG_LINK_DIR})
 
 if (USE_TIP_LOG)
     add_definitions(-DWITH_TIP_LOG)
