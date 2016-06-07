@@ -53,20 +53,23 @@ struct connection_observer {
     void
     enqueue_event(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << typeid(Event).name() << ": Enqueue";
+        fsm.log() << util::ANSI_COLOR::MAGENTA
+                << typeid(Event).name() << ": Enqueue";
     }
 
     template < typename FSM >
     void
     start_process_events_queue(FSM const& fsm) const noexcept
     {
-        fsm.log() << "Start processing event queue";
+        fsm.log() << util::ANSI_COLOR::MAGENTA
+                << "Start processing event queue";
     }
     template < typename FSM >
     void
     end_process_events_queue(FSM const& fsm) const noexcept
     {
-        fsm.log() << "End processing event queue";
+        fsm.log() << util::ANSI_COLOR::MAGENTA
+                << "End processing event queue";
     }
 
     template < typename FSM, typename Event >

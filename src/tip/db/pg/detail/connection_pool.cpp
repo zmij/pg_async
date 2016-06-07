@@ -118,7 +118,8 @@ connection_pool::connection_ready(connection_ptr c)
                 << (util::CLEAR) << (util::RED | util::BRIGHT)
                 << alias()
                 << logger::severity_color()
-                << " queue size " << queue_.size();
+                << " queue size " << queue_.size()
+                << " idle connections " << (ready_connections_.size() + 1);
         if (closed_) {
             close_connections();
         } else {
