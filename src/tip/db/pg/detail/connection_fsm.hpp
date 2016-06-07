@@ -1838,8 +1838,8 @@ public:
             fsm_type::make_observer();
     }
     virtual ~concrete_connection() {}
-private:
     using fsm_type::log;
+private:
     //@{
     /** @name State machine abstract interface implementation */
     virtual void
