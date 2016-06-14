@@ -1197,6 +1197,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 auto conn = connection().shared_from_this();
                 connection().async_notify(
                 [conn, result_cb, res, complete](){
+                    conn->log(logger::DEBUG) << "In async notify";
                     try {
                         result_cb(res, complete);
                     } catch (error::query_error const& e) {
@@ -1834,7 +1835,7 @@ public:
         : basic_connection(), fsm_type(svc, co),
           callbacks_(callbacks)
     {
-        if (PGFSM_DEFAULT_SEVERITY > logger::OFF)
+        // if (PGFSM_DEFAULT_SEVERITY > logger::OFF)
             fsm_type::make_observer();
     }
     virtual ~concrete_connection() {}
