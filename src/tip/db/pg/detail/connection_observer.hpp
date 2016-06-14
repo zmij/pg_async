@@ -38,14 +38,14 @@ struct connection_observer {
     void
     state_changed(FSM const& fsm) const noexcept
     {
-        fsm.log() << "State changed to " << fsm.state_name();
+        fsm.log(log::logger::DEBUG) << "State changed to " << fsm.state_name();
     }
 
     template < typename FSM, typename Event >
     void
     processed_in_state(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << typeid(Event).name() << ": processed in state "
+        fsm.log(log::logger::DEBUG) << typeid(Event).name() << ": processed in state "
                 << fsm.state_name();
     }
 
@@ -100,7 +100,7 @@ struct connection_observer {
     void
     reject_event(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
+        fsm.log(log::logger::ERROR) << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
                 << fsm.state_name() << " "
                 << typeid(Event).name() << ": Reject.";
     }
