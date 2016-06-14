@@ -951,11 +951,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 operator() (command_complete const& complete, extended_query& fsm,
                         SourceState&, TargetState&)
                 {
-                    fsm.tran().log() << "Execute complete " << complete.command_tag
-                            << " resultset columns "
-                            << fsm.result_->row_description().size()
-                            << " rows " << fsm.result_->size();
-                    fsm.tran().notify_result(fsm, resultset(fsm.result_), true);
+                    // TODO Process non-select query result
                 }
             };
             //@}
@@ -1077,10 +1073,34 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                     execute.pack(message(sync_tag));
                     fsm.connection().send(execute);
                 }
+                template < typename Event >
+                void
+                on_exit(Event const&, extended_query_fsm_type& fsm)
+                {
+                    fsm.tran().log() << "Exit exec state resultset columns "
+                            << fsm.result_->row_description().size()
+                            << " rows " << fsm.result_->size();
+                    fsm.tran().notify_result(fsm, resultset(fsm.result_), true);
+                }
+
+                void
+                on_exit(error::query_error const& err, extended_query_fsm_type& fsm)
+                {
+                    fsm.tran().log(logger::ERROR)
+                            << "Exit exec state on query error " << err.what();
+                    fsm.tran().notify_error(fsm, err);
+                }
+                void
+                on_exit(error::db_error const& err, extended_query_fsm_type& fsm)
+                {
+                    fsm.tran().log(logger::ERROR)
+                            << "Exit exec state on database error " << err.what();
+                    fsm.tran().notify_error(err);
+                }
 
                 using internal_transitions = transition_table<
-                    in< row_event,        parse_data_row,            none >,
-                    in< command_complete, complete_execution,     none >
+                    in< row_event,        parse_data_row,           none >,
+                    in< command_complete, none,                     none >
                 >;
             };
 
