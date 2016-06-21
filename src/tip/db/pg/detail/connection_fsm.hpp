@@ -1855,7 +1855,7 @@ public:
         : basic_connection(), fsm_type(svc, co),
           callbacks_(callbacks)
     {
-        // if (PGFSM_DEFAULT_SEVERITY > logger::OFF)
+        if (PGFSM_DEFAULT_SEVERITY > logger::OFF)
             fsm_type::make_observer();
     }
     virtual ~concrete_connection() {}
