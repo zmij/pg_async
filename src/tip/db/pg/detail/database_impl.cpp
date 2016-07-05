@@ -110,7 +110,7 @@ database_impl::get_connection(dbalias const& alias,
         throw error::connection_error("Database service is not running");
 
     if (!connections_.count(alias)) {
-        throw error::connection_error("Database alias is not registered");
+        throw error::connection_error("Database alias '" + alias + "' is not registered");
     }
     connection_pool_ptr pool = connections_[alias];
     pool->get_connection(cb, err, mode);
