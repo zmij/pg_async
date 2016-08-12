@@ -1048,6 +1048,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
 
                     fsm.connection().send(cmd);
                 }
+                using internal_transitions = transition_table<
+                    in< command_complete, none,                     none >
+                >;
             };
 
             struct exec : state< exec > {
