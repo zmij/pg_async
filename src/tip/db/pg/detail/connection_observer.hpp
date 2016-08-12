@@ -8,6 +8,9 @@
 #ifndef TIP_DB_PG_DETAIL_CONNECTION_OBSERVER_HPP_
 #define TIP_DB_PG_DETAIL_CONNECTION_OBSERVER_HPP_
 
+#include <cxxabi.h>
+#include <string>
+
 #include <afsm/fsm.hpp>
 #include <tip/db/pg/log.hpp>
 
@@ -16,6 +19,16 @@ namespace db {
 namespace pg {
 namespace detail {
 
+template < typename T >
+::std::string
+demangle()
+{
+    int status {0};
+    char* ret = abi::__cxa_demangle( typeid(T).name(), nullptr, nullptr, &status );
+    ::std::string res{ret};
+    if(ret) free(ret);
+    return res;
+}
 
 struct connection_observer {
     template < typename FSM, typename Event >
@@ -24,7 +37,7 @@ struct connection_observer {
     {
         using decayed_event = typename ::std::decay<Event>::type;
         using tip::util::ANSI_COLOR;
-        fsm.log() << typeid(Event).name() << ": Start processing";
+        fsm.log() << demangle<Event>() << ": Start processing";
     }
 
     template < typename FSM >
@@ -45,7 +58,7 @@ struct connection_observer {
     void
     processed_in_state(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << typeid(Event).name() << ": processed in state "
+        fsm.log() << demangle<Event>() << ": processed in state "
                 << fsm.state_name();
     }
 
@@ -54,7 +67,7 @@ struct connection_observer {
     enqueue_event(FSM const& fsm, Event const&) const noexcept
     {
         fsm.log() << util::ANSI_COLOR::MAGENTA
-                << typeid(Event).name() << ": Enqueue";
+                << demangle<Event>() << ": Enqueue";
     }
 
     template < typename FSM >
@@ -78,7 +91,7 @@ struct connection_observer {
     {
         fsm.log() << (util::ANSI_COLOR::CYAN | util::ANSI_COLOR::BRIGHT)
                 << fsm.state_name() << " "
-                << typeid(Event).name() << ": Defer";
+                << demangle<Event>() << ": Defer";
     }
 
     template < typename FSM >
@@ -102,7 +115,7 @@ struct connection_observer {
     {
         fsm.log(log::logger::ERROR) << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
                 << fsm.state_name() << " "
-                << typeid(Event).name() << ": Reject.";
+                << demangle<Event>() << ": Reject.";
     }
 };
 
