@@ -21,132 +21,135 @@ namespace log {
  */
 class logger {
 public:
-	/**
-	 * Severity of event being logged
-	 */
-	enum event_severity {
-		OFF,	//!< OFF
-		TRACE,  //!< TRACE
-		DEBUG,  //!< DEBUG
-		INFO,   //!< INFO
-		WARNING,//!< WARNING
-		ERROR   //!< ERROR
-	};
+    /**
+     * Severity of event being logged
+     */
+    enum event_severity {
+        OFF,    //!< OFF
+        TRACE,  //!< TRACE
+        DEBUG,  //!< DEBUG
+        INFO,   //!< INFO
+        WARNING,//!< WARNING
+        ERROR   //!< ERROR
+    };
 
 public:
-	logger(logger const&) = delete;
-	logger&
-	operator = (logger const&) = delete;
+    logger(logger const&) = delete;
+    logger&
+    operator = (logger const&) = delete;
 
-	/**
-	 * @return Thread-specific buffer for writing a log message
-	 */
-	std::streambuf&
-	buffer();
+    /**
+     * @return Thread-specific buffer for writing a log message
+     */
+    std::streambuf&
+    buffer();
 
-	/**
-	 * Set severity of current logged event.
-	 * @param severity @e new event severity
-	 * @return Logger instance for call chaining
-	 */
-	logger&
-	severity(event_severity);
+    /**
+     * Set severity of current logged event.
+     * @param severity @e new event severity
+     * @return Logger instance for call chaining
+     */
+    logger&
+    severity(event_severity);
 
-	/**
-	 * @return Severity of current event
-	 */
-	event_severity
-	severity() const;
+    /**
+     * @return Severity of current event
+     */
+    event_severity
+    severity() const;
 
-	/**
-	 * Set category of current logged event
-	 * @param category New category for the event
-	 * @return Logger instance for call chaining
-	 */
-	logger&
-	category(std::string const&);
+    /**
+     * Set category of current logged event
+     * @param category New category for the event
+     * @return Logger instance for call chaining
+     */
+    logger&
+    category(std::string const&);
 
-	/**
-	 * Flush the event
-	 * @return Logger instance for call chaining
-	 */
-	logger&
-	flush();
+    /**
+     * Flush the event
+     * @return Logger instance for call chaining
+     */
+    logger&
+    flush();
 
-	/**
-	 * Singleton instance of the logger
-	 * @return
-	 */
-	static logger&
-	instance();
+    /**
+     * Singleton instance of the logger
+     * @return
+     */
+    static logger&
+    instance();
 
-	static void
-	set_proc_name(std::string const&);
-	/**
-	 * Set output stream of the logger.
-	 * @param stream
-	 */
-	static void
-	set_stream(std::ostream&);
+    static void
+    set_proc_name(std::string const&);
+    /**
+     * Set output stream of the logger.
+     * @param stream
+     */
+    static void
+    set_stream(std::ostream&);
 
-	static void
-	set_date_format(std::string const& fmt);
+    static void
+    set_target_file(::std::string const& file_name);
 
-	/**
-	 * Set minimum event severity that will be written to the log.
-	 * @param severity
-	 */
-	static void
-	min_severity(event_severity);
+    static void
+    set_date_format(std::string const& fmt);
 
-	/**
-	 * Get minimum event severity that will be written to the log
-	 * @return
-	 */
-	static event_severity
-	min_severity();
+    /**
+     * Set minimum event severity that will be written to the log.
+     * @param severity
+     */
+    static void
+    min_severity(event_severity);
 
-	/**
-	 * Set true to use the ANSI color escape codes in the output
-	 * @param
-	 */
-	static void
-	use_colors(bool);
+    /**
+     * Get minimum event severity that will be written to the log
+     * @return
+     */
+    static event_severity
+    min_severity();
 
-	/**
-	 * Check if the logger uses colored output
-	 * @return
-	 */
-	static bool
-	use_colors();
+    /**
+     * Set true to use the ANSI color escape codes in the output
+     * @param
+     */
+    static void
+    use_colors(bool);
 
-	/**
-	 * Get default color for current event severity
-	 * @return
-	 */
-	static util::ANSI_COLOR
-	severity_color();
+    /**
+     * Check if the logger uses colored output
+     * @return
+     */
+    static bool
+    use_colors();
 
-	/**
-	 * Get ANSI color for a given event severity
-	 * @param
-	 * @return
-	 */
-	static util::ANSI_COLOR
-	severity_color(event_severity);
+    /**
+     * Get default color for current event severity
+     * @return
+     */
+    static util::ANSI_COLOR
+    severity_color();
 
-	/**
-	 * Set flush stream after every logged event
-	 * @param
-	 */
-	static void
-	flush_stream(bool);
+    /**
+     * Get ANSI color for a given event severity
+     * @param
+     * @return
+     */
+    static util::ANSI_COLOR
+    severity_color(event_severity);
+
+    /**
+     * Set flush stream after every logged event
+     * @param
+     */
+    static void
+    flush_stream(bool);
 private:
-	logger(std::ostream&);
+    logger(std::ostream&);
 
-	struct Impl;
-	typedef std::shared_ptr<Impl> PImpl;
-	PImpl pimpl_;
+    struct Impl;
+    typedef std::shared_ptr<Impl> PImpl;
+    PImpl pimpl_;
 };
 
 /**
@@ -162,7 +165,7 @@ private:
  * local
  * local_log(logger::event_severity s = logger::DEBUG)
  * {
- * 		return local(LOG_CATEGORY, s);
+ *         return local(LOG_CATEGORY, s);
  * }
  * } // namespace
  *
@@ -171,65 +174,65 @@ private:
  */
 class local {
 public:
-	/**
-	 * Constructs a local logger with a category and severity
-	 * @param category
-	 * @param severity
-	 */
-	local(std::string const& category, logger::event_severity severity =
-				logger::TRACE)
-			:
-				do_flush_(true)
-	{
-		logger::instance().category(category).severity(severity);
-	}
-	~local()
-	{
-		if (do_flush_)
-			logger::instance().flush();
-	}
+    /**
+     * Constructs a local logger with a category and severity
+     * @param category
+     * @param severity
+     */
+    local(std::string const& category, logger::event_severity severity =
+                logger::TRACE)
+            :
+                do_flush_(true)
+    {
+        logger::instance().category(category).severity(severity);
+    }
+    ~local()
+    {
+        if (do_flush_)
+            logger::instance().flush();
+    }
 
-	local(local const& rhs) : do_flush_(true)
-	{
-		rhs.do_flush_ = false;
-	}
+    local(local const& rhs) : do_flush_(true)
+    {
+        rhs.do_flush_ = false;
+    }
 
-	local&
-	operator = (local const& rhs)
-	{
-		do_flush_ = true;
-		rhs.do_flush_ = false;
-		return *this;
-	}
+    local&
+    operator = (local const& rhs)
+    {
+        do_flush_ = true;
+        rhs.do_flush_ = false;
+        return *this;
+    }
 
-	logger*
-	operator->()
-	{
-		return &logger::instance();
-	}
-	logger const*
-	operator->() const
-	{
-		return &logger::instance();
-	}
-	logger&
-	operator*()
-	{
-		return logger::instance();
-	}
-	logger const&
-	operator*() const
-	{
-		return logger::instance();
-	}
+    logger*
+    operator->()
+    {
+        return &logger::instance();
+    }
+    logger const*
+    operator->() const
+    {
+        return &logger::instance();
+    }
+    logger&
+    operator*()
+    {
+        return logger::instance();
+    }
+    logger const&
+    operator*() const
+    {
+        return logger::instance();
+    }
 private:
-	mutable bool do_flush_;
+    mutable bool do_flush_;
 };
 
 inline logger&
 endl(logger& out)
 {
-	return out.flush();
+    return out.flush();
 }
 
 
@@ -237,26 +240,23 @@ template < typename T >
 logger&
 operator << (logger& out, T const& v)
 {
-	logger::event_severity s = out.severity();
-	if (logger::min_severity() <= s && logger::OFF < s) {
-		std::ostream os(&out.buffer());
-		os << v;
-	}
-	return out;
+    std::ostream os(&out.buffer());
+    os << v;
+    return out;
 }
 
 template < typename T >
 local
 operator << (local out, T const& v)
 {
-	logger::instance() << v;
-	return out;
+    logger::instance() << v;
+    return out;
 }
 
 inline logger&
 operator << (logger& out, logger& (*fp)(logger&))
 {
-	return fp(out);
+    return fp(out);
 }
 
 namespace detail {
@@ -265,14 +265,14 @@ namespace detail {
  * Helper struct to set severity for current event
  */
 struct _set_severity {
-	logger::event_severity s_;
+    logger::event_severity s_;
 };
 
 /**
  * Helper struct to set category for current event
  */
 struct _set_category {
-	std::string c_;
+    std::string c_;
 };
 
 }  // namespace detail
@@ -286,13 +286,13 @@ category(std::string const& c) { return { c }; }
 inline logger&
 operator << (logger& out, detail::_set_severity const& s)
 {
-	return out.severity(s.s_);
+    return out.severity(s.s_);
 }
 
 inline logger&
 operator << (logger& out, detail::_set_category const& s)
 {
-	return out.category(s.c_);
+    return out.category(s.c_);
 }
 
 std::ostream&
@@ -314,48 +314,48 @@ operator << (log::logger&, ANSI_COLOR);
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
 #define LOCAL_LOGGING_FACILITY(c, s) \
-	namespace { \
-		using namespace tip::log; \
-		const std::string c##_LOG_CATEGORY = #c;	\
-		const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
-		local \
-		local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
-		{ return local(c##_LOG_CATEGORY, sv); }\
-	} \
-	using tip::log::logger
+    namespace { \
+        using namespace tip::log; \
+        const std::string c##_LOG_CATEGORY = #c;    \
+        const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
+        local \
+        local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
+        { return local(c##_LOG_CATEGORY, sv); }\
+    } \
+    using tip::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG(c, s) \
-	namespace { \
-		using namespace tip::log; \
-		const std::string c##_LOG_CATEGORY = #c;	\
-		const logger::event_severity c##_DEFAULT_SEVERITY = s; \
-		local \
-		local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
-		{ return local(c##_LOG_CATEGORY, sv); }\
-	} \
-	using tip::log::logger
+    namespace { \
+        using namespace tip::log; \
+        const std::string c##_LOG_CATEGORY = #c;    \
+        const logger::event_severity c##_DEFAULT_SEVERITY = s; \
+        local \
+        local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
+        { return local(c##_LOG_CATEGORY, sv); }\
+    } \
+    using tip::log::logger
 
 #define LOCAL_LOGGING_FACILITY_FUNC(c, s, f) \
-	namespace { \
-		using namespace tip::log; \
-		const std::string c##_LOG_CATEGORY = #c;	\
-		const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
-		local \
-		f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
-		{ return local(c##_LOG_CATEGORY, sv); }\
-	} \
-	using tip::log::logger
+    namespace { \
+        using namespace tip::log; \
+        const std::string c##_LOG_CATEGORY = #c;    \
+        const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
+        local \
+        f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
+        { return local(c##_LOG_CATEGORY, sv); }\
+    } \
+    using tip::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG_FUNC(c, s, f) \
-	namespace { \
-		using namespace tip::log; \
-		const std::string c##_LOG_CATEGORY = #c;	\
-		const logger::event_severity c##_DEFAULT_SEVERITY = s; \
-		local \
-		f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
-		{ return local(c##_LOG_CATEGORY, sv); }\
-	} \
-	using tip::log::logger
+    namespace { \
+        using namespace tip::log; \
+        const std::string c##_LOG_CATEGORY = #c;    \
+        const logger::event_severity c##_DEFAULT_SEVERITY = s; \
+        local \
+        f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
+        { return local(c##_LOG_CATEGORY, sv); }\
+    } \
+    using tip::log::logger
 
 #pragma GCC diagnostic pop
 
