@@ -1,7 +1,7 @@
-#	CMakeLists.txt for tip-log library
-#	
-#	@author zmij
-#	@date Nov 30, 2015
+#    CMakeLists.txt for tip-log library
+#
+#    @author zmij
+#    @date Nov 30, 2015
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -34,5 +34,6 @@ add_subdirectory(src)
 get_directory_property(has_parent PARENT_DIRECTORY)
 if (has_parent)
     set(TIP_LOG_LIB ${PROJECT_PREFIX}-log CACHE INTERNAL "Name of tip log library target")
-    set(TIP_LOG_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "Path to tip log libaray includes" )
+    set(TIP_LOG_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "Path to tip log library includes" )
+    set(TIP_LOG_LINK_DIR ${CMAKE_CURRENT_BINARY_DIR}/src CACHE INTERNAL "Path to tip log binary dir")
 endif()
