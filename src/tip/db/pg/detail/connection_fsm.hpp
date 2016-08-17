@@ -570,26 +570,26 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_enter(Event const&, transaction_fsm_type& fsm)
             {
-                fsm.log(logger::DEBUG) << "entering: exit transaction";
+                fsm.log() << "entering: exit transaction";
                 callback_ = notification_callback{};
             }
             void
             on_enter(events::commit const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log(logger::DEBUG) << "entering: exit transaction (commit)";
+                fsm.log() << "entering: exit transaction (commit)";
                 callback_ = evt.callback;
             }
             void
             on_enter(events::rollback const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log(logger::DEBUG) << "entering: exit transaction (rollback)";
+                fsm.log() << "entering: exit transaction (rollback)";
                 callback_ = evt.callback;
             }
             template < typename Event >
             void
             on_exit(Event const&, transaction_fsm_type& fsm)
             {
-                fsm.log(logger::DEBUG) << "leaving: exit transaction";
+                fsm.log() << "leaving: exit transaction";
 
                 if (callback_) {
                     auto cb = callback_;
@@ -1064,6 +1064,10 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             };
 
             struct bind : state< bind > {
+                using deferred_events = ::psst::meta::type_tuple<
+                        events::row_event,
+                        command_complete
+                    >;
                 ::std::string
                 state_name() const override
                 {
@@ -1249,7 +1253,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 auto conn = connection().shared_from_this();
                 connection().async_notify(
                 [conn, result_cb, res, complete](){
-                    conn->log(logger::DEBUG) << "In async notify";
+                    conn->log() << "In async notify";
                     try {
                         result_cb(res, complete);
                     } catch (error::query_error const& e) {
@@ -1346,7 +1350,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_enter(events::begin const& evt, connection_fsm_type& fsm)
         {
-            log(logger::DEBUG) << "entering: transaction";
+            log() << "entering: transaction";
             connection().in_transaction_ = true;
             callbacks_ = evt;
         }
@@ -1354,7 +1358,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_exit(Event const&, FSM&)
         {
-            log(logger::DEBUG) << "leaving: transaction";
+            log() << "leaving: transaction";
             tran_object_.reset();
             connection().in_transaction_ = false;
             callbacks_ = events::begin{};
