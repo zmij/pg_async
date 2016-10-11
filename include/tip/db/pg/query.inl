@@ -416,6 +416,29 @@ query::bind(T const& ... params)
     return *this;
 }
 
+template < template <typename> class _Promise >
+auto
+query::run_async() const
+    -> decltype(::std::declval<_Promise<resultset>>().get_future())
+{
+    auto promise = ::std::make_shared<_Promise<resultset>>();
+
+    run_async(
+        [promise](transaction_ptr trx, resultset r, bool complete)
+        {
+            if (complete) {
+                promise->set_value(r);
+            }
+        },
+        [promise](error::db_error const& e)
+        {
+            promise->set_exception(::std::make_exception_ptr(e));
+        }
+    );
+
+    return promise->get_future();
+}
+
 }  // namespace pg
 }  // namespace db
 }  // namespace tip

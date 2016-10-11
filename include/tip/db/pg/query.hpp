@@ -9,9 +9,11 @@
 #define TIP_DB_PG_QUERY_HPP_
 
 #include <tip/db/pg/common.hpp>
+#include <tip/db/pg/resultset.hpp>
 
 #include <memory>
 #include <functional>
+#include <future>
 
 namespace tip {
 namespace db {
@@ -154,6 +156,28 @@ public:
      */
     void
     operator()(query_result_callback const& result, error_callback const& error) const;
+    /**
+     * Start running the query, return future
+     * @return
+     */
+    template < template <typename> class _Promise = ::std::promise >
+    auto
+    run_async() const
+        -> decltype(::std::declval<_Promise<resultset>>().get_future());
+
+    /**
+     * Run query "synchronously". Will return when the resultset is fully
+     * transferred from database.
+     * @return
+     */
+    resultset
+    run() const;
+    /**
+     * Shortcut for @ref tip::db::pg::query::run
+     * @return
+     */
+    resultset
+    operator()() const;
 private:
     using params_buffer = std::vector<byte>;
     struct impl;

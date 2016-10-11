@@ -73,6 +73,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
     void
     run_async(query_result_callback const& res, error_callback const& err)
     {
+        // TODO wrap res & err in strand
         if (!tran_) {
             db_service::begin(
                 alias_,
@@ -153,6 +154,19 @@ void
 query::operator ()(query_result_callback const& res, error_callback const& err) const
 {
     run_async(res, err);
+}
+
+resultset
+query::run() const
+{
+    auto future = run_async();
+    return future.get();
+}
+
+resultset
+query::operator()()const
+{
+    return run();
 }
 
 query::pimpl
