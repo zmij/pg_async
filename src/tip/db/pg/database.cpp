@@ -73,7 +73,15 @@ db_service::begin(dbalias const& alias,
         error_callback const& error,
         transaction_mode const& mode)
 {
+    // TODO Wrap callbacks in strands
     impl()->get_connection(alias, result, error, mode);
+}
+
+transaction_ptr
+db_service::begin(dbalias const& alias, transaction_mode const& mode)
+{
+    auto future = begin_async(alias, mode);
+    return future.get();
 }
 
 void
