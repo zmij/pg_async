@@ -286,7 +286,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                         fsm.log() << "Cleartext password requested";
                         message pm(password_message_tag);
                         pm.write(fsm.options().password);
-                        fsm.send(pm);
+                        fsm.send(::std::move(pm));
                         break;
                     }
                     case MD5Password: {
@@ -301,7 +301,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                         // Construct and send message
                         message pm(password_message_tag);
                         pm.write(md5digest);
-                        fsm.send(pm);
+                        fsm.send(::std::move(pm));
                         break;
                     }
                     default : {
@@ -680,7 +680,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 query_ = q;
                 message m(query_tag);
                 m.write(q.expression);
-                connection().send(m);
+                connection().send(::std::move(m));
             }
             template < typename Event, typename FSM >
             void
@@ -935,7 +935,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 describe.write(query_name_);
                 cmd.pack(describe);
 
-                connection().send(cmd);
+                connection().send(::std::move(cmd));
             }
 
             void
@@ -970,7 +970,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 cmd.pack(execute);
                 cmd.pack(message(sync_tag));
 
-                connection().send(cmd);
+                connection().send(::std::move(cmd));
             }
 
             using deferred_events = ::psst::meta::type_tuple<
@@ -1484,7 +1484,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     {
         message m(empty_tag);
         create_startup_message(m);
-        send(m);
+        send(::std::move(m));
     }
     void
     send_begin(events::begin const& evt)
@@ -1494,7 +1494,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         ::std::ostringstream cmd{"begin"};
         cmd << evt.mode;
         m.write(cmd.str());
-        send(m);
+        send(::std::move(m));
     }
     void
     send_commit()
@@ -1502,7 +1502,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         log() << "Send commit";
         message m(query_tag);
         m.write("commit");
-        send(m);
+        send(::std::move(m));
     }
     void
     send_rollback()
@@ -1510,22 +1510,27 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         log() << "Send rollback";
         message m(query_tag);
         m.write("rollback");
-        send(m);
+        send(::std::move(m));
     }
     void
-    send(message const& m, asio_io_handler handler = asio_io_handler())
+    send(message&& m, asio_io_handler handler = asio_io_handler())
     {
         if (transport_.connected()) {
-            auto data_range = m.buffer();
-            if (!handler) {
-                handler = boost::bind(
-                        &this_type::handle_write, shared_base::shared_from_this(),
-                        _1, _2 );
-            }
+            auto msg = ::std::make_shared<message>(::std::move(m));
+            auto data_range = msg->buffer();
+            auto _this = shared_base::shared_from_this();
+            auto write_handler =
+                [_this, handler, msg](asio_config::error_code const& ec, size_t sz)
+                {
+                    if (handler)
+                        handler(ec, sz);
+                    else
+                        _this->handle_write(ec, sz);
+                };
             transport_.async_write(
                 ASIO_NAMESPACE::buffer(&*data_range.first,
                         data_range.second - data_range.first),
-                strand_.wrap(handler)
+                strand_.wrap(write_handler)
             );
         }
     }
