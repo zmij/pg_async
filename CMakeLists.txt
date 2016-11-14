@@ -53,9 +53,10 @@ find_package(Threads REQUIRED)
 add_definitions("-std=c++11")
 
 if(USE_TIP_LOG)
-if(NOT TIP_LOG_INCLUDE_DIRS)
-add_subdirectory(lib/log)
-endif()
+    if(NOT TIP_LOG_INCLUDE_DIRS)
+        add_subdirectory(lib/log)
+    endif()
+    link_directories(${TIP_LOG_LINK_DIR})
 endif()
 
 if(NOT TIP_UTIL_INCLUDE_DIRS)
