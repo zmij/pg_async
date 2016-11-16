@@ -30,7 +30,7 @@ demangle()
     return res;
 }
 
-struct connection_observer {
+struct connection_observer : ::afsm::detail::null_observer {
     template < typename FSM, typename Event >
     void
     start_process_event(FSM const& fsm, Event const&) const noexcept
@@ -47,9 +47,9 @@ struct connection_observer {
         fsm.log() << "[default]: Start processing";
     }
 
-    template < typename FSM >
+    template < typename FSM, typename SourceState, typename TargetState, typename Event >
     void
-    state_changed(FSM const& fsm) const noexcept
+    state_changed(FSM const& fsm, SourceState const&, TargetState const&, Event const&) const noexcept
     {
         fsm.log() << "State changed to " << fsm.state_name();
     }
