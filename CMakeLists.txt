@@ -31,7 +31,10 @@ option(BUILD_TESTS "Build tests for the library" OFF)
 option(USE_BOOST_ASIO "Use Boost.Asio instead of Standalone Asio library" ON)
 
 # Dependencies
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules" )
+set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    "${CMAKE_SOURCE_DIR}/cmake/modules"
+    "${CMAKE_SOURCE_DIR}/lib/afsm/cmake"
+    "${CMAKE_SOURCE_DIR}/lib/afsm/lib/meta/cmake")
 
 if (USE_BOOST_ASIO)
 set(BOOST_COMPONENTS
@@ -50,6 +53,8 @@ find_package(asio 1.10 REQUIRED)
 endif()
 
 find_package(Threads REQUIRED)
+find_package(AFSM)
+
 add_definitions("-std=c++11")
 
 if(USE_TIP_LOG)
@@ -63,7 +68,7 @@ if(NOT TIP_UTIL_INCLUDE_DIRS)
     set(TIP_UTIL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/util/include)
 endif()
 
-if(NOT AFSM_INCLUDE_DIR)
+if(NOT AFSM_FOUND)
 add_subdirectory(lib/afsm)
 endif()
 
@@ -73,8 +78,8 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${Boost_INCLUDE_DIR}
-    ${METAPUSHKIN_INCLUDE_DIR}
-    ${AFSM_INCLUDE_DIR}
+    ${METAPUSHKIN_INCLUDE_DIRS}
+    ${AFSM_INCLUDE_DIRS}
     ${TIP_UTIL_INCLUDE_DIRS}
     ${TIP_LOG_INCLUDE_DIRS}
 )
