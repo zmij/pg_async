@@ -24,6 +24,7 @@ else()
 endif()
 
 option(BUILD_TESTS "Build test programs" ON)
+option(BUILD_BENCHMARKS "Build benchmarks" ON)
 option(BUILD_EXAMPLES "Build example programs" OFF)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -37,19 +38,21 @@ set(${LIB_NAME}_LIB ${lib_name})
 
 # Add subdirectories here
 
-if (NOT METAPUSHKIN_INCLUDE_DIR)
+if (NOT METAPUSHKIN_FOUND)
     add_subdirectory(lib/meta)
 endif()
 
-message(STATUS "Metapushkin include dir ${METAPUSHKIN_INCLUDE_DIR}")
-include_directories(${METAPUSHKIN_INCLUDE_DIR})
+message(STATUS "Metapushkin include dir ${METAPUSHKIN_INCLUDE_DIRS}")
+include_directories(${METAPUSHKIN_INCLUDE_DIRS})
+
+add_subdirectory(include)
+add_subdirectory(cmake)
 
 if (BUILD_TESTS)
     enable_testing()
     if (NOT PSST_ANSI_COLORS_INCLUDE_DIR)
     add_subdirectory(lib/ansi-colors)
     endif()
-    message(STATUS ${PSST_ANSI_COLORS_LINK_DIR})
 
     include_directories(${PSST_ANSI_COLORS_INCLUDE_DIR})
     link_directories(${PSST_ANSI_COLORS_LINK_DIR})
@@ -62,6 +65,8 @@ endif()
 
 get_directory_property(has_parent PARENT_DIRECTORY)
 if (has_parent)
-    set(${LIB_NAME}_LIB ${lib_name} CACHE INTERNAL "Name of afsm library target")
-    set(${LIB_NAME}_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "Path to afsm libaray includes" )
+    set(${LIB_NAME}_INCLUDE_DIRS
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${METAPUSHKIN_INCLUDE_DIRS}
+        CACHE INTERNAL "Path to afsm libaray includes" )
 endif()
