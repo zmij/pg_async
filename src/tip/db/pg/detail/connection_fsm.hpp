@@ -120,37 +120,37 @@ struct connection_base_state {
 template < typename Mutex, typename TransportType, typename SharedType >
 struct connection_fsm_def : ::afsm::def::state_machine<
             connection_fsm_def< Mutex, TransportType, SharedType >,
-            connection_base_state >,
+            ::afsm::def::tags::common_base<connection_base_state> >,
         public std::enable_shared_from_this< SharedType > {
 
     //@{
     /** @name Misc typedefs */
-    using transport_type = TransportType;
-    using shared_type    = SharedType;
-    using this_type      = connection_fsm_def<Mutex, transport_type, shared_type>;
+    using transport_type    = TransportType;
+    using shared_type       = SharedType;
+    using this_type         = connection_fsm_def<Mutex, transport_type, shared_type>;
 
-    using message_ptr = std::shared_ptr< message >;
+    using message_ptr       = std::shared_ptr< message >;
     using prepared_statements_map = std::map< std::string, events::row_description >;
-    using result_ptr = std::shared_ptr< result_impl >;
+    using result_ptr        = std::shared_ptr< result_impl >;
 
     using connection_fsm_type = ::afsm::state_machine<this_type, Mutex, connection_observer>;
-
-    template < typename StateDef, typename ... Tags >
-    using state = ::afsm::def::state<StateDef, connection_base_state, Tags...>;
-    template < typename MachineDef, typename ... Tags >
-    using state_machine = ::afsm::def::state_machine<MachineDef, connection_base_state, Tags...>;
-    template < typename ... T >
-    using transition_table = ::afsm::def::transition_table<T...>;
-    template < typename Predicate >
-    using not_ = ::psst::meta::not_<Predicate>;
-
+    using base_tag          = ::afsm::def::tags::common_base<connection_base_state>;
     using none = ::afsm::none;
 
+    template < typename StateDef, typename ... Tags >
+    using state = ::afsm::def::state<StateDef, base_tag, Tags...>;
+    template < typename MachineDef, typename ... Tags >
+    using state_machine = ::afsm::def::state_machine<MachineDef, base_tag, Tags...>;
+    template < typename ... T >
+    using transition_table = ::afsm::def::transition_table<T...>;
     template < typename Event, typename Action = none, typename Guard = none >
     using in = ::afsm::def::internal_transition< Event, Action, Guard>;
     template <typename SourceState, typename Event, typename TargetState,
             typename Action = none, typename Guard = none>
     using tr = ::afsm::def::transition<SourceState, Event, TargetState, Action, Guard>;
+
+    template < typename Predicate >
+    using not_ = ::psst::meta::not_<Predicate>;
     //@}
     //@{
     /** @name Actions */
@@ -196,7 +196,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         }
     };
 
-    struct terminated : ::afsm::def::terminal_state< terminated, connection_base_state > {
+    struct terminated : ::afsm::def::terminal_state< terminated, base_tag > {
         template < typename Event >
         void
         on_enter(Event const&, connection_fsm_type& fsm)
