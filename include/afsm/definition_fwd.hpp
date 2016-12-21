@@ -19,6 +19,11 @@ using state = state_def< StateType, Tags... >;
 template < typename T, typename ... Tags  >
 struct terminal_state;
 
+template < typename T, typename Machine, typename ... Tags >
+struct pushdown;
+template < typename T, typename Machine, typename ... Tags >
+struct popup;
+
 template < typename T, typename ... Tags >
 struct state_machine_def;
 template < typename T, typename ... Tags >
@@ -33,6 +38,14 @@ template < typename ... T >
 struct transition_table;
 
 }  /* namespace def */
+namespace detail {
+
+template <typename T>
+struct pushdown_state;
+
+template <typename T>
+struct popup_state;
+}  /* namespace detail */
 }  /* namespace afsm */
 
 #endif /* AFSM_DEFINITION_FWD_HPP_ */
