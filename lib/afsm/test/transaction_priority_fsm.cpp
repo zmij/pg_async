@@ -13,30 +13,11 @@
 namespace afsm {
 namespace test {
 
-namespace events {
-::std::string const connect::name{"connect"};
-::std::string const complete::name{"complete"};
-::std::string const ready_for_query::name{"ready_for_query"};
-::std::string const begin::name{"begin"};
-::std::string const terminate::name{"terminate"};
-::std::string const execute::name{"execute"};
-::std::string const exec_prepared::name{"exec_prepared"};
-::std::string const commit::name{"commit"};
-::std::string const rollback::name{"rollback"};
-::std::string const conn_error::name{"conn_error"};
-::std::string const query_error::name{"query_error"};
-::std::string const client_error::name{"client_error"};
-::std::string const row_description::name{"row_description"};
-::std::string const no_data::name{"no_data"};
-::std::string const row_event::name{"row_event"};
-::std::string const command_complete::name{"command_complete"};
-}  /* namespace events */
-
-struct connection_fsm_def : def::state_machine<connection_fsm_def,
+struct connection_pri_fsm_def : def::state_machine<connection_pri_fsm_def,
                                 def::tags::common_base<state_name>> {
     using connection_fsm =
-            ::afsm::state_machine<
-                 connection_fsm_def, ::std::mutex, test_fsm_observer>;
+            ::afsm::priority_state_machine<
+                    connection_pri_fsm_def, ::std::mutex, test_fsm_observer>;
 
     connection_fsm&
     fsm()
@@ -317,35 +298,35 @@ struct connection_fsm_def : def::state_machine<connection_fsm_def,
     >;
 };
 
-using connection_fsm = state_machine<connection_fsm_def, ::std::mutex, test_fsm_observer>;
+using connection_fsm = priority_state_machine<connection_pri_fsm_def, ::std::mutex, test_fsm_observer>;
 
-static_assert(def::contains_substate<connection_fsm_def, connection_fsm_def::connecting>::value, "");
-static_assert(def::contains_substate<connection_fsm_def, connection_fsm_def::transaction>::value, "");
-static_assert(def::contains_substate<connection_fsm_def::transaction, connection_fsm_def::transaction::idle>::value, "");
-static_assert(!def::contains_substate<connection_fsm_def::transaction, connection_fsm_def::connecting>::value, "");
-static_assert(def::contains_substate<connection_fsm_def, connection_fsm_def::transaction::idle>::value, "");
+static_assert(def::contains_substate<connection_pri_fsm_def, connection_pri_fsm_def::connecting>::value, "");
+static_assert(def::contains_substate<connection_pri_fsm_def, connection_pri_fsm_def::transaction>::value, "");
+static_assert(def::contains_substate<connection_pri_fsm_def::transaction, connection_pri_fsm_def::transaction::idle>::value, "");
+static_assert(!def::contains_substate<connection_pri_fsm_def::transaction, connection_pri_fsm_def::connecting>::value, "");
+static_assert(def::contains_substate<connection_pri_fsm_def, connection_pri_fsm_def::transaction::idle>::value, "");
 
 static_assert(
     ::std::is_base_of< detail::containment_type< detail::state_containment::immediate >,
      detail::state_containment_type<
-             connection_fsm_def::connecting,
-             connection_fsm_def,
+             connection_pri_fsm_def::connecting,
+             connection_pri_fsm_def,
              connection_fsm::inner_states_def>>::value, "");
 
 static_assert(
     detail::state_containment_type<
-        connection_fsm_def::connecting,
-        connection_fsm_def,
+        connection_pri_fsm_def::connecting,
+        connection_pri_fsm_def,
         connection_fsm::inner_states_def>::value == detail::state_containment::immediate, "");
 static_assert(
     detail::state_containment_type<
-        connection_fsm_def::transaction::idle,
-        connection_fsm_def,
+        connection_pri_fsm_def::transaction::idle,
+        connection_pri_fsm_def,
         connection_fsm::inner_states_def>::value == detail::state_containment::substate, "");
 static_assert(
     detail::state_containment_type<
-        connection_fsm_def,
-        connection_fsm_def,
+        connection_pri_fsm_def,
+        connection_pri_fsm_def,
         connection_fsm::inner_states_def>::value == detail::state_containment::self, "");
 
 namespace {
@@ -360,8 +341,8 @@ begin_transaction(connection_fsm& fsm)
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::begin{}));
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::ready_for_query{}));
 
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::transaction>());
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::transaction::idle>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::transaction>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::transaction::idle>());
 }
 
 void
@@ -375,76 +356,36 @@ commit_transaction(connection_fsm& fsm)
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::ready_for_query{}));
     ::std::cout << ansi_color::yellow << ::std::setw(80) << ::std::setfill('=') << '='
             << "\n";
-    EXPECT_FALSE(fsm.is_in_state<connection_fsm_def::transaction>());
-    EXPECT_FALSE(fsm.is_in_state<connection_fsm_def::transaction::idle>());
+    EXPECT_FALSE(fsm.is_in_state<connection_pri_fsm_def::transaction>());
+    EXPECT_FALSE(fsm.is_in_state<connection_pri_fsm_def::transaction::idle>());
 }
-
 }  /* namespace  */
 
-TEST(TranFSM, StaticHandledEvents)
-{
-    connection_fsm fsm;
-
-    EXPECT_TRUE(
-        fsm.static_handled_events().count( &detail::event<events::connect>::id ))
-            << "Immediately handled event";
-    EXPECT_TRUE(
-        fsm.static_handled_events().count( &detail::event<events::terminate>::id ))
-            << "Immediately handled event";
-    EXPECT_TRUE(
-        fsm.static_handled_events().count( &detail::event<events::complete>::id ))
-            << "Immediately handled event";
-    EXPECT_TRUE(
-        fsm.static_handled_events().count( &detail::event<events::conn_error>::id ))
-            << "Immediately handled event";
-    EXPECT_TRUE(
-        fsm.static_handled_events().count( &detail::event<events::ready_for_query>::id ))
-            << "Immediately handled event";
-    EXPECT_TRUE(
-        fsm.static_handled_events().count( &detail::event<events::begin>::id ))
-            << "Immediately handled event";
-
-
-    EXPECT_FALSE(
-        fsm.static_handled_events().count( &detail::event<events::commit>::id ))
-            << "Event handled by a nested state";
-    EXPECT_FALSE(
-        fsm.static_handled_events().count( &detail::event<events::row_event>::id ))
-            << "Event handled by a nested state";
-    EXPECT_FALSE(
-        fsm.static_handled_events().count( &detail::event<events::command_complete>::id ))
-            << "Event handled by a nested state";
-}
-
-TEST(TranFSM, AllEvents)
+TEST(TranPriorityFSM, AllEvents)
 {
     using actions::event_process_result;
     using ::psst::ansi_color;
     connection_fsm fsm;
-    fsm.make_observer("connection_fsm_def");
-
-    ::std::cerr << fsm.get_state< connection_fsm_def >().name() << "\n";
-    ::std::cerr << fsm.get_state< connection_fsm::transaction >().name() << "\n";
-    ::std::cerr << fsm.get_state< connection_fsm::transaction::simple_query >().name() << "\n";
+    fsm.make_observer("connection_pri_fsm_def");
 
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::connect{}));
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::connecting>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::connecting>());
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::complete{}));
-    EXPECT_FALSE(fsm.is_in_state<connection_fsm_def::connecting>());
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::authorizing>());
-    EXPECT_FALSE(fsm.is_in_state<connection_fsm_def::idle>());
+    EXPECT_FALSE(fsm.is_in_state<connection_pri_fsm_def::connecting>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::authorizing>());
+    EXPECT_FALSE(fsm.is_in_state<connection_pri_fsm_def::idle>());
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::ready_for_query{}));
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::idle>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::idle>());
 
     begin_transaction(fsm);
 
     // Simple query sequence
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::execute{}));
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::transaction::simple_query>());
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::transaction::simple_query::waiting>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::transaction::simple_query>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::transaction::simple_query::waiting>());
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::row_description{}));
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::transaction::simple_query>());
-    EXPECT_TRUE(fsm.is_in_state<connection_fsm_def::transaction::simple_query::fetch_data>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::transaction::simple_query>());
+    EXPECT_TRUE(fsm.is_in_state<connection_pri_fsm_def::transaction::simple_query::fetch_data>());
     EXPECT_EQ(event_process_result::process_in_state, fsm.process_event(events::row_event{}));
     EXPECT_EQ(event_process_result::process_in_state, fsm.process_event(events::row_event{}));
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::command_complete{}));
@@ -471,12 +412,12 @@ TEST(TranFSM, AllEvents)
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::terminate{}));
 }
 
-TEST(TranFSM, RealEventSequence)
+TEST(TranPriorityFSM, RealEventSequence)
 {
     using actions::event_process_result;
     using ::psst::ansi_color;
     connection_fsm fsm;
-    fsm.make_observer("connection_fsm_def");
+    fsm.make_observer("connection_pri_fsm_def");
 
     // Enqueueing commands
     EXPECT_EQ(event_process_result::process, fsm.process_event(events::connect{}));
