@@ -1359,8 +1359,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         on_exit(Event const&, FSM&)
         {
             log() << "leaving: transaction";
-            tran_object_.reset();
             connection().in_transaction_ = false;
+            auto tran = tran_object_.lock();
+            if (tran) {
+                tran->mark_done();
+            }
+            tran_object_.reset();
             callbacks_ = events::begin{};
         }
         //@}
