@@ -103,6 +103,7 @@ TEST(QueryTest, QueryQueue)
         resultset res;
 
         bool got_error = false;
+        ::std::atomic<::std::size_t> insert_count{0};
 
         ASSERT_NO_THROW(db_service::add_connection(test::environment::test_database,
                 test::environment::connection_pool));
@@ -122,6 +123,7 @@ TEST(QueryTest, QueryQueue)
                     ([&](transaction_ptr c, resultset, bool){
                         local_log(logger::DEBUG) << "Query two finished";
                         EXPECT_TRUE(c.get());
+                        ++insert_count;
                     }, [](error::db_error const&){
                         FAIL();
                     });
@@ -148,13 +150,17 @@ TEST(QueryTest, QueryQueue)
                 });
                 tran->commit();
                 query(tran, "select 1")
-                ([&](transaction_ptr c, resultset, bool) {},
+                ([&](transaction_ptr c, resultset r, bool)
+                 {
+                    local_log(logger::DEBUG) << "Unexpected finish of query five. Resultset size " << r.size();
+                 },
                  [&](error::db_error const&) { got_error = true; });
             }, [](error::db_error const&){});
         }
         db_service::run();
 
         EXPECT_EQ(1, res.columns_size());
+        EXPECT_EQ(test::environment::num_requests, insert_count);
         EXPECT_EQ(test::environment::num_requests, res.size());
         EXPECT_TRUE(got_error);
     }

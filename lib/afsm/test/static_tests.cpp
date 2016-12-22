@@ -20,8 +20,8 @@ struct eventBC{};
 struct eventAC{};
 
 struct stateA : state< stateA > {};
-struct stateB : state< stateB > {};
-struct stateC : state< stateC > {};
+struct stateB : state< stateB, tags::strong_exception_safety > {};
+struct stateC : state< stateC, tags::nothrow_guarantee > {};
 
 static_assert( traits::is_state<stateA>::value, "" );
 static_assert( traits::is_state<stateB>::value, "" );
@@ -72,6 +72,22 @@ static_assert(!detail::has_transitions<void>::value, "");
 static_assert(detail::has_inner_states<transition_table_1>::value, "");
 static_assert(!detail::has_inner_states<empty_transition_table>::value, "");
 
+using events_in_state_a = ::psst::meta::find_if<
+        def::originates_from<stateA>::template type,
+        transition_table_1::transitions
+    >;
+using events_in_state_b = ::psst::meta::find_if<
+        def::originates_from<stateB>::template type,
+        transition_table_1::transitions
+    >;
+using events_in_state_c = ::psst::meta::find_if<
+        def::originates_from<stateC>::template type,
+        transition_table_1::transitions
+    >;
+static_assert(events_in_state_a::type::size == 2, "");
+static_assert(events_in_state_b::type::size == 1, "");
+static_assert(events_in_state_c::type::size == 0, "");
+
 struct my_state : state <my_state> {
     using internal_transitions = transition_table <
         internal_transition< eventAB >,
@@ -106,6 +122,47 @@ struct ortho_fsm : state_machine<ortho_fsm> {
 static_assert(traits::is_state<ortho_fsm>::value, "");
 static_assert(traits::is_state_machine<ortho_fsm>::value, "");
 static_assert(traits::has_orthogonal_regions<ortho_fsm>::value, "");
+
+//----------------------------------------------------------------------------
+//  Actions
+//----------------------------------------------------------------------------
+
+struct action_long {
+    template < typename Event, typename FSM, typename SourceState, typename TargetState >
+    void
+    operator()(Event&&, FSM&, SourceState&, TargetState&) {}
+};
+
+struct action_short {
+    template < typename Event, typename FSM >
+    void
+    operator()(Event&&, FSM&) {}
+};
+
+static_assert(actions::detail::action_long_signature<action_long, eventAB, none, stateA, stateB>::value, "");
+static_assert(!actions::detail::action_long_signature<action_short, eventAB, none, stateA, stateB>::value, "");
+
+static_assert(!actions::detail::action_short_signature<action_long, eventAB, none>::value, "");
+static_assert(actions::detail::action_short_signature<action_short, eventAB, none>::value, "");
+
+//----------------------------------------------------------------------------
+//  Exception safety
+//----------------------------------------------------------------------------
+static_assert(
+    ::std::is_same<
+        traits::exception_safety<stateA>::type,
+        tags::basic_exception_safety
+     >::value, "Default exception safety");
+static_assert(
+    ::std::is_same<
+        traits::exception_safety<stateB>::type,
+        tags::strong_exception_safety
+     >::value, "Strong exception safety");
+static_assert(
+    ::std::is_same<
+        traits::exception_safety<stateC>::type,
+        tags::nothrow_guarantee
+     >::value, "No-throw exception guarantee");
 
 }  /* namespace test */
 }  /* namespace def */

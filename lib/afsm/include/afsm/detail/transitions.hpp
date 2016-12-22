@@ -9,6 +9,12 @@
 #define AFSM_DETAIL_TRANSITIONS_HPP_
 
 #include <afsm/detail/actions.hpp>
+#include <afsm/detail/exception_safety_guarantees.hpp>
+#include <afsm/detail/event_identity.hpp>
+
+#include <deque>
+#include <memory>
+#include <algorithm>
 
 #include <iostream>
 
@@ -137,7 +143,7 @@ struct state_exit_impl {
     void
     operator()(State& state, Event const& event, FSM& fsm) const
     {
-        state.state_exit(event);
+        state.state_exit(event, fsm);
         state.on_exit(event, fsm);
     }
 };
@@ -145,9 +151,9 @@ struct state_exit_impl {
 template < typename FSM, typename State, typename Event >
 struct state_exit_impl< FSM, State, Event, false > {
     void
-    operator()(State& state, Event const& event, FSM&) const
+    operator()(State& state, Event const& event, FSM& fsm) const
     {
-        state.state_exit(event);
+        state.state_exit(event, fsm);
     }
 };
 
@@ -163,7 +169,7 @@ struct state_enter_impl {
     operator()(State& state, Event&& event, FSM& fsm) const
     {
         state.on_enter(::std::forward<Event>(event), fsm);
-        state.state_enter(::std::forward<Event>(event));
+        state.state_enter(::std::forward<Event>(event), fsm);
     }
 };
 
@@ -171,9 +177,9 @@ template < typename FSM, typename State >
 struct state_enter_impl< FSM, State, false > {
     template < typename Event >
     void
-    operator()(State& state, Event&& event, FSM&) const
+    operator()(State& state, Event&& event, FSM& fsm) const
     {
-        state.state_enter(::std::forward<Event>(event));
+        state.state_enter(::std::forward<Event>(event), fsm);
     }
 };
 
@@ -235,7 +241,7 @@ struct single_transition<FSM, StateTable,
     using guard_type        = actions::detail::guard_check<FSM, SourceState, Event, Guard>;
     using source_exit       = state_exit<fsm_type, source_state_type, Event>;
     using target_enter      = state_enter<fsm_type, target_state_type, Event>;
-    using action_type       = actions::detail::action_invokation<Action, FSM,
+    using action_type       = actions::detail::action_invocation<Action, FSM,
             SourceState, TargetState>;
     using state_clear_type  = state_clear<FSM, source_state_type>;
 
@@ -261,7 +267,7 @@ struct nth_transition {
     using transition            = typename Transitions::template type<N>;
     using event_type            = typename transition::event_type;
     using previous_transition   = nth_transition<N - 1, FSM, StateTable, Transitions>;
-    using transition_invokation = single_transition<FSM, StateTable, ::psst::meta::type_tuple<transition>>;
+    using transition_invocation = single_transition<FSM, StateTable, ::psst::meta::type_tuple<transition>>;
 
     template < typename Event >
     actions::event_process_result
@@ -269,7 +275,7 @@ struct nth_transition {
     {
         auto res = previous_transition{}(states, ::std::forward<Event>(event));
         if (res == actions::event_process_result::refuse) {
-            return transition_invokation{}(states, ::std::forward<Event>(event));
+            return transition_invocation{}(states, ::std::forward<Event>(event));
         }
         return res;
     }
@@ -280,13 +286,13 @@ struct nth_transition< 0, FSM, StateTable, Transitions > {
     static_assert(Transitions::size > 0, "Transition list is too small");
     using transition            = typename Transitions::template type<0>;
     using event_type            = typename transition::event_type;
-    using transition_invokation = single_transition<FSM, StateTable, ::psst::meta::type_tuple<transition>>;
+    using transition_invocation = single_transition<FSM, StateTable, ::psst::meta::type_tuple<transition>>;
 
     template < typename Event >
     actions::event_process_result
     operator()(StateTable& states, Event&& event) const
     {
-        return transition_invokation{}(states, ::std::forward<Event>(event));
+        return transition_invocation{}(states, ::std::forward<Event>(event));
     }
 };
 
@@ -353,6 +359,32 @@ struct final_state_exit_func {
     }
 };
 
+template < ::std::size_t StateIndex >
+struct get_current_events_func {
+    static constexpr ::std::size_t state_index = StateIndex;
+
+    template < typename StateTuple >
+    ::afsm::detail::event_set
+    operator()(StateTuple const& states) const
+    {
+        auto const& state = ::std::get<state_index>(states);
+        return state.current_handled_events();
+    }
+};
+
+template < ::std::size_t StateIndex >
+struct get_current_deferred_events_func {
+    static constexpr ::std::size_t state_index = StateIndex;
+
+    template < typename StateTuple >
+    ::afsm::detail::event_set
+    operator()(StateTuple const& states) const
+    {
+        auto const& state = ::std::get<state_index>(states);
+        return state.current_deferrable_events();
+    }
+};
+
 }  /* namespace detail */
 
 template < typename FSM, typename FSM_DEF, typename Size >
@@ -386,6 +418,7 @@ public:
     static constexpr ::std::size_t size = inner_states_def::size;
 
     using state_indexes     = typename ::psst::meta::index_builder<size>::type;
+    using event_set         = ::afsm::detail::event_set;
 
     template < typename Event >
     using transition_table_type = ::std::array<
@@ -393,7 +426,11 @@ public:
 
     template < typename Event >
     using exit_table_type = ::std::array<
-            ::std::function< void(inner_states_tuple&, Event&&, fsm_type&) >, size>;
+            ::std::function< void(inner_states_tuple&, Event&&, fsm_type&) >, size >;
+
+    using current_events_table = ::std::array<
+            ::std::function< event_set(inner_states_tuple const&) >, size >;
+    using available_transtions_table = ::std::array< event_set, size >;
 
     template < typename CommonBase, typename StatesTuple >
     using cast_table_type = ::std::array< ::std::function<
@@ -417,7 +454,11 @@ public:
       {}
 
     state_transition_table(state_transition_table const&) = delete;
-    state_transition_table(state_transition_table&&) = delete;
+    state_transition_table(state_transition_table&& rhs)
+        : fsm_{rhs.fsm_},
+          current_state_{ (::std::size_t)rhs.current_state_ },
+          states_{ ::std::move(rhs.states_) }
+    {}
     state_transition_table&
     operator = (state_transition_table const&) = delete;
     state_transition_table&
@@ -429,8 +470,15 @@ public:
         using ::std::swap;
         swap(current_state_, rhs.current_state_);
         swap(states_, rhs.states_);
-        ::afsm::detail::set_enclosing_fsm< size - 1 >::set(*fsm_, states_);
-        ::afsm::detail::set_enclosing_fsm< size - 1 >::set(*rhs.fsm_, rhs.states_);
+        set_fsm(*fsm_);
+        rhs.set_fsm(*rhs.fsm_);
+    }
+
+    void
+    set_fsm(fsm_type& fsm)
+    {
+        fsm_ = &fsm;
+        ::afsm::detail::set_enclosing_fsm< size - 1 >::set(fsm, states_);
     }
 
     inner_states_tuple&
@@ -523,26 +571,106 @@ public:
 
         auto& source = ::std::get< source_index::value >(states_);
         auto& target = ::std::get< target_index::value >(states_);
-        try {
-            if (guard(*fsm_, source, event)) {
-                auto const& observer = root_machine(*fsm_);
-                exit(source, ::std::forward<Event>(event), *fsm_);
-                observer.state_exited(*fsm_, source, event);
-                action(::std::forward<Event>(event), *fsm_, source, target);
-                enter(target, ::std::forward<Event>(event), *fsm_);
-                observer.state_entered(*fsm_, target, event);
-                if (clear(*fsm_, source))
-                    observer.state_cleared(*fsm_, source);
-                current_state_ = target_index::value;
-                observer.state_changed(*fsm_, source, target, event);
-                return actions::event_process_result::process;
-            }
-        } catch (...) {
-            // FIXME Do something ;)
-            throw;
+        return transit_state_impl(
+                ::std::forward<Event>(event), source, target,
+                 guard, action, exit, enter, clear,
+                 target_index::value,
+                 typename def::traits::exception_safety<state_machine_definition_type>::type{});
+    }
+    template < typename SourceState, typename TargetState,
+        typename Event, typename Guard, typename Action,
+        typename SourceExit, typename TargetEnter, typename SourceClear >
+    actions::event_process_result
+    transit_state_impl(Event&& event, SourceState& source, TargetState& target,
+            Guard guard, Action action, SourceExit exit,
+            TargetEnter enter, SourceClear clear,
+            ::std::size_t target_index,
+            def::tags::basic_exception_safety const&)
+    {
+        if (guard(*fsm_, source, event)) {
+            auto const& observer = root_machine(*fsm_);
+            exit(source, ::std::forward<Event>(event), *fsm_);
+            observer.state_exited(*fsm_, source, event);
+            action(::std::forward<Event>(event), *fsm_, source, target);
+            enter(target, ::std::forward<Event>(event), *fsm_);
+            observer.state_entered(*fsm_, target, event);
+            if (clear(*fsm_, source))
+                observer.state_cleared(*fsm_, source);
+            current_state_ = target_index;
+            observer.state_changed(*fsm_, source, target, event);
+            return actions::event_process_result::process;
         }
         return actions::event_process_result::refuse;
     }
+    template < typename SourceState, typename TargetState,
+        typename Event, typename Guard, typename Action,
+        typename SourceExit, typename TargetEnter, typename SourceClear >
+    actions::event_process_result
+    transit_state_impl(Event&& event, SourceState& source, TargetState& target,
+            Guard guard, Action action, SourceExit exit,
+            TargetEnter enter, SourceClear clear,
+            ::std::size_t target_index,
+            def::tags::strong_exception_safety const&)
+    {
+        SourceState source_backup{source};
+        TargetState target_backup{target};
+        try {
+            return transit_state_impl(
+                    ::std::forward<Event>(event), source, target,
+                     guard, action, exit, enter, clear,
+                     target_index,
+                     def::tags::basic_exception_safety{});
+        } catch (...) {
+            using ::std::swap;
+            swap(source, source_backup);
+            swap(target, target_backup);
+            throw;
+        }
+    }
+    template < typename SourceState, typename TargetState,
+        typename Event, typename Guard, typename Action,
+        typename SourceExit, typename TargetEnter, typename SourceClear >
+    actions::event_process_result
+    transit_state_impl(Event&& event, SourceState& source, TargetState& target,
+            Guard guard, Action action, SourceExit exit,
+            TargetEnter enter, SourceClear clear,
+            ::std::size_t target_index,
+            def::tags::nothrow_guarantee const&)
+    {
+        SourceState source_backup{source};
+        TargetState target_backup{target};
+        try {
+            return transit_state_impl(
+                    ::std::forward<Event>(event), source, target,
+                     guard, action, exit, enter, clear,
+                     target_index,
+                     def::tags::basic_exception_safety{});
+        } catch (...) {}
+        using ::std::swap;
+        swap(source, source_backup);
+        swap(target, target_backup);
+        return actions::event_process_result::refuse;
+    }
+
+    event_set
+    current_handled_events() const
+    {
+        auto const& table = get_current_events_table(state_indexes{});
+        auto res = table[current_state_](states_);
+        auto const& available_transitions
+                            = get_available_transitions_table(state_indexes{});
+        auto const& trans = available_transitions[current_state_];
+        res.insert( trans.begin(), trans.end());
+        return res;
+    }
+
+    event_set
+    current_deferrable_events() const
+    {
+        auto const& table = get_current_deferred_events_table(state_indexes{});
+        return table[current_state_](states_);
+    }
+
     template < typename T >
     T&
     cast_current_state()
@@ -587,6 +715,46 @@ private:
         }};
         return _table;
     }
+    template < ::std::size_t ... Indexes >
+    static current_events_table const&
+    get_current_events_table( ::psst::meta::indexes_tuple< Indexes ... > const& )
+    {
+        static current_events_table _table{{
+            detail::get_current_events_func<Indexes>{} ...
+        }};
+
+        return _table;
+    }
+    template < ::std::size_t ... Indexes >
+    static current_events_table const&
+    get_current_deferred_events_table( ::psst::meta::indexes_tuple< Indexes ... > const& )
+    {
+        static current_events_table _table{{
+            detail::get_current_deferred_events_func<Indexes>{} ...
+        }};
+
+        return _table;
+    }
+    template < ::std::size_t ... Indexes >
+    static available_transtions_table const&
+    get_available_transitions_table( ::psst::meta::indexes_tuple< Indexes ...> const& )
+    {
+        static available_transtions_table _table{{
+            ::afsm::detail::make_event_set(
+                typename ::psst::meta::transform<
+                    def::detail::event_type,
+                    typename ::psst::meta::find_if<
+                        def::originates_from<
+                            typename inner_states_def::template type< Indexes >
+                        >:: template type,
+                        transitions_tuple
+                    >::type
+                 > ::type {}
+            ) ...
+        }};
+
+        return _table;
+    }
     template < typename T, typename StateTuple, ::std::size_t ... Indexes >
     static cast_table_type<T, StateTuple> const&
     get_cast_table( ::psst::meta::indexes_tuple< Indexes... > const& )
@@ -600,6 +768,248 @@ private:
     fsm_type*           fsm_;
     size_type           current_state_;
     inner_states_tuple  states_;
+};
+
+template < typename FSM, typename FSM_DEF, typename Size >
+class state_transition_stack {
+public:
+    using state_table_type  = state_transition_table<FSM, FSM_DEF, Size>;
+    using this_type         = state_transition_stack<FSM, FSM_DEF, Size>;
+
+    using fsm_type                      = typename state_table_type::fsm_type;
+    using state_machine_definition_type = typename state_table_type::state_machine_definition_type;
+    using size_type                     = typename state_table_type::size_type;
+    using inner_states_tuple            = typename state_table_type::inner_states_tuple;
+    using event_set                     = typename state_table_type::event_set;
+
+    using stack_constructor_type        = afsm::detail::stack_constructor<FSM, state_table_type>;
+public:
+    state_transition_stack(fsm_type& fsm)
+        : fsm_{&fsm},
+          state_stack_{ stack_constructor_type::construct(fsm) }
+    {}
+    state_transition_stack(fsm_type& fsm, state_transition_stack const& rhs)
+        : fsm_{&fsm},
+          state_stack_{ stack_constructor_type::copy_construct(fsm, rhs.state_stack_) }
+    {}
+    state_transition_stack(fsm_type& fsm, state_transition_stack&& rhs)
+        : fsm_{&fsm},
+          state_stack_{ stack_constructor_type::move_construct(fsm, ::std::move(rhs.state_stack_)) }
+    {}
+
+    state_transition_stack(state_transition_stack const&) = delete;
+    state_transition_stack(state_transition_stack&&) = delete;
+    state_transition_stack&
+    operator = (state_transition_stack const&) = delete;
+    state_transition_stack&
+    operator = (state_transition_stack&&) = delete;
+
+    void
+    swap(state_transition_stack& rhs)
+    {
+        using ::std::swap;
+        swap(state_stack_, rhs.state_stack_);
+        set_fsm(*fsm_);
+        rhs.set_fsm(*rhs.fsm_);
+    }
+
+    void
+    set_fsm(fsm_type& fsm)
+    {
+        fsm_ = &fsm;
+        for (auto& item : state_stack_) {
+            item.set_fsm(fsm);
+        }
+    }
+
+    inner_states_tuple&
+    states()
+    { return top().states(); }
+    inner_states_tuple const&
+    states() const
+    { return top().states(); }
+
+    template < ::std::size_t N >
+    typename ::std::tuple_element< N, inner_states_tuple >::type&
+    get_state()
+    { return top().template get_state<N>(); }
+    template < ::std::size_t N >
+    typename ::std::tuple_element< N, inner_states_tuple >::type const&
+    get_state() const
+    { return top().template get_state<N>(); }
+
+    ::std::size_t
+    current_state() const
+    { return top().current_state(); }
+
+    template < typename Event >
+    actions::event_process_result
+    process_event(Event&& event)
+    {
+        return top().process_event(::std::forward<Event>(event));
+    }
+
+    template < typename Event >
+    void
+    enter(Event&& event)
+    {
+        top().enter(::std::forward<Event>(event));
+    }
+    template < typename Event >
+    void
+    exit(Event&& event)
+    {
+        top().exit(::std::forward<Event>(event));
+    }
+
+    template < typename Event >
+    void
+    push(Event&& event)
+    {
+        state_stack_.emplace_back( *fsm_ );
+        enter(::std::forward<Event>(event));
+    }
+
+    template < typename Event >
+    void
+    pop(Event&& event)
+    {
+        if (state_stack_.size() > 1) {
+            exit(::std::forward<Event>(event));
+            state_stack_.pop_back();
+        }
+    }
+
+    ::std::size_t
+    stack_size() const
+    {
+        return state_stack_.size();
+    }
+
+    event_set
+    current_handled_events() const
+    {
+        return top().current_handled_events();
+    }
+    event_set
+    current_deferrable_events() const
+    {
+        return top().current_deferrable_events();
+    }
+
+    template < typename T >
+    T&
+    cast_current_state()
+    {
+        return top().template cast_current_state<T>();
+    }
+    template < typename T >
+    T const&
+    cast_current_state() const
+    {
+        return top().template cast_current_state<T>();
+    }
+private:
+    using stack_type = typename stack_constructor_type::type;
+
+    state_table_type&
+    top()
+    { return state_stack_.back(); }
+    state_table_type const&
+    top() const
+    { return state_stack_.back(); }
+private:
+    fsm_type*           fsm_;
+    stack_type          state_stack_;
+};
+
+template < typename FSM, typename FSM_DEF, typename Size, bool HasPusdowns >
+struct transition_container_selector {
+    using type = state_transition_table<FSM, FSM_DEF, Size>;
+};
+
+template <typename FSM, typename FSM_DEF, typename Size>
+struct transition_container_selector<FSM, FSM_DEF, Size, true> {
+    using type = state_transition_stack<FSM, FSM_DEF, Size>;
+};
+
+namespace detail {
+
+template < typename FSM, typename FSM_DEF, typename Size, bool HasPushdowns >
+struct transition_container {
+    using transitions_tuple = typename transition_container_selector<FSM, FSM_DEF, Size, HasPushdowns>::type;
+
+    transition_container(FSM* fsm)
+        : transitions_{*fsm}
+    {}
+    transition_container(FSM* fsm, transition_container const& rhs)
+        : transitions_{*fsm, rhs.transitions_}
+    {}
+    transition_container(FSM* fsm, transition_container&& rhs)
+        : transitions_{*fsm, ::std::move(rhs.transitions_)}
+    {}
+protected:
+    transitions_tuple   transitions_;
+};
+
+template < typename FSM, typename FSM_DEF, typename Size >
+struct transition_container< FSM, FSM_DEF, Size, true > {
+    using transitions_tuple = typename transition_container_selector<FSM, FSM_DEF, Size, true>::type;
+
+    transition_container(FSM* fsm)
+        : transitions_{*fsm}
+    {}
+    transition_container(FSM* fsm, transition_container const& rhs)
+        : transitions_{*fsm, rhs.transitions_}
+    {}
+    transition_container(FSM* fsm, transition_container&& rhs)
+        : transitions_{*fsm, ::std::move(rhs.transitions_)}
+    {}
+
+    ::std::size_t
+    stack_size() const
+    {
+        return transitions_.stack_size();
+    }
+
+protected:
+    template < typename T >
+    friend struct ::afsm::detail::pushdown_state;
+    template < typename T >
+    friend struct ::afsm::detail::popup_state;
+    // Push/pop ops
+    template < typename Event >
+    void
+    pushdown(Event&& event)
+    {
+        transitions_.push(::std::forward<Event>(event));
+    }
+    template < typename Event >
+    void
+    popup(Event&& event)
+    {
+        transitions_.pop(::std::forward<Event>(event));
+    }
+protected:
+    transitions_tuple  transitions_;
+};
+}  /* namespace detail */
+
+template < typename FSM, typename FSM_DEF, typename Size >
+struct transition_container
+    : detail::transition_container<FSM, FSM_DEF, Size,
+          def::has_pushdown_stack<FSM_DEF>::value> {
+    using base_type = detail::transition_container<FSM, FSM_DEF, Size,
+                            def::has_pushdown_stack<FSM_DEF>::value>;
+    using transitions_tuple = typename base_type::transitions_tuple;
+
+    transition_container( FSM* fsm ) : base_type{fsm} {}
+    transition_container(FSM* fsm, transition_container const& rhs)
+        : base_type{fsm, rhs} {}
+    transition_container(FSM* fsm, transition_container&& rhs)
+        : base_type{fsm, ::std::move(rhs)} {}
+protected:
+    using base_type::transitions_;
 };
 
 }  /* namespace transitions */
