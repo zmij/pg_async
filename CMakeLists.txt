@@ -32,9 +32,9 @@ option(USE_BOOST_ASIO "Use Boost.Asio instead of Standalone Asio library" ON)
 
 # Dependencies
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    "${CMAKE_SOURCE_DIR}/cmake/modules"
-    "${CMAKE_SOURCE_DIR}/lib/afsm/cmake"
-    "${CMAKE_SOURCE_DIR}/lib/afsm/lib/meta/cmake")
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/afsm/cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/afsm/lib/meta/cmake")
 
 if (USE_BOOST_ASIO)
 set(BOOST_COMPONENTS
