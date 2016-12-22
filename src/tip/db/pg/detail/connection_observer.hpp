@@ -12,6 +12,7 @@
 #include <string>
 
 #include <afsm/fsm.hpp>
+#include <pushkin/util/demangle.hpp>
 #include <tip/db/pg/log.hpp>
 
 namespace tip {
@@ -96,17 +97,39 @@ struct connection_observer : ::afsm::detail::null_observer {
 
     template < typename FSM >
     void
-    start_process_deferred_queue(FSM const& fsm) const noexcept
+    start_process_deferred_queue(FSM const& fsm, ::std::size_t size) const noexcept
     {
         fsm.log() << util::ANSI_COLOR::CYAN
-                << "Start processing deferred queue";
+                << "Start processing deferred queue size " << size;
     }
     template < typename FSM >
     void
-    end_process_deferred_queue(FSM const& fsm) const noexcept
+    end_process_deferred_queue(FSM const& fsm, ::std::size_t remain) const noexcept
     {
         fsm.log() << util::ANSI_COLOR::CYAN
-                << "End processing deferred queue";
+                << "End processing deferred queue. Remain " << remain;
+    }
+
+    template < typename FSM >
+    void
+    skip_processing_deferred_queue(FSM const& fsm) const noexcept
+    {
+        fsm.log() << (util::ANSI_COLOR::YELLOW | util::ANSI_COLOR::BRIGHT)
+                << "Skip processing deferred queue";
+    }
+    template < typename FSM >
+    void
+    postpone_deferred_events(FSM const& fsm, ::std::size_t count) const noexcept
+    {
+        fsm.log() << util::ANSI_COLOR::YELLOW
+                << "Postpone " << count << " deferred events";
+    }
+    template < typename FSM >
+    void
+    drop_deferred_event(FSM const& fsm) const noexcept
+    {
+        fsm.log() << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
+                << "Drop deferred event";
     }
 
     template < typename FSM, typename Event >
