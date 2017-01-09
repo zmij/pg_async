@@ -84,7 +84,8 @@ database_impl::add_pool(connection_options const& co,
         if (!pool_size.is_initialized()) {
             pool_size = pool_size_;
         }
-        local_log(logger::INFO) << "Create a new connection pool " << co.alias;
+        local_log(logger::INFO) << "Create a new connection pool " << co.alias
+                << " size " << *pool_size;
         client_options_type parms(params);
         for (auto p : defaults_) {
             if (!parms.count(p.first)) {
