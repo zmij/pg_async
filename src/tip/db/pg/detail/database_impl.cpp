@@ -10,7 +10,6 @@
 #include <tip/db/pg/error.hpp>
 #include <stdexcept>
 
-#include <tip/db/pg/version.hpp>
 #include <tip/db/pg/log.hpp>
 
 namespace tip {
