@@ -23,6 +23,23 @@ namespace pg {
 
 LOCAL_LOGGING_FACILITY_CFG(PGCONN, config::CONNECTION_LOG);
 
+template < typename Handler >
+void
+wrap(asio_config::io_service::strand& strand, Handler& h)
+{
+    if (h)
+        h = strand.wrap(h);
+}
+
+template < typename Handler >
+Handler
+wrap_it(asio_config::io_service::strand& strand, Handler h)
+{
+    if (h)
+        return strand.wrap(h);
+    return h;
+}
+
 template < typename TransportType >
 std::shared_ptr< detail::concrete_connection< TransportType > >
 create_connection(asio_config::io_service_ptr svc,
@@ -74,21 +91,23 @@ basic_connection::alias() const
 }
 
 void
-basic_connection::begin(events::begin const& evt)
+basic_connection::begin(events::begin&& evt)
 {
-    do_begin(evt);
+    wrap(strand(), evt.started);
+    wrap(strand(), evt.error);
+    do_begin(::std::move(evt));
 }
 
 void
 basic_connection::commit(notification_callback cb)
 {
-    do_commit(cb);
+    do_commit(wrap_it(strand(), cb));
 }
 
 void
 basic_connection::rollback(notification_callback cb)
 {
-    do_rollback(cb);
+    do_rollback(wrap_it(strand(), cb));
 }
 
 bool
@@ -98,14 +117,18 @@ basic_connection::in_transaction() const
 }
 
 void
-basic_connection::execute(events::execute const& query)
+basic_connection::execute(events::execute&& query)
 {
-    do_execute(query);
+    wrap(strand(), query.result);
+    wrap(strand(), query.error);
+    do_execute(::std::move(query));
 }
 void
-basic_connection::execute(events::execute_prepared const& query)
+basic_connection::execute(events::execute_prepared&& query)
 {
-    do_execute(query);
+    wrap(strand(), query.result);
+    wrap(strand(), query.error);
+    do_execute(::std::move(query));
 }
 
 
