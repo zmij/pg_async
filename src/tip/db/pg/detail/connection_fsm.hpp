@@ -9,7 +9,6 @@
 #define LIB_PG_ASYNC_SRC_TIP_DB_PG_DETAIL_BASIC_CONNECTION_NEW_HPP_
 
 #include <boost/noncopyable.hpp>
-#include <boost/bind.hpp>
 #include <map>
 #include <stack>
 #include <set>
@@ -1428,7 +1427,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     //@{
     connection_fsm_def(io_service_ptr svc, client_options_type const& co)
         : shared_base(), io_service_{svc}, transport_{svc},
-          client_opts_{co}, strand_{*svc},
+          client_opts_{co},
           serverPid_{0}, serverSecret_{0}, in_transaction_{false},
           connection_number_{ next_connection_number() }
     {
@@ -1462,10 +1461,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             throw error::connection_error("User not specified!");
         }
         conn_opts_ = opts;
+        auto _this = shared_base::shared_from_this();
         transport_.connect_async(conn_opts_,
-            boost::bind(&this_type::handle_connect,
-                shared_base::shared_from_this(),
-                _1));
+            [_this](asio_config::error_code const& ec)
+            {
+                _this->handle_connect(ec);
+            });
     }
     void
     close_transport()
@@ -1476,11 +1477,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     void
     start_read()
     {
+        auto _this = shared_base::shared_from_this();
         transport_.async_read(incoming_,
-            strand_.wrap( boost::bind(
-                &this_type::handle_read, shared_base::shared_from_this(),
-                _1, _2 )
-        ));
+            [_this](asio_config::error_code const& ec, size_t bytes_transferred)
+            {
+                _this->handle_read(ec, bytes_transferred);
+            });
     }
 
     void
@@ -1534,7 +1536,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             transport_.async_write(
                 ASIO_NAMESPACE::buffer(&*data_range.first,
                         data_range.second - data_range.first),
-                strand_.wrap(write_handler)
+                write_handler
             );
         }
     }
@@ -1869,7 +1871,6 @@ private:
 
     client_options_type             client_opts_;
 
-    asio_config::io_service::strand strand_;
     ASIO_NAMESPACE::streambuf       incoming_;
 
     message_ptr                     message_;
@@ -1905,6 +1906,7 @@ public:
             client_options_type const& co,
             connection_callbacks const& callbacks)
         : basic_connection(), fsm_type(svc, co),
+          strand_(*svc),
           callbacks_(callbacks)
     {
         if (PGFSM_DEFAULT_SEVERITY > logger::OFF)
@@ -1964,13 +1966,13 @@ private:
         return fsm_type::in_transaction();
     }
     virtual void
-    do_begin(events::begin const& evt)
+    do_begin(events::begin&& evt)
     {
         if (fsm_type::in_transaction()) {
             log(logger::ERROR) << "Cannot begin transaction: already in transaction";
             throw error::db_error("Already in transaction");
         }
-        fsm_type::process_event(evt);
+        fsm_type::process_event(::std::move(evt));
     }
 
     virtual void
@@ -1994,15 +1996,15 @@ private:
     }
 
     virtual void
-    do_execute(events::execute const& query)
+    do_execute(events::execute&& query)
     {
-        fsm_type::process_event(query);
+        fsm_type::process_event(::std::move(query));
     }
 
     virtual void
-    do_execute(events::execute_prepared const& query)
+    do_execute(events::execute_prepared&& query)
     {
-        fsm_type::process_event(query);
+        fsm_type::process_event(::std::move(query));
     }
 
     virtual void
@@ -2010,8 +2012,13 @@ private:
     {
         fsm_type::process_event(events::terminate{});
     }
+
+    asio_config::io_service::strand&
+    strand() override
+    { return strand_; }
 private:
-    connection_callbacks callbacks_;
+    asio_config::io_service::strand strand_;
+    connection_callbacks            callbacks_;
 };
 
 }  // namespace detail

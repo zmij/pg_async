@@ -212,7 +212,7 @@ struct connection_pool::impl {
 
         events::begin evt;
         if (next_event(evt)) {
-            c->begin(evt);
+            c->begin(::std::move(evt));
         } else {
             if (closed_) {
                 close_connections();

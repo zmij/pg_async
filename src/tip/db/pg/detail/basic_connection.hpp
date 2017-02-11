@@ -82,7 +82,7 @@ public:
     alias() const;
 
     void
-    begin(events::begin const&);
+    begin(events::begin&&);
     void
     commit(notification_callback = notification_callback());
     void
@@ -92,9 +92,9 @@ public:
     in_transaction() const;
 
     void
-    execute(events::execute const&);
+    execute(events::execute&&);
     void
-    execute(events::execute_prepared const&);
+    execute(events::execute_prepared&&);
 
     void
     terminate();
@@ -112,19 +112,22 @@ private:
     is_in_transaction() const = 0;
 
     virtual void
-    do_begin(events::begin const&) = 0;
+    do_begin(events::begin&&) = 0;
     virtual void
     do_commit(notification_callback) = 0;
     virtual void
     do_rollback(notification_callback) = 0;
 
     virtual void
-    do_execute(events::execute const&) = 0;
+    do_execute(events::execute&&) = 0;
     virtual void
-    do_execute(events::execute_prepared const&) = 0;
+    do_execute(events::execute_prepared&&) = 0;
 
     virtual void
     do_terminate() = 0;
+
+    virtual asio_config::io_service::strand&
+    strand() = 0;
 };
 
 }  // namespace pg
