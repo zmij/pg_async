@@ -2002,7 +2002,7 @@ private:
     }
 
     virtual void
-    do_execute(events::execute_prepared&& query)
+    do_execute(events::execute_prepared&& query) override
     {
         fsm_type::process_event(::std::move(query));
     }
