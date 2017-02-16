@@ -1918,7 +1918,7 @@ private:
     //@{
     /** @name State machine abstract interface implementation */
     virtual void
-    do_notify_idle()
+    do_notify_idle() override
     {
         if (callbacks_.idle) {
             callbacks_.idle(fsm_type::shared_from_this());
@@ -1927,7 +1927,7 @@ private:
         }
     }
     virtual void
-    do_notify_terminated()
+    do_notify_terminated() override
     {
         if (callbacks_.terminated) {
             callbacks_.terminated(fsm_type::shared_from_this());
@@ -1937,7 +1937,7 @@ private:
         callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
     }
     virtual void
-    do_notify_error(error::connection_error const& e)
+    do_notify_error(error::connection_error const& e) override
     {
         log(logger::ERROR) << "Connection error " << e.what();
         if (callbacks_.error) {
@@ -1949,24 +1949,24 @@ private:
     //@}
 
     virtual void
-    do_connect(connection_options const& co)
+    do_connect(connection_options const& co) override
     {
         fsm_type::process_event(co);
     }
 
     virtual dbalias const&
-    get_alias() const
+    get_alias() const override
     {
         return fsm_type::conn_opts_.alias;
     }
 
     virtual bool
-    is_in_transaction() const
+    is_in_transaction() const override
     {
         return fsm_type::in_transaction();
     }
     virtual void
-    do_begin(events::begin&& evt)
+    do_begin(events::begin&& evt) override
     {
         if (fsm_type::in_transaction()) {
             log(logger::ERROR) << "Cannot begin transaction: already in transaction";
@@ -1976,7 +1976,7 @@ private:
     }
 
     virtual void
-    do_commit(notification_callback cb)
+    do_commit(notification_callback cb) override
     {
         if (!fsm_type::in_transaction()) {
             log(logger::ERROR) << "Cannot commit transaction: not in transaction";
@@ -1986,7 +1986,7 @@ private:
     }
 
     virtual void
-    do_rollback(notification_callback cb)
+    do_rollback(notification_callback cb) override
     {
         if (!fsm_type::in_transaction()) {
             log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
@@ -1996,7 +1996,7 @@ private:
     }
 
     virtual void
-    do_execute(events::execute&& query)
+    do_execute(events::execute&& query) override
     {
         fsm_type::process_event(::std::move(query));
     }
@@ -2008,7 +2008,7 @@ private:
     }
 
     virtual void
-    do_terminate()
+    do_terminate() override
     {
         fsm_type::process_event(events::terminate{});
     }
