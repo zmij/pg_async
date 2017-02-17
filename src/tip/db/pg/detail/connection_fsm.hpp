@@ -954,8 +954,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                     events::row_description const& row =
                             connection().get_prepared(query_name_);
                     cmd.write((smallint)row.fields.size());
+                    tran().log() << "Write " << row.fields.size() << " field formats";
                     for (auto fd : row.fields) {
-                        cmd.write((smallint)fd.format_code);
+                        smallint fmt_code = io::traits::has_binary_parser(fd.type_oid)
+                                ? BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
+                        tran().log() << "Format for " << fd.type_oid << " is " << fmt_code;
+                        cmd.write(fmt_code);
                     }
                 } else {
                     cmd.write((smallint)0); // no row description
