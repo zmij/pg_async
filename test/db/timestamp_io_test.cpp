@@ -43,6 +43,12 @@ TEST_P(DateTimeIOTest, DBRoundtrip)
 {
     using local_adjust = boost::date_time::c_local_adjustor<ptime>;
     if (!test::environment::test_database.empty()) {
+        db_service::initialize(1,
+            {
+                { "application_name", "test-pg-async"   },
+                { "client_encoding",  "UTF8"            },
+                { "TimeZone",         "UTC"             }
+            });
         db_service::add_connection(test::environment::test_database);
         connection_options opts = connection_options::parse(test::environment::test_database);
 
@@ -61,13 +67,13 @@ TEST_P(DateTimeIOTest, DBRoundtrip)
             [](transaction_ptr, resultset, bool){},
             [](error::db_error const&) {}
             );
-            query(tran, "select t from pg_async_ts_test where $1=$1", 1)(
+            query(tran, "select t from pg_async_ts_test")(
             [&res_txt](transaction_ptr, resultset r, bool){
                 res_txt = r;
             },
             [](error::db_error const&) {
             });
-            query(tran, "select t from pg_async_ts_test where $1=$1", 1)(
+            query(tran, "select t from pg_async_ts_test limit $1", 1)(
             [&res_bin](transaction_ptr, resultset r, bool){
                 res_bin = r;
             },
@@ -96,8 +102,6 @@ TEST_P(DateTimeIOTest, DBRoundtrip)
         ASSERT_EQ(1, res_bin.columns_size());
 
         res_bin.front().to(out_v);
-        if (!out_v.is_not_a_date_time())
-            out_v = local_adjust::utc_to_local(out_v);
         EXPECT_EQ(test_val.second, out_v) << "Successfully parsed binary protocol";
     }
 }
