@@ -881,11 +881,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 }
                 query_name_ = "q_" +
                     std::string( boost::md5( os.str().c_str() ).digest().hex_str_value() );
-
-                if (!is_query_prepared()) {
-                    send_parse();
-                }
-                send_bind_exec();
             }
             template < typename Event, typename FSM >
             void
@@ -933,6 +928,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 describe.write('S');
                 describe.write(query_name_);
                 cmd.pack(describe);
+                cmd.pack(message(sync_tag));
 
                 connection().send(::std::move(cmd));
             }
@@ -987,12 +983,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 operator() (events::row_description const& row, extended_query_fsm_type& fsm,
                         SourceState&, TargetState&)
                 {
-                    fsm.result_.reset(new result_impl);
-                    fsm.result_->row_description() = row.fields; // copy!
                     for (auto& fd : row.fields) {
                         if (io::traits::has_binary_parser(fd.type_oid))
                             fd.format_code = BINARY_DATA_FORMAT;
                     }
+                    fsm.result_.reset(new result_impl);
+                    fsm.result_->row_description() = row.fields; // copy!
                     fsm.connection().set_prepared(fsm.query_name_, row);
                 }
                 template < typename SourceState, typename TargetState >
@@ -1059,12 +1055,19 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 on_enter(Event const&, extended_query& fsm)
                 {
                     fsm.tran().log() << "entering: parse";
+                    fsm.send_parse();
                 }
 
                 template < typename Event >
                 void
                 on_exit(Event const&, extended_query& fsm)
                 { fsm.tran().log() << "leaving: parse"; }
+
+                using internal_transitions = transition_table<
+                    in< events::parse_complete,     none,                   none >,
+                    in< events::row_description,    store_prepared_desc,    none >,
+                    in< events::no_data,            store_prepared_desc,    none >
+                >;
             };
 
             struct bind : state< bind > {
@@ -1081,17 +1084,16 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 template < typename Event, typename FSM >
                 void
                 on_enter(Event const&, FSM&)
-                { log() << "entering: bind (unexpected fsm)"; }
+                {
+                    log() << "entering: bind (unexpected fsm)";
+                }
                 template < typename Event >
                 void
                 on_enter( Event const&, extended_query_fsm_type& fsm )
                 {
                     fsm.tran().log() << "entering: bind";
+                    fsm.send_bind_exec();
                 }
-                using internal_transitions = transition_table<
-                    in< events::row_description,    store_prepared_desc,    none >,
-                    in< events::no_data,            store_prepared_desc,    none >
-                >;
             };
 
             struct exec : state< exec > {
@@ -1171,7 +1173,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 /*  +-----------------+------------------------+---------------+---------------+---------------------+ */
                  tr<    prepare,       none,                    parse,          none,            not_<is_prepared>    >,
                  tr<    prepare,       none,                    bind,           skip_parsing,    is_prepared         >,
-                 tr<    parse,         events::parse_complete,  bind,           none,            none                >,
+                 tr<    parse,         events::ready_for_query, bind,           none,            none                >,
                  tr<    bind,          events::bind_complete,   exec,           none,            none                >
             >;
             //@}
