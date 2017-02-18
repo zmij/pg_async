@@ -28,7 +28,7 @@ using namespace oids::type;
 
 std::set< oid_type > BINARY_PARSERS {
     boolean, oids::type::bytea, int2, int4, int8, oid, tid, xid, cid,
-    timestamp, timestamptz
+    timestamp, timestamptz, uuid
 };
 }  // namespace
 
@@ -128,7 +128,6 @@ protocol_parser<ptime, BINARY_DATA_FORMAT>::from_int_value(bigint val)
 bool
 protocol_formatter<ptime, BINARY_DATA_FORMAT>::operator()( ::std::vector<byte>& buffer )
 {
-    local_log() << "Use binary ptime formatter";
     if (buffer.capacity() - buffer.size() < size()) {
         buffer.reserve(buffer.size() + size());
     }

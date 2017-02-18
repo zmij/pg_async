@@ -11,8 +11,6 @@
 #include <tip/db/pg/query.hpp>
 #include <tip/db/pg/io/boost_date_time.hpp>
 
-#include <boost/date_time/c_local_time_adjustor.hpp>
-
 #include "db/config.hpp"
 #include "test-environment.hpp"
 
@@ -41,7 +39,6 @@ TEST_P(DateTimeIOTest, Parse)
 
 TEST_P(DateTimeIOTest, DBRoundtrip)
 {
-    using local_adjust = boost::date_time::c_local_adjustor<ptime>;
     if (!test::environment::test_database.empty()) {
         db_service::initialize(1,
             {
