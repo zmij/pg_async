@@ -181,14 +181,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
 
         template < typename Event >
         void
-        on_enter(Event const&, connection_fsm_type& fsm)
-        { fsm.log(logger::WARNING) << "entering: transport connecting - unknown variant"; }
-
-        template < typename Event >
-        void
         on_exit(Event const&, connection_fsm_type& fsm)
         {
-            fsm.log() << "leaving:  transport connecting";
             fsm.start_read();
         }
     };
@@ -206,13 +200,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_enter(Event const&, connection_fsm_type& fsm)
         {
-            fsm.log() << "entering: authenticating";
             fsm.send_startup_message();
         }
-        template < typename Event >
-        void
-        on_exit(Event const&, connection_fsm_type& fsm)
-        { fsm.log() << "leaving: authenticating"; }
 
         struct handle_authn_event {
             template < typename SourceState, typename TargetState >
@@ -268,13 +257,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_enter(Event const&, connection_fsm_type& fsm)
         {
-            fsm.log() << "entering: idle";
             fsm.notify_idle();
         }
-        template < typename Event >
-        void
-        on_exit(Event const&, connection_fsm_type& fsm)
-        { fsm.log() << "leaving: idle"; }
 
         using internal_transitions = transition_table<
         /*                Event            Action        Guard     */
@@ -388,13 +372,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_enter(events::begin const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: start transaction";
                 fsm.connection().send_begin(evt);
             }
-            template < typename Event >
-            void
-            on_exit(Event const&, transaction_fsm_type& fsm)
-            { fsm.log() << "leaving: start transaction"; }
             using internal_transitions = transition_table<
             /*      Event                       Action        Guard     */
             /*    +----------------------------+-----------+---------+*/
@@ -430,15 +409,11 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_exit(error::query_error const& err, transaction_fsm_type& fsm)
             {
-                fsm.log() << tip::util::MAGENTA
-                        << "leaving: idle (transaction) (query_error)";
                 fsm.notify_error(err);
             }
             void
             on_exit(error::client_error const& err, transaction_fsm_type& fsm)
             {
-                fsm.log() << tip::util::MAGENTA
-                        << "leaving: idle (transaction) (client_error)";
                 fsm.notify_error(err);
             }
 
@@ -451,14 +426,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         };
 
         struct tran_error : state< tran_error > {
-            template < typename Event >
-            void
-            on_enter(Event const&, transaction_fsm_type& fsm)
-            { fsm.log() << "entering: tran_error"; }
-            template < typename Event >
-            void
-            on_exit(Event const&, transaction_fsm_type& fsm)
-            { fsm.log() << "leaving: tran_error"; }
             using internal_transitions = transition_table<
             /*                Event              Action                    Guard     */
             /*            +---------------------+-----------------------+---------+*/
@@ -471,27 +438,22 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_enter(Event const&, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: exit transaction";
                 callback_ = notification_callback{};
             }
             void
             on_enter(events::commit const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: exit transaction (commit)";
                 callback_ = evt.callback;
             }
             void
             on_enter(events::rollback const& evt, transaction_fsm_type& fsm)
             {
-                fsm.log() << "entering: exit transaction (rollback)";
                 callback_ = evt.callback;
             }
             template < typename Event >
             void
             on_exit(Event const&, transaction_fsm_type& fsm)
             {
-                fsm.log() << "leaving: exit transaction";
-
                 if (callback_) {
                     auto cb = callback_;
                     fsm.connection().async_notify(
@@ -560,17 +522,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 return tran().log(s);
             }
 
-            template < typename Event >
-            void
-            on_enter(Event const&, transaction_fsm_type&)
-            {
-                tran().log(logger::WARNING)
-                        << tip::util::MAGENTA << "entering: simple query (unexpected event)";
-            }
             void
             on_enter(events::execute const& q, transaction_fsm_type&)
             {
-                log() << tip::util::MAGENTA << "entering: simple query (execute event)";
                 log() << "Execute query: " << q.expression;
                 query_ = q;
                 message m(query_tag);
@@ -581,14 +535,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_exit(Event const&, FSM&)
             {
-                log() << tip::util::MAGENTA << "leaving: simple query";
                 query_ = events::execute{};
             }
             template < typename FSM >
             void
             on_exit(error::query_error const& err, FSM&)
             {
-                log() << tip::util::MAGENTA << "leaving: simple query (query_error)";
                 tran().notify_error(*this, err);
                 query_ = events::execute{};
             }
@@ -596,7 +548,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_exit(error::client_error const& err, FSM&)
             {
-                log() << tip::util::MAGENTA << "leaving: simple query (client_error)";
                 tran().notify_error(err);
                 query_ = events::execute();
             }
@@ -633,20 +584,11 @@ struct connection_fsm_def : ::afsm::def::state_machine<
 
                 fetch_data() : result_( new result_impl ) {}
 
-                template < typename Event >
-                void
-                on_enter(Event const& evt, simple_query_fsm_type& fsm)
-                {
-                    fsm.log() << "entering: fetch_data (unexpected event) "
-                            << typeid(evt).name();
-                }
-
                 void
                 on_enter(events::row_description const& rd,
                         simple_query_fsm_type& fsm)
                 {
-                    fsm.log() << "entering: fetch_data column count: "
-                            << rd.fields.size();
+                    // TODO Don't reset the resultset
                     result_.reset(new result_impl); // TODO Number of resultset
                     result_->row_description().swap(rd.fields);
                 }
@@ -655,15 +597,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 void
                 on_exit(Event const&, simple_query_fsm_type& fsm)
                 {
-                    fsm.log() << "leaving: fetch_data result size: "
-                            << result_->size();
                     fsm.tran().notify_result(fsm, resultset(result_), true);
-                }
-
-                void
-                on_exit(error::db_error const& err, simple_query_fsm_type& fsm)
-                {
-                    fsm.tran().log() << "leaving: fetch_data on error";
                 }
 
                 struct parse_data_row {
@@ -738,14 +672,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 return tran().log(s);
             }
 
-            template < typename Event, typename FSM >
-            void
-            on_enter(Event const&, FSM&)
-            { log(logger::WARNING) << tip::util::MAGENTA << "entering: extended query (unexpected event)"; }
             void
             on_enter(events::execute_prepared const& q, transaction_fsm_type&)
             {
-                log() << tip::util::MAGENTA << "entering: extended query";
                 query_ = q;
                 std::ostringstream os;
                 os << query_.expression;
@@ -762,14 +691,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_exit(Event const&, FSM&)
             {
-                log() << tip::util::MAGENTA << "leaving: extended query";
                 query_ = events::execute_prepared();
             }
             template < typename FSM >
             void
             on_exit(error::query_error const& err, FSM&)
             {
-                log() << tip::util::MAGENTA << "leaving: extended query (query_error)";
                 tran().notify_error(*this, err);
                 query_ = events::execute_prepared();
             }
@@ -777,7 +704,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             void
             on_exit(error::client_error const& err, FSM&)
             {
-                log() << tip::util::MAGENTA << "leaving: extended query (client_error)";
                 tran().notify_error(err);
                 query_ = events::execute_prepared();
             }
@@ -917,14 +843,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 void
                 on_enter(Event const&, extended_query& fsm)
                 {
-                    fsm.tran().log() << "entering: parse";
                     fsm.send_parse();
                 }
-
-                template < typename Event >
-                void
-                on_exit(Event const&, extended_query& fsm)
-                { fsm.tran().log() << "leaving: parse"; }
 
                 using internal_transitions = transition_table<
                     in< events::parse_complete,     none,                   none >,
@@ -938,32 +858,15 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                         events::row_event,
                         command_complete
                     >;
-                template < typename Event, typename FSM >
-                void
-                on_enter(Event const&, FSM&)
-                {
-                    log() << "entering: bind (unexpected fsm)";
-                }
                 template < typename Event >
                 void
                 on_enter( Event const&, extended_query_fsm_type& fsm )
                 {
-                    fsm.tran().log() << "entering: bind";
                     fsm.send_bind_exec();
                 }
             };
 
             struct exec : state< exec > {
-                template < typename Event, typename FSM >
-                void
-                on_enter(Event const&, FSM&)
-                { log() << "entering: execute (unexpected fsm)"; }
-                template < typename Event >
-                void
-                on_enter( Event const&, extended_query_fsm_type& fsm )
-                {
-                    fsm.tran().log() << "entering: execute";
-                }
                 template < typename Event >
                 void
                 on_exit(Event const&, extended_query_fsm_type& fsm)
@@ -977,15 +880,11 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 void
                 on_exit(error::query_error const& err, extended_query_fsm_type& fsm)
                 {
-                    fsm.tran().log(logger::ERROR)
-                            << "Exit exec state on query error " << err.what();
                     fsm.tran().notify_error(fsm, err);
                 }
                 void
                 on_exit(error::db_error const& err, extended_query_fsm_type& fsm)
                 {
-                    fsm.tran().log(logger::ERROR)
-                            << "Exit exec state on database error " << err.what();
                     fsm.tran().notify_error(err);
                 }
 
@@ -1202,7 +1101,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_enter(events::begin const& evt, connection_fsm_type& fsm)
         {
-            log() << "entering: transaction";
             connection().in_transaction_ = true;
             callbacks_ = evt;
         }
@@ -1210,7 +1108,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_exit(Event const&, FSM&)
         {
-            log() << "leaving: transaction";
             connection().in_transaction_ = false;
             auto tran = tran_object_.lock();
             if (tran) {
