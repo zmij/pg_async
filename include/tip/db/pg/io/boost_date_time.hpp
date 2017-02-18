@@ -154,9 +154,8 @@ struct protocol_parser< boost::posix_time::ptime, BINARY_DATA_FORMAT > :
     InputIterator
     operator()( InputIterator begin, InputIterator end )
     {
-        bigint tmp;
-        protocol_parser<bigint, BINARY_DATA_FORMAT> int_parser{tmp};
-        auto res = int_parser(begin, end);
+        bigint tmp{0};
+        auto res = protocol_read<BINARY_DATA_FORMAT>(begin, end, tmp);
         from_int_value(tmp);
         return res;
     }

@@ -955,11 +955,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                             connection().get_prepared(query_name_);
                     cmd.write((smallint)row.fields.size());
                     tran().log() << "Write " << row.fields.size() << " field formats";
-                    for (auto fd : row.fields) {
-                        smallint fmt_code = io::traits::has_binary_parser(fd.type_oid)
-                                ? BINARY_DATA_FORMAT : TEXT_DATA_FORMAT;
-                        tran().log() << "Format for " << fd.type_oid << " is " << fmt_code;
-                        cmd.write(fmt_code);
+                    for (auto const& fd : row.fields) {
+                        cmd.write((smallint)fd.format_code);
                     }
                 } else {
                     cmd.write((smallint)0); // no row description
@@ -992,6 +989,10 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 {
                     fsm.result_.reset(new result_impl);
                     fsm.result_->row_description() = row.fields; // copy!
+                    for (auto& fd : row.fields) {
+                        if (io::traits::has_binary_parser(fd.type_oid))
+                            fd.format_code = BINARY_DATA_FORMAT;
+                    }
                     fsm.connection().set_prepared(fsm.query_name_, row);
                 }
                 template < typename SourceState, typename TargetState >

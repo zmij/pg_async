@@ -121,7 +121,6 @@ protocol_formatter<ptime, BINARY_DATA_FORMAT>::pg_epoch{ date{2000, boost::grego
 void
 protocol_parser<ptime, BINARY_DATA_FORMAT>::from_int_value(bigint val)
 {
-    local_log() << "Use binary ptime parser";
     using fmt_type = protocol_formatter<ptime, BINARY_DATA_FORMAT>;
     base_type::value = fmt_type::pg_epoch + ::boost::posix_time::microseconds{val};
 }
