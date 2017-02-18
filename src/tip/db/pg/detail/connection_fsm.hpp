@@ -375,9 +375,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 fsm.connection().send_begin(evt);
             }
             using internal_transitions = transition_table<
-            /*      Event                       Action        Guard     */
-            /*    +----------------------------+-----------+---------+*/
-                in< command_complete,   none,        none     >
+            /*      Event                     Action      Guard     */
+            /*    +-------------------------+-----------+----------+*/
+                in< command_complete        , none      , none     >
             >;
         };
 
@@ -418,10 +418,10 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             }
 
             using internal_transitions = transition_table<
-            /*                Event             Action                    Guard     */
-            /*            +--------------------+-----------------------+---------+*/
-                in< command_complete,           none,                    none     >,
-                in< events::ready_for_query,    none,                    none     >
+            /*                Event           Action  Guard    */
+            /*    +-------------------------+-------+---------+*/
+                in< command_complete        , none  , none     >,
+                in< events::ready_for_query , none  , none     >
             >;
         };
 
@@ -472,13 +472,13 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 }
             }
             using internal_transitions = transition_table<
-            /*                Event                Action                    Guard     */
-            /*            +---------------------+-----------------------+---------+*/
-                in< command_complete,        none,                    none    >,
-                in< events::commit,          none,                    none    >,
-                in< events::rollback,        none,                    none    >,
-                in< events::execute,         tran_finished,           none    >,
-                in< events::execute_prepared,tran_finished,           none    >
+            /*                Event               Action          Guard    */
+            /*    +-----------------------------+---------------+---------+*/
+                in< command_complete            , none          , none    >,
+                in< events::commit              , none          , none    >,
+                in< events::rollback            , none          , none    >,
+                in< events::execute             , tran_finished , none    >,
+                in< events::execute_prepared    , tran_finished , none    >
             >;
 
             notification_callback callback_;
@@ -622,10 +622,10 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             //@{
             /** @name Transitions for simple query */
             using transitions = transition_table<
-                /*      Start           Event                       Next            Action          Guard              */
-                /*  +-----------------+----------------------------+---------------+---------------+-----------------+ */
-                 tr<    waiting,        events::row_description,    fetch_data,     none,           none            >,
-                 tr<    fetch_data,     command_complete,           waiting,        none,           none            >
+                /*   Start            Event                       Next            Action      Guard   */
+                /* +----------------+---------------------------+---------------+-----------+-------+ */
+                 tr< waiting        , events::row_description   , fetch_data    , none      , none  >,
+                 tr< fetch_data     , command_complete          , waiting       , none      , none  >
             >;
 
             events::execute         query_;
@@ -919,12 +919,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             /** @todo Row limits and portal suspended state */
             /** @todo Exit on error handling */
             using transitions = transition_table<
-                /*        Start         Event                   Next            Action            Guard                  */
-                /*  +-----------------+------------------------+---------------+---------------+---------------------+ */
-                 tr<    prepare,       none,                    parse,          none,            not_<is_prepared>    >,
-                 tr<    prepare,       none,                    bind,           skip_parsing,    is_prepared         >,
-                 tr<    parse,         events::ready_for_query, bind,           none,            none                >,
-                 tr<    bind,          events::bind_complete,   exec,           none,            none                >
+                /*   Start        Event                       Next    Action          Guard               */
+                /* +------------+---------------------------+-------+---------------+-------------------+ */
+                 tr< prepare    , none                      , parse , none          , not_<is_prepared> >,
+                 tr< prepare    , none                      , bind  , skip_parsing  , is_prepared       >,
+                 tr< parse      , events::ready_for_query   , bind  , none          , none              >,
+                 tr< bind       , events::bind_complete     , exec  , none          , none              >
             >;
             //@}
 
@@ -943,29 +943,28 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         //@{
         /** @name Transition table for transaction */
         using transitions = transition_table<
-            /*        Start            Event                    Next            Action                        Guard                  */
-            /* +--------------------+--------------------------+---------------+---------------------------+-----------+ */
-             tr<    starting,           events::ready_for_query,idle,           transaction_started,        none            >,
-             /* +--------------------+--------------------------+---------------+---------------------------+-----------+ */
-             tr<    idle,               events::commit,         exiting,        commit_transaction,         none            >,
-             tr<    idle,               events::rollback,       exiting,        rollback_transaction,       none            >,
-             tr<    idle,               error::query_error,     exiting,        rollback_transaction,       none            >,
-             tr<    idle,               error::client_error,    exiting,        rollback_transaction,       none            >,
-             /* +--------------------+--------------------------+---------------+---------------------------+-----------+ */
-             tr<    idle,               events::execute,        simple_query,   none,                       none            >,
-             tr<    simple_query,       events::ready_for_query,idle,           none,                       none            >,
-             tr<    simple_query,       error::query_error,     tran_error,     none,                       none            >,
-             tr<    simple_query,       error::client_error,    tran_error,     none,                       none            >,
-             tr<    simple_query,       error::db_error,        tran_error,     none,                       none            >,
-             /* +--------------------+--------------------------+---------------+---------------------------+-----------+ */
-             tr<    idle,               events::
-                                          execute_prepared,     extended_query, none,                       none            >,
-             tr<    extended_query,     events::ready_for_query,idle,           none,                       none            >,
-             tr<    extended_query,     error::query_error,     tran_error,     none,                       none            >,
-             tr<    extended_query,     error::client_error,    tran_error,     none,                       none            >,
-             tr<    extended_query,     error::db_error,        tran_error,     none,                       none            >,
-             /* +--------------------+--------------------------+---------------+---------------------------+-----------+ */
-             tr<    tran_error,         events::ready_for_query,exiting,        rollback_transaction,        none            >
+            /*        Start       Event                       Next                Action                  */
+             /*+----------------+---------------------------+-------------------+-----------------------+ */
+             tr< starting       , events::ready_for_query   , idle              , transaction_started   >,
+             /*+----------------+---------------------------+-------------------+-----------------------+ */
+             tr< idle           , events::commit            , exiting           , commit_transaction    >,
+             tr< idle           , events::rollback          , exiting           , rollback_transaction  >,
+             tr< idle           , error::query_error        , exiting           , rollback_transaction  >,
+             tr< idle           , error::client_error       , exiting           , rollback_transaction  >,
+             /*+----------------+---------------------------+-------------------+-----------------------+ */
+             tr< idle           , events::execute           , simple_query      , none                  >,
+             tr< simple_query   , events::ready_for_query   , idle              , none                  >,
+             tr< simple_query   , error::query_error        , tran_error        , none                  >,
+             tr< simple_query   , error::client_error       , tran_error        , none                  >,
+             tr< simple_query   , error::db_error           , tran_error        , none                  >,
+             /*+----------------+---------------------------+-------------------+-----------------------+ */
+             tr< idle           , events::execute_prepared  , extended_query    , none                  >,
+             tr< extended_query , events::ready_for_query   , idle              , none                  >,
+             tr< extended_query , error::query_error        , tran_error        , none                  >,
+             tr< extended_query , error::client_error       , tran_error        , none                  >,
+             tr< extended_query , error::db_error           , tran_error        , none                  >,
+             /*+----------------+---------------------------+-------------------+-----------------------+ */
+             tr< tran_error     , events::ready_for_query   , exiting           , rollback_transaction  >
         >;
 
         //@}
@@ -1133,28 +1132,24 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     //@{
     /** @name Connection state transition table */
     using transitions = transition_table<
-        /*        Start     Event                       Next            Action                  Guard                      */
-        /*  +--------------+---------------------------+---------------+-----------------------+---------------------+ */
-        tr<    unplugged,   connection_options,         t_conn,         none,                   none                >,
-        tr<    unplugged,   events::terminate,          terminated,     none,                   none                >,
+        /*  Start         Event                       Next            Action                 */
+        /*+-------------+---------------------------+---------------+-----------------------+*/
+        tr< unplugged   , connection_options        , t_conn        , none                  >,
+        tr< unplugged   , events::terminate         , terminated    , none                  >,
 
-        tr<    t_conn,      events::complete,           authn,          none,                   none                >,
-        tr<    t_conn,      error::
-                              connection_error,         terminated,     on_connection_error,    none                >,
+        tr< t_conn      , events::complete          , authn         , none                  >,
+        tr< t_conn      , error::connection_error   , terminated    , on_connection_error   >,
 
-        tr<    authn,       events::ready_for_query,    idle,           none,                   none                >,
-        tr<    authn,       error::
-                                connection_error,       terminated,     on_connection_error,    none                >,
-        /*                                    Transitions from idle                                                      */
-        /*  +-----------------+-------------------+---------------+---------------------------+---------------------+ */
-        tr<    idle,        events::begin,              transaction,    none,                   none                >,
-        tr<    idle,        events::terminate,          terminated,     disconnect,             none                >,
-        tr<    idle,        error::
-                              connection_error,         terminated,     on_connection_error,    none                >,
-        /*  +-----------------+-------------------+---------------+---------------------------+---------------------+ */
-        tr<    transaction, events::ready_for_query,    idle,           none,                   none                >,
-        tr<    transaction, error::
-                                connection_error,       terminated,     on_connection_error,    none                >
+        tr< authn       , events::ready_for_query   , idle          , none                  >,
+        tr< authn       , error::connection_error   , terminated    , on_connection_error   >,
+        /*  Transitions from idle                                                            */
+        /*+-------------+---------------------------+---------------+-----------------------+*/
+        tr< idle        , events::begin             , transaction   , none                  >,
+        tr< idle        , events::terminate         , terminated    , disconnect            >,
+        tr< idle        , error::connection_error   , terminated    , on_connection_error   >,
+        /*+-------------+---------------------------+---------------+-----------------------+*/
+        tr< transaction , events::ready_for_query   , idle          , none                  >,
+        tr< transaction , error::connection_error   , terminated    , on_connection_error   >
     >;
     //@}
     template< typename Event, typename FSM >
