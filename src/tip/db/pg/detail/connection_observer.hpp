@@ -52,15 +52,14 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     state_changed(FSM const& fsm, SourceState const&, TargetState const&, Event const&) const noexcept
     {
-        fsm.log() << "State changed to " << fsm.state_name();
+        fsm.log() << "State changed to " << demangle<TargetState>();
     }
 
     template < typename FSM, typename Event >
     void
     processed_in_state(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << demangle<Event>() << ": processed in state "
-                << fsm.state_name();
+        fsm.log() << demangle<Event>() << ": processed";
     }
 
     template < typename FSM, typename Event >
@@ -91,7 +90,6 @@ struct connection_observer : ::afsm::detail::null_observer {
     defer_event(FSM const& fsm, Event const&) const noexcept
     {
         fsm.log() << (util::ANSI_COLOR::CYAN | util::ANSI_COLOR::BRIGHT)
-                << fsm.state_name() << " "
                 << demangle<Event>() << ": Defer";
     }
 
@@ -137,7 +135,6 @@ struct connection_observer : ::afsm::detail::null_observer {
     reject_event(FSM const& fsm, Event const&) const noexcept
     {
         fsm.log(log::logger::ERROR) << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
-                << fsm.state_name() << " "
                 << demangle<Event>() << ": Reject.";
     }
 };

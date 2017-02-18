@@ -83,43 +83,9 @@ namespace detail {
 
 LOCAL_LOGGING_FACILITY_CFG_FUNC(PGFSM, config::INTERNALS_LOG, fsm_log);
 
-namespace flags {
-struct in_transaction{};
-}  // namespace flags
-
-struct connection_base_state {
-    virtual ~connection_base_state() {}
-
-    virtual ::std::string
-    state_name() const = 0;
-
-    virtual ::tip::log::local
-    log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
-    {
-        return fsm_log(s);
-    }
-
-    template < typename Event, typename FSM >
-    void
-    on_enter(Event&&, FSM&)
-    {
-        log() << "entering " << (tip::util::MAGENTA | tip::util::BRIGHT)
-                << state_name();
-    }
-
-    template < typename Event, typename FSM >
-    void
-    on_exit(Event&&, FSM&)
-    {
-        log() << "exiting "  << (tip::util::MAGENTA | tip::util::BRIGHT)
-                << state_name();
-    }
-};
-
 template < typename Mutex, typename TransportType, typename SharedType >
 struct connection_fsm_def : ::afsm::def::state_machine<
-            connection_fsm_def< Mutex, TransportType, SharedType >,
-            ::afsm::def::tags::common_base<connection_base_state> >,
+            connection_fsm_def< Mutex, TransportType, SharedType > >,
         public std::enable_shared_from_this< SharedType > {
 
     //@{
@@ -133,13 +99,12 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     using result_ptr        = std::shared_ptr< result_impl >;
 
     using connection_fsm_type = ::afsm::state_machine<this_type, Mutex, connection_observer>;
-    using base_tag          = ::afsm::def::tags::common_base<connection_base_state>;
     using none = ::afsm::none;
 
     template < typename StateDef, typename ... Tags >
-    using state = ::afsm::def::state<StateDef, base_tag, Tags...>;
+    using state = ::afsm::def::state<StateDef, Tags...>;
     template < typename MachineDef, typename ... Tags >
-    using state_machine = ::afsm::def::state_machine<MachineDef, base_tag, Tags...>;
+    using state_machine = ::afsm::def::state_machine<MachineDef, Tags...>;
     template < typename ... T >
     using transition_table = ::afsm::def::transition_table<T...>;
     template < typename Event, typename Action = none, typename Guard = none >
@@ -186,16 +151,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 events::execute,
                 events::execute_prepared
             >;
-
-        ::std::string
-        state_name() const override
-        {
-            static const ::std::string name = "unplugged";
-            return name;
-        }
     };
 
-    struct terminated : ::afsm::def::terminal_state< terminated, base_tag > {
+    struct terminated : ::afsm::def::terminal_state< terminated > {
         template < typename Event >
         void
         on_enter(Event const&, connection_fsm_type& fsm)
@@ -203,12 +161,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             fsm.log() << "entering: terminated";
             fsm.send(message(terminate_tag));
             fsm.notify_terminated();
-        }
-        ::std::string
-        state_name() const override
-        {
-            static const ::std::string name = "terminated";
-            return name;
         }
     };
 
@@ -224,7 +176,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         void
         on_enter(connection_options const& opts, connection_fsm_type& fsm)
         {
-            fsm.log() << "entering: transport connecting";
             fsm.connect_transport(opts);
         }
 
@@ -239,12 +190,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         {
             fsm.log() << "leaving:  transport connecting";
             fsm.start_read();
-        }
-        ::std::string
-        state_name() const override
-        {
-            static const ::std::string name = "transport connecting";
-            return name;
         }
     };
 
@@ -316,13 +261,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         using internal_transitions = transition_table<
             in< events::authn_event, handle_authn_event,    none >
         >;
-
-        ::std::string
-        state_name() const override
-        {
-            static const ::std::string name = "authenticating";
-            return name;
-        }
     };
 
     struct idle : state< idle > {
@@ -343,18 +281,10 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         /*            +-----------------+-----------+---------+*/
             in< events::ready_for_query,    none,        none     >
         >;
-
-        ::std::string
-        state_name() const override
-        {
-            static const ::std::string name = "idle";
-            return name;
-        }
     };
 
     struct transaction : state_machine<transaction> {
         using deferred_events = ::psst::meta::type_tuple< events::terminate >;
-        using flag_list = ::psst::meta::type_tuple< flags::in_transaction >;
 
         using transaction_fsm_type = ::afsm::inner_state_machine< transaction,
                 connection_fsm_type >;
@@ -455,13 +385,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                     events::rollback
                 >;
 
-            ::std::string
-            state_name() const override
-            {
-                static const ::std::string name = "starting";
-                return name;
-            }
-
             void
             on_enter(events::begin const& evt, transaction_fsm_type& fsm)
             {
@@ -499,16 +422,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             { return fsm().enclosing_fsm(); }
 
             ::tip::log::local
-            log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const override
+            log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
             {
                 return tran().log();
-            }
-
-            ::std::string
-            state_name() const override
-            {
-                static const ::std::string name = "idle (transaction)";
-                return name;
             }
 
             void
@@ -535,13 +451,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         };
 
         struct tran_error : state< tran_error > {
-            ::std::string
-            state_name() const override
-            {
-                static const ::std::string name = "transaction error";
-                return name;
-            }
-
             template < typename Event >
             void
             on_enter(Event const&, transaction_fsm_type& fsm)
@@ -558,13 +467,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             >;
         };
         struct exiting : state< exiting > {
-            ::std::string
-            state_name() const override
-            {
-                static const ::std::string name = "exit";
-                return name;
-            }
-
             template < typename Event >
             void
             on_enter(Event const&, transaction_fsm_type& fsm)
@@ -652,14 +554,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             connection() const
             { return tran().connection(); }
 
-            ::std::string
-            state_name() const override
-            {
-                return "simple query " + fsm().current_state_base().state_name();
-            }
-
             ::tip::log::local
-            log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const override
+            log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
             {
                 return tran().log(s);
             }
@@ -715,13 +611,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             //@{
             /** @name Simple query sub-states */
             struct waiting : state< waiting > {
-                ::std::string
-                state_name() const override
-                {
-                    static const ::std::string name = "waiting";
-                    return name;
-                }
-
                 struct non_select_result {
                     void
                     operator()(command_complete const& evt, simple_query_fsm_type& fsm,
@@ -741,13 +630,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
 
             struct fetch_data : state< fetch_data> {
                 using deferred_events = ::psst::meta::type_tuple< events::ready_for_query >;
-
-                ::std::string
-                state_name() const override
-                {
-                    static const ::std::string name = "fetch_data";
-                    return name;
-                }
 
                 fetch_data() : result_( new result_impl ) {}
 
@@ -850,14 +732,8 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             connection() const
             { return tran().connection(); }
 
-            ::std::string
-            state_name() const override
-            {
-                return "extended query " + fsm().current_state_base().state_name();
-            }
-
             ::tip::log::local
-            log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const override
+            log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
             {
                 return tran().log(s);
             }
@@ -1034,22 +910,9 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             //@}
             //@{
             /** @name Extended query sub-states */
-            struct prepare : state< prepare > {
-                ::std::string
-                state_name() const override
-                {
-                    static const ::std::string name = "prepare";
-                    return name;
-                }
-            };
+            struct prepare : state< prepare > {};
 
             struct parse : state< parse > {
-                ::std::string
-                state_name() const override
-                {
-                    static const ::std::string name = "parse";
-                    return name;
-                }
                 template < typename Event >
                 void
                 on_enter(Event const&, extended_query& fsm)
@@ -1075,12 +938,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                         events::row_event,
                         command_complete
                     >;
-                ::std::string
-                state_name() const override
-                {
-                    static const ::std::string name = "bind";
-                    return name;
-                }
                 template < typename Event, typename FSM >
                 void
                 on_enter(Event const&, FSM&)
@@ -1097,12 +954,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             };
 
             struct exec : state< exec > {
-                ::std::string
-                state_name() const override
-                {
-                    static const ::std::string name = "exec";
-                    return name;
-                }
                 template < typename Event, typename FSM >
                 void
                 on_enter(Event const&, FSM&)
@@ -1346,11 +1197,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         connection() const
         { return fsm().enclosing_fsm(); }
 
-        ::std::string
-        state_name() const override
-        {
-            return "transaction " + fsm().current_state_base().state_name();
-        }
         //@{
         /** @name Transaction entry-exit */
         void
@@ -1376,7 +1222,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         //@}
 
         ::tip::log::local
-        log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const override
+        log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
         {
             return connection().log(s);
         }
@@ -1442,12 +1288,6 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     }
     virtual ~connection_fsm_def() {}
     //@}
-
-    ::std::string
-    state_name() const override
-    {
-        return fsm().current_state_base().state_name();
-    }
 
     size_t
     number() const
@@ -1621,7 +1461,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     //@}
 
     ::tip::log::local
-    log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const override
+    log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
     {
         return fsm_log(s) << "Conn# " << connection_number_ << ": ";
     }
