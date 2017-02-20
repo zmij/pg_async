@@ -32,6 +32,7 @@ set(test_pg_SRCS
     errors_tests.cpp
     array_support_test.cpp
     timestamp_io_test.cpp
+    uuid_io_test.cpp
     test_main.cpp
     test-environment.cpp
 )
