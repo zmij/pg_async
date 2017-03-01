@@ -280,6 +280,16 @@ public:
         void
         to(::std::initializer_list<::std::string> const& names,
                 T& ... val) const;
+
+        /**
+         * Get the index of field with name.
+         * Shortcut to the resultset's method
+         * @param name the field name
+         * @return if found, index in the range of [0..columns_size). If not found - npos
+         */
+        resultset::size_type
+        index_of_name(std::string const& name) const
+        { return result_->index_of_name(name); }
     protected:
         friend class resultset;
         /**
