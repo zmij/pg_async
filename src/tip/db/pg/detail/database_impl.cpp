@@ -132,7 +132,7 @@ database_impl::stop()
         asio_config::io_service_ptr svc = service_;
 
         for (auto c: connections_) {
-            // FIXME Pass a close callback. Call stop
+            // Pass a close callback. Call stop
             // only when all connections are closed, may be with some timeout
             c.second->close(
             [pool_count, svc](){
