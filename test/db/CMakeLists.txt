@@ -26,6 +26,8 @@ add_custom_target(test-sql-scripts
 )
 
 set(test_pg_SRCS
+    test_main.cpp
+    test-environment.cpp
     internals_tests.cpp
     db_io_tests.cpp
     query_tests.cpp
@@ -33,8 +35,6 @@ set(test_pg_SRCS
     array_support_test.cpp
     timestamp_io_test.cpp
     uuid_io_test.cpp
-    test_main.cpp
-    test-environment.cpp
 )
 
 if(TEST_PG_ASYNC_FSM)
@@ -53,11 +53,11 @@ target_link_libraries(
 )
 
 if (TEST_DATABASE)
-    set(TEST_ARGS
+    set(DB_TEST_ARGS
         "-d${TEST_DATABASE}" -s2 -x4 -q10 --run-deadline=1
     )
 else()
-    set(TEST_ARGS)
+    set(DB_TEST_ARGS)
 endif()
 
 if (GTEST_XML_OUTPUT)
@@ -70,9 +70,40 @@ endif()
 
 add_test(
     NAME test-pg-async
-    COMMAND ${PGTEST} ${TEST_ARGS}
+    COMMAND ${PGTEST} ${DB_TEST_ARGS} ${TEST_ARGS}
 )
 
 
 add_dependencies(${PGTEST} test-sql-scripts)
+
+if(WITH_BOOST_FIBER)
+
+set(fiber_test_SRCS
+    test_main.cpp
+    test-environment.cpp
+    fiber_query_test.cpp
+)
+add_executable(test-pg-fiber ${fiber_test_SRCS})
+target_link_libraries(
+    test-pg-fiber
+    ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+    ${GTEST_LIBRARIES}
+    ${PGFIBER_LIB_NAME}
+)
+
+if (GTEST_XML_OUTPUT)
+    set (
+        FIBER_TEST_ARGS
+        --gtest_output=xml:test-pg-fiber-detail.xml
+    )
+endif()
+
+
+add_test(
+    NAME test-pg-fiber
+    COMMAND test-pg-fiber ${DB_TEST_ARGS} ${FIBER_TEST_ARGS}
+)
+
+
+endif()
 

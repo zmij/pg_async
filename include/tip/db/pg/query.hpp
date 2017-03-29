@@ -8,6 +8,7 @@
 #ifndef TIP_DB_PG_QUERY_HPP_
 #define TIP_DB_PG_QUERY_HPP_
 
+#include <tip/db/pg/future_config.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/resultset.hpp>
 
@@ -160,7 +161,7 @@ public:
      * Start running the query, return future
      * @return
      */
-    template < template <typename> class _Promise = ::std::promise >
+    template < template <typename> class _Promise = promise >
     auto
     run_async() const
         -> decltype(::std::declval<_Promise<resultset>>().get_future());
