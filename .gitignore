@@ -29,3 +29,9 @@
 
 # Build trees
 *build
+
+# Eclipse files
+*.settings
+.project
+.cproject
+
