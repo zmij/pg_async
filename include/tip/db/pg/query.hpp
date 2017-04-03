@@ -171,14 +171,21 @@ public:
      * transferred from database.
      * @return
      */
+    template < template<typename> class _Promise = promise >
     resultset
-    run() const;
+    run() const
+    {
+        auto future = run_async<_Promise>();
+        return future.get();
+    }
     /**
      * Shortcut for @ref tip::db::pg::query::run
      * @return
      */
+    template < template<typename> class _Promise = promise >
     resultset
-    operator()() const;
+    operator()() const
+    { return run<_Promise>(); }
 private:
     using params_buffer = std::vector<byte>;
     struct impl;

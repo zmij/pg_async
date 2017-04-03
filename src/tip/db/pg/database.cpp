@@ -77,13 +77,6 @@ db_service::begin(dbalias const& alias,
     impl()->get_connection(alias, result, error, mode);
 }
 
-transaction_ptr
-db_service::begin(dbalias const& alias, transaction_mode const& mode)
-{
-    auto future = begin_async(alias, mode);
-    return future.get();
-}
-
 void
 db_service::run()
 {

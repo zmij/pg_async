@@ -142,8 +142,13 @@ public:
         return promise->get_future();
     }
 
+    template < template <typename> class _Promise = promise >
     static transaction_ptr
-    begin(dbalias const& alias, transaction_mode const& mode = transaction_mode{});
+    begin(dbalias const& alias, transaction_mode const& mode = transaction_mode{})
+    {
+        auto future = begin_async< _Promise >(alias, mode);
+        return future.get();
+    }
 
     static void
     run();

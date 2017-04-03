@@ -77,6 +77,8 @@ add_test(
 add_dependencies(${PGTEST} test-sql-scripts)
 
 if(WITH_BOOST_FIBER)
+#-----------------------------------------------------------------------------
+#   PG fiber test
 
 set(fiber_test_SRCS
     test_main.cpp
@@ -88,7 +90,8 @@ target_link_libraries(
     test-pg-fiber
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     ${GTEST_LIBRARIES}
-    ${PGFIBER_LIB_NAME}
+    ${PGASYNC_LIB_NAME}
+    ${FIBER_LIBS}
 )
 
 if (GTEST_XML_OUTPUT)

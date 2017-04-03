@@ -55,6 +55,13 @@ set(
 )
 add_definitions(-DWITH_BOOST_ASIO)
 
+if(WITH_BOOST_FIBER)
+set(FIBER_LIBS
+    ${Boost_CONTEXT_LIBRARIES}
+    ${Boost_FIBER_LIBRARIES}
+)
+endif()
+
 find_package(Threads REQUIRED)
 find_package(AFSM)
 

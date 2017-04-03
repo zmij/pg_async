@@ -61,28 +61,3 @@ install (
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
-
-if(WITH_BOOST_FIBER)
-#-----------------------------------------------------------------------------
-#   PG async library built with fibers
-#-----------------------------------------------------------------------------
-
-add_library(${PGFIBER_LIB_NAME} SHARED ${pgsql_lib_SRCS})
-set_target_properties(
-    ${PGFIBER_LIB_NAME} PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    SOVERSION 1
-)
-target_compile_definitions(${PGFIBER_LIB_NAME} PRIVATE WITH_BOOST_FIBERS)
-target_link_libraries(${PGFIBER_LIB_NAME}
-    ${pgsql_lib_LIBRARIES}
-    ${Boost_CONTEXT_LIBRARIES}
-    ${Boost_FIBER_LIBRARIES}
-)
-install (
-    TARGETS ${PGFIBER_LIB_NAME}
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
-#-----------------------------------------------------------------------------
-endif()
