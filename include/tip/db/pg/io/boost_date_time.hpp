@@ -11,10 +11,14 @@
 #include <tip/db/pg/protocol_io_traits.hpp>
 #include <tip/util/endian.hpp>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/karma.hpp>
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/date_time.hpp>
+
+#pragma GCC diagnostic pop
 
 namespace tip {
 namespace db {
