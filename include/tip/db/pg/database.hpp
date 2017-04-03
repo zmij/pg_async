@@ -16,8 +16,10 @@
 #include <boost/optional.hpp>
 
 #include <tip/db/pg/asio_config.hpp>
+#include <tip/db/pg/future_config.hpp>
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/error.hpp>
+
 
 namespace tip {
 namespace db {
@@ -118,7 +120,7 @@ public:
      * @param
      * @return
      */
-    template < template <typename> class _Promise = ::std::promise >
+    template < template <typename> class _Promise = promise >
     static auto
     begin_async(dbalias const& alias, transaction_mode const& mode = transaction_mode{})
         -> decltype(::std::declval<_Promise<transaction_ptr>>().get_future())
@@ -140,8 +142,13 @@ public:
         return promise->get_future();
     }
 
+    template < template <typename> class _Promise = promise >
     static transaction_ptr
-    begin(dbalias const& alias, transaction_mode const& mode = transaction_mode{});
+    begin(dbalias const& alias, transaction_mode const& mode = transaction_mode{})
+    {
+        auto future = begin_async< _Promise >(alias, mode);
+        return future.get();
+    }
 
     static void
     run();
