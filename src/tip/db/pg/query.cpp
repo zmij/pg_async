@@ -156,19 +156,6 @@ query::operator ()(query_result_callback const& res, error_callback const& err) 
     run_async(res, err);
 }
 
-resultset
-query::run() const
-{
-    auto future = run_async();
-    return future.get();
-}
-
-resultset
-query::operator()()const
-{
-    return run();
-}
-
 query::pimpl
 query::create_impl(dbalias const& alias, transaction_mode const& mode,
         std::string const& expression,

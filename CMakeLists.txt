@@ -29,6 +29,7 @@ endif()
 option(USE_TIP_LOG "Use tip::log logger library" OFF)
 option(BUILD_TESTS "Build tests for the library" OFF)
 option(USE_BOOST_ASIO "Use Boost.Asio instead of Standalone Asio library" ON)
+option(WITH_BOOST_FIBER "Build wire with boost::fiber support" OFF)
 
 # Dependencies
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
@@ -36,20 +37,29 @@ set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/afsm/cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/afsm/lib/meta/cmake")
 
-if (USE_BOOST_ASIO)
 set(BOOST_COMPONENTS
     system
     thread
 )
-find_package(Boost 1.58 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+set(BOOST_VERSION 1.58)
+if (WITH_BOOST_FIBER)
+set(BOOST_VERSION 1.61) # Boost.Fiber was introduced in version 1.61
+list(APPEND BOOST_COMPONENTS context fiber)
+endif()
+
+find_package(Boost ${BOOST_VERSION} COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 set(
     ASIO_LIBRARIES
     ${Boost_SYSTEM_LIBRARIES}
     ${Boost_THREAD_LIBRARIES}
 )
 add_definitions(-DWITH_BOOST_ASIO)
-else()
-find_package(asio 1.10 REQUIRED)
+
+if(WITH_BOOST_FIBER)
+set(FIBER_LIBS
+    ${Boost_CONTEXT_LIBRARIES}
+    ${Boost_FIBER_LIBRARIES}
+)
 endif()
 
 find_package(Threads REQUIRED)
@@ -72,6 +82,15 @@ if(NOT AFSM_FOUND)
 add_subdirectory(lib/afsm)
 endif()
 
+if (NOT PUSHKIN_ASIO_FIBERS_INCLUDE_DIRECTORIES)
+    set(_PUSHKIN_ASIO_FIBERS_SUBTREE ON)
+endif()
+
+if (_PUSHKIN_ASIO_FIBERS_SUBTREE)
+    add_subdirectory(lib/asio-fiber)
+endif()
+
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -82,6 +101,7 @@ include_directories(
     ${AFSM_INCLUDE_DIRS}
     ${TIP_UTIL_INCLUDE_DIRS}
     ${TIP_LOG_INCLUDE_DIRS}
+    ${PUSHKIN_ASIO_FIBERS_INCLUDE_DIRECTORIES}
 )
 
 if (USE_TIP_LOG)
@@ -89,6 +109,9 @@ if (USE_TIP_LOG)
 endif()
 
 set(PGASYNC_LIB_NAME ${PROJECT_PREFIX}-psql)
+if(WITH_BOOST_FIBER)
+set(PGFIBER_LIB_NAME ${PROJECT_PREFIX}-psql-fiber)
+endif()
 
 add_subdirectory(src/tip/db/pg)
 add_subdirectory(include/tip/db)
@@ -100,6 +123,7 @@ endif()
 
 get_directory_property(has_parent PARENT_DIRECTORY)
 if (has_parent)
-    set(TIP_DB_LIB ${PROJECT_PREFIX}-psql CACHE INTERNAL "Name of tip psql library target")
+    set(TIP_DB_LIB ${PGASYNC_LIB_NAME} CACHE INTERNAL "Name of tip psql library target")
+    set(TIP_DB_FIBER_LIB ${PGFIBER_LIB_NAME} CACHE INTERNAL "Name of tip psql fiber library target")
     set(TIP_DB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include ${TIP_LOG_INCLUDE_DIRS} CACHE INTERNAL "Paths to tip psql library includes")
 endif()
