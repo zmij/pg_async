@@ -48,14 +48,14 @@ transaction::in_transaction() const
 }
 
 void
-transaction::commit(notification_callback cb)
+transaction::commit_async(notification_callback cb, error_callback ecb)
 {
     if (!finished_.test_and_set())
         connection_->commit(cb);
 }
 
 void
-transaction::rollback(notification_callback cb)
+transaction::rollback_async(notification_callback cb, error_callback ecb)
 {
     if (!finished_.test_and_set())
         connection_->rollback(cb);

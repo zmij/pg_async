@@ -10,8 +10,10 @@
 
 #include <memory>
 #include <functional>
-#include <tip/db/pg/common.hpp>
 #include <atomic>
+
+#include <tip/db/pg/common.hpp>
+#include <tip/db/pg/future_config.hpp>
 
 namespace tip {
 namespace db {
@@ -81,9 +83,60 @@ public:
     in_transaction() const;
 
     void
-    commit(notification_callback = notification_callback());
+    commit_async(notification_callback = notification_callback(),
+            error_callback = error_callback());
+    template < template<typename> class _Promise = promise >
+    auto
+    commit_future() -> decltype(::std::declval<_Promise<void>>().get_future())
+    {
+        auto promise = ::std::make_shared<_Promise<void>>();
+        commit_async(
+        [promise]()
+        {
+            promise->set_value();
+        },
+        [promise](error::db_error const& err)
+        {
+            promise->set_exception(::std::make_exception_ptr(err));
+        }
+        );
+        return promise->get_future();
+    }
+    template < template<typename> class _Promise = promise >
     void
-    rollback(notification_callback = notification_callback());
+    commit()
+    {
+        auto future = commit_future();
+        future.get();
+    }
+
+    void
+    rollback_async(notification_callback = notification_callback(),
+            error_callback = error_callback());
+    template < template<typename> class _Promise = promise >
+    auto
+    rollback_future() -> decltype(::std::declval<_Promise<void>>().get_future())
+    {
+        auto promise = ::std::make_shared<_Promise<void>>();
+        rollback_async(
+        [promise]()
+        {
+            promise->set_value();
+        },
+        [promise](error::db_error const& err)
+        {
+            promise->set_exception(::std::make_exception_ptr(err));
+        }
+        );
+        return promise->get_future();
+    }
+    template < template<typename> class _Promise = promise >
+    void
+    rollback()
+    {
+        auto future = rollback_future();
+        future.get();
+    }
 
     void
     execute(std::string const& query, query_result_callback,
