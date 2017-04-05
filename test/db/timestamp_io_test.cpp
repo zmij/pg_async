@@ -76,7 +76,7 @@ TEST_P(DateTimeIOTest, DBRoundtrip)
             },
             [](error::db_error const&) {
             });
-            tran->commit([](){
+            tran->commit_async([](){
                 db_service::stop();
             });
         },

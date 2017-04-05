@@ -148,7 +148,7 @@ TEST(QueryTest, QueryQueue)
                 }, [](error::db_error const&){
                     FAIL();
                 });
-                tran->commit();
+                tran->commit_async();
                 query(tran, "select 1")
                 ([&](transaction_ptr c, resultset r, bool)
                  {

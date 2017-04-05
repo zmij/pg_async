@@ -99,15 +99,15 @@ basic_connection::begin(events::begin&& evt)
 }
 
 void
-basic_connection::commit(notification_callback cb)
+basic_connection::commit(notification_callback cb, error_callback ecb)
 {
-    do_commit(wrap_it(strand(), cb));
+    do_commit(wrap_it(strand(), cb), wrap_it(strand(), ecb));
 }
 
 void
-basic_connection::rollback(notification_callback cb)
+basic_connection::rollback(notification_callback cb, error_callback ecb)
 {
-    do_rollback(wrap_it(strand(), cb));
+    do_rollback(wrap_it(strand(), cb), wrap_it(strand(), ecb));
 }
 
 bool

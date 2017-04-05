@@ -178,7 +178,7 @@ TEST( ConnectionTest, ConnectionPool )
                                     << " Received results: " << res_count;
                             if (complete) {
                                 local_log(logger::DEBUG) << "Commiting transaction";
-                                t1->commit();
+                                t1->commit_async();
                             }
 
                             if (res_count >= req_count * thread_count) {
@@ -251,7 +251,7 @@ TEST( ConnectionTest, ExecutePrepared )
                         EXPECT_TRUE(r.size());
                         EXPECT_TRUE(r.columns_size());
                         EXPECT_FALSE(r.empty());
-                        trx->commit();
+                        trx->commit_async();
                     }, [&](error::db_error const& ) {
                     });
                 }, [](error::db_error const&) {
@@ -337,7 +337,7 @@ TEST( ConnectionTest, ConnectionPoolExtended )
                                     << " Received results: " << res_count;
                             if (complete) {
                                 local_log(logger::DEBUG) << "Commiting transaction";
-                                t1->commit();
+                                t1->commit_async();
                             }
 
                             if (res_count >= req_count * thread_count) {
@@ -399,7 +399,7 @@ TEST( TransactionTest, CleanExit )
                     //EXPECT_THROW( c->begin(events::begin()), db_error );
                     EXPECT_TRUE(tran.get());
                     EXPECT_TRUE(tran->in_transaction());
-                    ASSERT_NO_THROW(tran->commit());
+                    ASSERT_NO_THROW(tran->commit_async());
                 },
                 [&](error::db_error const&){
                     transaction_error = true;
