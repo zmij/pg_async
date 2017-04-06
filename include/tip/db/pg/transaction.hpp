@@ -14,6 +14,7 @@
 
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/future_config.hpp>
+#include <tip/db/pg/error.hpp>
 
 namespace tip {
 namespace db {
