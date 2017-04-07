@@ -37,7 +37,6 @@ struct connection_observer : ::afsm::detail::null_observer {
     start_process_event(FSM const& fsm, Event const&) const noexcept
     {
         using decayed_event = typename ::std::decay<Event>::type;
-        using tip::util::ANSI_COLOR;
         fsm.log() << demangle<Event>() << ": Start processing";
     }
 
@@ -66,7 +65,7 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     enqueue_event(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << util::ANSI_COLOR::MAGENTA
+        fsm.log() << ::psst::util::ANSI_COLOR::MAGENTA
                 << demangle<Event>() << ": Enqueue";
     }
 
@@ -74,14 +73,14 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     start_process_events_queue(FSM const& fsm) const noexcept
     {
-        fsm.log() << util::ANSI_COLOR::MAGENTA
+        fsm.log() << ::psst::util::ANSI_COLOR::MAGENTA
                 << "Start processing event queue";
     }
     template < typename FSM >
     void
     end_process_events_queue(FSM const& fsm) const noexcept
     {
-        fsm.log() << util::ANSI_COLOR::MAGENTA
+        fsm.log() << ::psst::util::ANSI_COLOR::MAGENTA
                 << "End processing event queue";
     }
 
@@ -89,7 +88,7 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     defer_event(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log() << (util::ANSI_COLOR::CYAN | util::ANSI_COLOR::BRIGHT)
+        fsm.log() << (::psst::util::ANSI_COLOR::CYAN | ::psst::util::ANSI_COLOR::BRIGHT)
                 << demangle<Event>() << ": Defer";
     }
 
@@ -97,14 +96,14 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     start_process_deferred_queue(FSM const& fsm, ::std::size_t size) const noexcept
     {
-        fsm.log() << util::ANSI_COLOR::CYAN
+        fsm.log() << ::psst::util::ANSI_COLOR::CYAN
                 << "Start processing deferred queue size " << size;
     }
     template < typename FSM >
     void
     end_process_deferred_queue(FSM const& fsm, ::std::size_t remain) const noexcept
     {
-        fsm.log() << util::ANSI_COLOR::CYAN
+        fsm.log() << ::psst::util::ANSI_COLOR::CYAN
                 << "End processing deferred queue. Remain " << remain;
     }
 
@@ -112,21 +111,21 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     skip_processing_deferred_queue(FSM const& fsm) const noexcept
     {
-        fsm.log() << (util::ANSI_COLOR::YELLOW | util::ANSI_COLOR::BRIGHT)
+        fsm.log() << (::psst::util::ANSI_COLOR::YELLOW | ::psst::util::ANSI_COLOR::BRIGHT)
                 << "Skip processing deferred queue";
     }
     template < typename FSM >
     void
     postpone_deferred_events(FSM const& fsm, ::std::size_t count) const noexcept
     {
-        fsm.log() << util::ANSI_COLOR::YELLOW
+        fsm.log() << ::psst::util::ANSI_COLOR::YELLOW
                 << "Postpone " << count << " deferred events";
     }
     template < typename FSM >
     void
     drop_deferred_event(FSM const& fsm) const noexcept
     {
-        fsm.log() << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
+        fsm.log() << (::psst::util::ANSI_COLOR::RED | ::psst::util::ANSI_COLOR::BRIGHT)
                 << "Drop deferred event";
     }
 
@@ -134,7 +133,8 @@ struct connection_observer : ::afsm::detail::null_observer {
     void
     reject_event(FSM const& fsm, Event const&) const noexcept
     {
-        fsm.log(log::logger::ERROR) << (util::ANSI_COLOR::RED | util::ANSI_COLOR::BRIGHT)
+        fsm.log(::psst::log::logger::ERROR)
+                << (::psst::util::ANSI_COLOR::RED | ::psst::util::ANSI_COLOR::BRIGHT)
                 << demangle<Event>() << ": Reject.";
     }
 };

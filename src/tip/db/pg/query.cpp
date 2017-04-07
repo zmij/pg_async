@@ -93,6 +93,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
             query_result_callback const& res,
             error_callback const& err)
     {
+        namespace util = ::psst::util;
         tran_ = t;
         if (params_.empty()) {
             {
