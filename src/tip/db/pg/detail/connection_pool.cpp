@@ -123,6 +123,7 @@ struct connection_pool::impl {
     bool
     next_event(events::begin& evt)
     {
+        namespace util = ::psst::util;
         lock_type lock{event_mutex_};
         if (!queue_.empty()) {
             local_log()
@@ -139,6 +140,7 @@ struct connection_pool::impl {
     void
     enqueue_event(events::begin&& evt)
     {
+        namespace util = ::psst::util;
         lock_type lock{event_mutex_};
         queue_.push(::std::move(evt));
 
@@ -165,6 +167,7 @@ struct connection_pool::impl {
     void
     create_new_connection(connection_pool_ptr pool)
     {
+        namespace util = ::psst::util;
         if (closed_)
             return;
         {
@@ -201,6 +204,7 @@ struct connection_pool::impl {
     void
     connection_ready(connection_ptr c)
     {
+        namespace util = ::psst::util;
         {
             local_log()
                 << "Connection "
@@ -225,6 +229,7 @@ struct connection_pool::impl {
     void
     connection_terminated(connection_ptr c)
     {
+        namespace util = ::psst::util;
         {
             local_log(logger::INFO)
                     << "Connection "
@@ -265,6 +270,7 @@ struct connection_pool::impl {
         transaction_mode const& mode,
         connection_pool_ptr pool)
     {
+        namespace util = ::psst::util;
         if (closed_) {
             err( error::connection_error("Connection pool is closed") );
             return;
@@ -304,6 +310,7 @@ struct connection_pool::impl {
     void
     close_connections()
     {
+        namespace util = ::psst::util;
         local_log() << "Close connection pool "
                 << (util::CLEAR) << (util::RED | util::BRIGHT)
                 << alias()
