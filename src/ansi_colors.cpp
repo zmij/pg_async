@@ -5,10 +5,10 @@
  *      Author: zmij
  */
 
-#include <tip/log/ansi_colors.hpp>
+#include <pushkin/log/ansi_colors.hpp>
 #include <iostream>
 
-namespace tip {
+namespace psst {
 namespace util {
 
 namespace {
@@ -22,7 +22,7 @@ const int multiply_de_bruijn_bit_position[32] =
 int
 lowest_bit_set(unsigned int v)
 {
-	return multiply_de_bruijn_bit_position[((unsigned int)((v & -v) * 0x077CB531U)) >> 27];
+    return multiply_de_bruijn_bit_position[((unsigned int)((v & -v) * 0x077CB531U)) >> 27];
 }
 
 char ESC = '\033';
@@ -32,34 +32,34 @@ char ESC = '\033';
 std::ostream&
 operator << (std::ostream& out, ANSI_COLOR col)
 {
-	std::ostream::sentry s(out);
-	if (s) {
-		if (col == CLEAR) {
-			out << ESC << "[0m";
-		} else {
-			if (col & BRIGHT) {
-				out << ESC << "[1m";
-			} else if (col & DIM) {
-				out << ESC << "[2m";
-			}
-			if (col & UNDERLINE) {
-				out << ESC << "[4m";
-			}
+    std::ostream::sentry s(out);
+    if (s) {
+        if (col == CLEAR) {
+            out << ESC << "[0m";
+        } else {
+            if (col & BRIGHT) {
+                out << ESC << "[1m";
+            } else if (col & DIM) {
+                out << ESC << "[2m";
+            }
+            if (col & UNDERLINE) {
+                out << ESC << "[4m";
+            }
 
-			char fg = '3';
-			if (col & BACKGROUND) {
-				fg = '4';
-			}
-			// clear attribute bits
-			col = (ANSI_COLOR)(col & COLORS);
-			if (col) {
-				int color_pos = lowest_bit_set(col) - lowest_bit_set(BLACK);
-				out << ESC << '[' << fg << (char)('0' + color_pos) << 'm';
-			}
-		}
-	}
-	return out;
+            char fg = '3';
+            if (col & BACKGROUND) {
+                fg = '4';
+            }
+            // clear attribute bits
+            col = (ANSI_COLOR)(col & COLORS);
+            if (col) {
+                int color_pos = lowest_bit_set(col) - lowest_bit_set(BLACK);
+                out << ESC << '[' << fg << (char)('0' + color_pos) << 'm';
+            }
+        }
+    }
+    return out;
 }
 
 }  // namespace util
-}  // namespace tip
+}  // namespace psst
