@@ -28,7 +28,7 @@ add_definitions("-std=c++11")
 
 set(TIP_LOG_LIB ${PROJECT_PREFIX}-log)
 
-add_subdirectory(include/tip)
+add_subdirectory(include/pushkin)
 add_subdirectory(src)
 
 get_directory_property(has_parent PARENT_DIRECTORY)

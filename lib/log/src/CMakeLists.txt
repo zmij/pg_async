@@ -15,7 +15,7 @@ target_link_libraries(${TIP_LOG_LIB}
     ${Boost_THREAD_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
 )
-include_directories(${Boost_INCLUDE_DIR})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 set_target_properties(
     ${TIP_LOG_LIB} PROPERTIES
     VERSION ${PROJECT_VERSION}

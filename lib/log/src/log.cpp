@@ -5,7 +5,7 @@
  * @author: zmij
  */
 
-#include <tip/log.hpp>
+#include <pushkin/log.hpp>
 #include <iomanip>
 #include <chrono>
 #include <algorithm>
@@ -20,13 +20,19 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <pushkin/log/stream_redirect.hpp>
+
 #include <boost/thread/tss.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/date_time/date_facet.hpp>
 
-namespace tip {
+#if defined __linux__ or defined MACOSX
+#include <pthread.h>
+#endif
+
+namespace psst {
 namespace log {
 
 const std::string::size_type PROC_NAME_MAX_LEN = 12;
@@ -171,9 +177,10 @@ struct log_writer {
     using mutex_type    = ::std::mutex;
     using lock_guard    = ::std::lock_guard<mutex_type>;
     using unique_lock   = ::std::unique_lock<mutex_type>;
+    using redirect_ptr  = ::std::shared_ptr< stream_redirect >;
 
-    ::std::shared_ptr<::std::ofstream>  redirect_file_;
     ::std::ostream&                     out_;
+    redirect_ptr                        redirect_;
     pid_t                               pid_;
 
     event_queue                         events_;
@@ -191,34 +198,46 @@ struct log_writer {
         out_.imbue(std::locale(std::locale::classic(), f));
     }
 
-    log_writer(::std::string const& file_name)
-        : redirect_file_{
-            ::std::make_shared< ::std::ofstream >(file_name,
-                    std::ofstream::out | std::ofstream::app) },
-          out_{*redirect_file_}, pid_{::getpid()}, finished_{false}
+    ~log_writer()
     {
+        out_.flush();
+    }
+
+	void
+	change_date_format()
+	{
         using boost::gregorian::date_facet;
         date_facet* f = new date_facet(date_format.c_str());
         out_.imbue(std::locale(std::locale::classic(), f));
     }
 
-    ~log_writer()
+	void
+    redirect(::std::string const& file)
     {
-        if (redirect_file_)
-            redirect_file_->flush();
+        if (redirect_)
+            throw ::std::runtime_error{ "Log is already redirected" };
+        unique_lock lock{mtx_};
+        redirect_ = ::std::make_shared< stream_redirect >( out_, file );
     }
 
     void
-    change_date_format()
+    reopen()
     {
-        using boost::gregorian::date_facet;
-        date_facet* f = new date_facet(date_format.c_str());
-        out_.imbue(std::locale(std::locale::classic(), f));
+        if (redirect_) {
+            unique_lock lock{mtx_};
+            redirect_->reopen();
+        }
     }
 
     void
     run()
     {
+        // TODO Wrap in if have posix
+        #if defined __linux__
+        pthread_setname_np(pthread_self(), "logger");
+        #elif defined MACOSX
+        pthread_setname_np("logger");
+        #endif
         while (!finished_) {
             try {
                 event_queue events;
@@ -295,7 +314,7 @@ struct log_writer {
     }
 };
 
-struct logger::Impl {
+struct logger::impl {
     struct thread_number {
         size_t no;
     };
@@ -311,7 +330,7 @@ struct logger::Impl {
 
     bool finished_;
 
-    Impl(std::ostream& out)
+    impl(std::ostream& out)
             : writer_(out), writer_thread_(), finished_(false)
     {
         writer_thread_ = std::thread([&]{
@@ -319,15 +338,7 @@ struct logger::Impl {
         });
     }
 
-    Impl(::std::string const& file_name)
-        : writer_(file_name), writer_thread_(), finished_(false)
-    {
-        writer_thread_ = std::thread([&]{
-            writer_.run();
-        });
-    }
-
-    ~Impl()
+    ~impl()
     {
         try {
             flush();
@@ -398,6 +409,18 @@ struct logger::Impl {
     {
         writer_.change_date_format();
     }
+
+    void
+    redirect(::std::string const& file)
+    {
+        writer_.redirect(file);
+    }
+
+    void
+    rotate()
+    {
+        writer_.reopen();
+    }
 };
 
 logger&
@@ -417,14 +440,14 @@ void
 logger::set_stream(std::ostream& s)
 {
     logger& l = instance();
-    l.pimpl_.reset(new Impl(s));
+    l.pimpl_.reset(new impl(s));
 }
 
 void
 logger::set_target_file(::std::string const& file_name)
 {
     logger& l = instance();
-    l.pimpl_.reset(new Impl(file_name));
+    l.pimpl_->redirect(file_name);
 }
 
 void
@@ -479,7 +502,7 @@ logger::severity_color(event_severity s)
 
 
 logger::logger(std::ostream& out)
-        : pimpl_(new Impl(out))
+        : pimpl_(new impl(out))
 {
 }
 
@@ -516,6 +539,12 @@ logger::flush()
     return *this;
 }
 
+void
+logger::rotate()
+{
+    pimpl_->rotate();
+}
+
 }  // namespace log
 namespace util {
 
@@ -530,5 +559,5 @@ operator << (log::logger& out, ANSI_COLOR col)
 }
 
 }  // namespace util
-}  // namespace tip
+}  // namespace psst
 

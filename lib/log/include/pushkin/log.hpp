@@ -1,19 +1,19 @@
 /**
- * @file /tip-server/include/tip/log/log.hpp
+ * @file pushkin/log.hpp
  * @brief
  * @date Jul 8, 2015
  * @author: zmij
  */
 
-#ifndef TIP_LOG_LOG_HPP_
-#define TIP_LOG_LOG_HPP_
+#ifndef PUSHKIN_LOG_LOG_HPP_
+#define PUSHKIN_LOG_LOG_HPP_
 
 #include <iostream>
 #include <memory>
 
-#include <tip/log/ansi_colors.hpp>
+#include <pushkin/log/ansi_colors.hpp>
 
-namespace tip {
+namespace psst {
 namespace log {
 
 /**
@@ -72,6 +72,12 @@ public:
      */
     logger&
     flush();
+
+    /**
+     * Reopen log file
+     */
+    void
+    rotate();
 
     /**
      * Singleton instance of the logger
@@ -147,9 +153,9 @@ public:
 private:
     logger(std::ostream&);
 
-    struct Impl;
-    typedef std::shared_ptr<Impl> PImpl;
-    PImpl pimpl_;
+    struct impl;
+    typedef std::shared_ptr<impl> pimpl;
+    pimpl pimpl_;
 };
 
 /**
@@ -308,55 +314,55 @@ log::logger&
 operator << (log::logger&, ANSI_COLOR);
 
 }  // namespace util
-}  // namespace tip
+}  // namespace psst
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
 #define LOCAL_LOGGING_FACILITY(c, s) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
         local \
         local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG(c, s) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = s; \
         local \
         local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #define LOCAL_LOGGING_FACILITY_FUNC(c, s, f) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
         local \
         f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG_FUNC(c, s, f) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = s; \
         local \
         f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #pragma GCC diagnostic pop
 
-#endif /* TIP_LOG_LOG_HPP_ */
+#endif /* PUSHKIN_LOG_LOG_HPP_ */
