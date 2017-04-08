@@ -67,7 +67,7 @@ TEST_P(UUIDIOTest, DBRoundtrip)
             },
             [](error::db_error const&) {
             });
-            tran->commit([](){
+            tran->commit_async([](){
                 db_service::stop();
             });
         },

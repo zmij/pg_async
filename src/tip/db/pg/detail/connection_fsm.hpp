@@ -1715,23 +1715,33 @@ private:
     }
 
     virtual void
-    do_commit(notification_callback cb) override
+    do_commit(notification_callback cb, error_callback ecb) override
     {
         if (!fsm_type::in_transaction()) {
             log(logger::ERROR) << "Cannot commit transaction: not in transaction";
-            throw error::db_error("Not in transaction");
+            if (ecb) {
+                ecb(error::db_error("Not in transaction"));
+            }
+            else {
+                throw error::db_error("Not in transaction");
+            }
         }
-        fsm_type::process_event(events::commit{cb});
+        fsm_type::process_event(events::commit{cb, ecb});
     }
 
     virtual void
-    do_rollback(notification_callback cb) override
+    do_rollback(notification_callback cb, error_callback ecb) override
     {
         if (!fsm_type::in_transaction()) {
             log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
-            throw error::db_error("Not in transaction");
+            if (ecb) {
+                ecb(error::db_error("Not in transaction"));
+            }
+            else {
+                throw error::db_error("Not in transaction");
+            }
         }
-        fsm_type::process_event(events::rollback{cb});
+        fsm_type::process_event(events::rollback{cb, ecb});
     }
 
     virtual void
