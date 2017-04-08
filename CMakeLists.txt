@@ -69,13 +69,17 @@ add_definitions("-std=c++11")
 
 if(USE_TIP_LOG)
     if(NOT TIP_LOG_INCLUDE_DIRS)
-        add_subdirectory(lib/log)
+        set(_LOG_SUBTREE ON)
     endif()
-    link_directories(${TIP_LOG_LINK_DIR})
 endif()
 
 if(NOT TIP_UTIL_INCLUDE_DIRS)
     set(TIP_UTIL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/util/include)
+endif()
+
+if (_LOG_SUBTREE)
+    add_subdirectory(lib/log)
+    link_directories(${TIP_LOG_LINK_DIR})
 endif()
 
 if(NOT AFSM_FOUND)
