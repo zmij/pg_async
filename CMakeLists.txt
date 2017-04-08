@@ -43,8 +43,12 @@ find_package(Boost ${BOOST_VERSION} COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 find_package(Threads REQUIRED)
 
 include_directories(
+    SYSTEM
+    ${Boost_INCLUDE_DIRS}
+)
+
+include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${Boost_INCLUDE_DIRECTORIES}
 )
 add_definitions("-std=c++14")
 
