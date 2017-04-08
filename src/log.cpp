@@ -205,11 +205,11 @@ struct log_writer {
 
 	void
 	change_date_format()
-	{
-		using boost::gregorian::date_facet;
-		date_facet* f = new date_facet(date_format.c_str());
-		out_.imbue(std::locale(std::locale::classic(), f));
-	}
+    {
+        using boost::gregorian::date_facet;
+        date_facet* f = new date_facet(date_format.c_str());
+        out_.imbue(std::locale(std::locale::classic(), f));
+    }
 
 	void
     redirect(::std::string const& file)
@@ -220,16 +220,16 @@ struct log_writer {
         redirect_ = ::std::make_shared< stream_redirect >( out_, file );
     }
 
-    void
+	void
     reopen()
-    {
+	{
         if (redirect_) {
             unique_lock lock{mtx_};
             redirect_->reopen();
         }
-    }
+	}
 
-    void
+	void
 	run()
 	{
         // TODO Wrap in if have posix
@@ -239,61 +239,61 @@ struct log_writer {
         pthread_setname_np("logger");
         #endif
 		while (!finished_) {
-			try {
+            try {
                 event_queue events;
-				{
+			{
                     unique_lock lock{mtx_};
-					while (events_.empty() && !finished_) cond_.wait(lock);
+				while (events_.empty() && !finished_) cond_.wait(lock);
                     events.swap(events_);
-				}
+			}
 
                 while (!events.empty()) {
                     while (!events.empty()) {
-					event_ptr e;
+                        event_ptr e;
                         e = events.front();
                         events.pop();
-						if (!e) break;
+                        if (!e) break;
 
-					event_data& evt = *e;
-					std::ostream::sentry s(out_);
-					if (s) {
-						bool use_colors = logger_use_colors;
-						if (use_colors)
-							out_ << severity_colors[ evt.severity_ ];
-						// process name
-						out_ << std::setw(PROC_NAME_MAX_LEN + 1) << std::left << proc_name() << ' ';
-						// pid
-						out_ << std::setw(6) << std::left << pid_ << ' ';
-						// thread no
-						out_ << std::setw(4) << std::left << evt.thread_no_ << ' ';
-						// category
-						out_ << std::setw(CATEGORY_MAX_LEN + 1) << evt.category_;
-						// timestamp
-						out_ << evt.timestamp_.date() << ' ' << evt.timestamp_.time_of_day() << ' ';
-						out_ << std::setw(8) << std::left << evt.severity_;
+				event_data& evt = *e;
+				std::ostream::sentry s(out_);
+				if (s) {
+					bool use_colors = logger_use_colors;
+					if (use_colors)
+						out_ << severity_colors[ evt.severity_ ];
+					// process name
+					out_ << std::setw(PROC_NAME_MAX_LEN + 1) << std::left << proc_name() << ' ';
+					// pid
+					out_ << std::setw(6) << std::left << pid_ << ' ';
+					// thread no
+					out_ << std::setw(4) << std::left << evt.thread_no_ << ' ';
+					// category
+					out_ << std::setw(CATEGORY_MAX_LEN + 1) << evt.category_;
+					// timestamp
+					out_ << evt.timestamp_.date() << ' ' << evt.timestamp_.time_of_day() << ' ';
+					out_ << std::setw(8) << std::left << evt.severity_;
 
-						std::istreambuf_iterator<char> eob;
-						std::istreambuf_iterator<char> bi(&evt.buffer_);
-						std::ostream_iterator<char> out(out_);
-						std::copy(bi, eob, out);
-						if (use_colors)
-							out_ << util::CLEAR;
-						*out++ = '\n';
-						if (flush_stream_)
-							out_.flush();
-					}
-					}
+					std::istreambuf_iterator<char> eob;
+					std::istreambuf_iterator<char> bi(&evt.buffer_);
+					std::ostream_iterator<char> out(out_);
+					std::copy(bi, eob, out);
+					if (use_colors)
+						out_ << util::CLEAR;
+					*out++ = '\n';
+					if (flush_stream_)
+						out_.flush();
+				}
+				}
                     unique_lock lock{mtx_};
                     events.swap(events_);
-				}
-                out_.flush();
-			} catch (::std::exception const& e) {
-                auto time = boost::posix_time::microsec_clock::universal_time();
-				out_ << time.time_of_day() << " Exception in logging thread: " << e.what() << ::std::endl;
-			} catch (...) {
-                auto time = boost::posix_time::microsec_clock::universal_time();
-				out_ << time.time_of_day() << " Unknown exception in logging thread"<< ::std::endl;
 			}
+                out_.flush();
+            } catch (::std::exception const& e) {
+                auto time = boost::posix_time::microsec_clock::universal_time();
+                out_ << time.time_of_day() << " Exception in logging thread: " << e.what() << ::std::endl;
+            } catch (...) {
+                auto time = boost::posix_time::microsec_clock::universal_time();
+                out_ << time.time_of_day() << " Unknown exception in logging thread"<< ::std::endl;
+            }
 		}
 	}
 
@@ -339,7 +339,7 @@ struct logger::impl {
 	}
 
     ~impl()
-	{
+    {
 		try {
 			flush();
 			finished_ = true;
@@ -401,8 +401,8 @@ struct logger::impl {
                 && logger::OFF < e->severity_) {
                 writer_.push(e);
 		}
-		}
 	}
+    }
 
 	void
 	change_date_format()
