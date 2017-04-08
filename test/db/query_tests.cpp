@@ -213,7 +213,7 @@ TEST(QueryTest, BasicResultParsing)
                     }
 
                     for (resultset::const_iterator row = res.begin(); row != res.end(); ++row) {
-                        tip::log::local local = local_log();
+                        auto local = local_log();
                         local << "Row " << (row - res.begin()) << ": ";
 
                         long id;

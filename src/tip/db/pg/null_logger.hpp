@@ -10,7 +10,7 @@
 
 #include <iosfwd>
 
-namespace tip {
+namespace psst {
 namespace util {
 enum ANSI_COLOR {
     // clear the color
@@ -132,54 +132,54 @@ operator << (local out, T const& v)
 }
 
 }  // namespace log
-}  // namespace tip
+}  // namespace psst
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
 #define LOCAL_LOGGING_FACILITY(c, s) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
         local \
         local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG(c, s) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = s; \
         local \
         local_log(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #define LOCAL_LOGGING_FACILITY_FUNC(c, s, f) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = logger::s; \
         local \
         f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #define LOCAL_LOGGING_FACILITY_CFG_FUNC(c, s, f) \
     namespace { \
-        using namespace tip::log; \
+        using namespace ::psst::log; \
         const std::string c##_LOG_CATEGORY = #c;    \
         const logger::event_severity c##_DEFAULT_SEVERITY = s; \
         local \
         f(logger::event_severity sv = c##_DEFAULT_SEVERITY) \
         { return local(c##_LOG_CATEGORY, sv); }\
     } \
-    using tip::log::logger
+    using ::psst::log::logger
 
 #pragma GCC diagnostic pop
 

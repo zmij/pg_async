@@ -400,7 +400,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             tran() const
             { return fsm().enclosing_fsm(); }
 
-            ::tip::log::local
+            ::psst::log::local
             log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
             {
                 return tran().log();
@@ -516,7 +516,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             connection() const
             { return tran().connection(); }
 
-            ::tip::log::local
+            ::psst::log::local
             log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
             {
                 return tran().log(s);
@@ -666,7 +666,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
             connection() const
             { return tran().connection(); }
 
-            ::tip::log::local
+            ::psst::log::local
             log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
             {
                 return tran().log(s);
@@ -1117,7 +1117,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
         }
         //@}
 
-        ::tip::log::local
+        ::psst::log::local
         log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
         {
             return connection().log(s);
@@ -1352,7 +1352,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     }
     //@}
 
-    ::tip::log::local
+    ::psst::log::local
     log(logger::event_severity s = PGFSM_DEFAULT_SEVERITY) const
     {
         return fsm_log(s) << "Conn# " << connection_number_ << ": ";
@@ -1470,6 +1470,7 @@ private:
     void
     handle_message(message_ptr m)
     {
+        namespace util = ::psst::util;
         message_tag tag = m->tag();
         if (message::backend_tags().count(tag)) {
             switch (tag) {
