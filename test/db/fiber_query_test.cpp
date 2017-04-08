@@ -30,8 +30,7 @@ LOCAL_LOGGING_FACILITY(PGTEST, TRACE);
 TEST(FiberTest, TheOnly)
 {
     if (!environment::test_database.empty()) {
-        ::boost::fibers::use_scheduling_algorithm<
-             ::psst::asio::fiber::shared_work >( db_service::io_service() );
+        auto runner = ::psst::asio::fiber::use_shared_work_algorithm( db_service::io_service() );
 
         ASSERT_NO_THROW(db_service::add_connection(environment::test_database,
                             environment::connection_pool));
@@ -76,12 +75,11 @@ TEST(FiberTest, TheOnly)
 
         for(auto i = 0; i < thread_cnt; ++i) {
             threads.emplace_back([&](){
-                ::boost::fibers::use_scheduling_algorithm<
-                     ::psst::asio::fiber::shared_work >( db_service::io_service() );
+                auto runner = ::psst::asio::fiber::use_shared_work_algorithm( db_service::io_service() );
                 for (auto i = 0; i < fiber_cnt; ++i) {
                     fiber{ fib_fn, ::std::ref(b) }.detach();
                 }
-                db_service::run();
+                runner->run();
                 local_log() << "Thread exit";
             });
         }
