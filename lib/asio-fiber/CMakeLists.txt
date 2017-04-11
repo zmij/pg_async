@@ -26,7 +26,7 @@ endif()
 
 option(BUILD_TESTS "Build tests for ${lib_name} library" ON)
 # Without fibers only non-fiber utilities can be used
-option(WITH_BOOST_FIBER "Build wire with boost::fiber support" ON)
+option(WITH_BOOST_FIBER "Build wire with boost::fiber support" OFF)
 
 set(
     BOOST_COMPONENTS
