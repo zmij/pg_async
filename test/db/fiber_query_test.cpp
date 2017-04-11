@@ -27,7 +27,7 @@ namespace test {
 
 LOCAL_LOGGING_FACILITY(PGTEST, TRACE);
 
-TEST(FiberTest, TheOnly)
+TEST(FiberTest, DISABLED_TheOnly)
 {
     if (!environment::test_database.empty()) {
         auto runner = ::psst::asio::fiber::use_shared_work_algorithm( db_service::io_service() );
