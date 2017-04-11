@@ -124,14 +124,14 @@ public:
     }
 
     bool
-    has_ready_fibers() const noexcept
+    has_ready_fibers() const noexcept override
     {
         service::lock_type lock{ shared_->mtx_ };
         return !shared_->queue_.empty() || !local_queue_.empty();
     }
 
     void
-    awakened(context* ctx) noexcept
+    awakened(context* ctx) noexcept override
     {
         if (ctx->is_context( context_type::pinned_context )) {
             ctx->ready_link(local_queue_);
@@ -142,7 +142,7 @@ public:
         }
     }
     context*
-    pick_next() noexcept
+    pick_next() noexcept override
     {
         context* ctx{ nullptr };
         service::lock_type lock{ shared_->mtx_ };
