@@ -977,6 +977,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
                 tran_object_ = t;
                 try {
                     callbacks_.started(t);
+                    callbacks_.started = nullptr;
                 } catch (error::query_error const& e) {
                     log(logger::ERROR)
                             << "Transaction started handler throwed a query_error:"
