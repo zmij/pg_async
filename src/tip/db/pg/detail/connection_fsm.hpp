@@ -1172,7 +1172,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
 
     //@{
     connection_fsm_def(io_service_ptr svc, client_options_type const& co)
-        : shared_base(), io_service_{svc}, transport_{svc},
+        : shared_base(), io_service_{svc}, strand_{*svc}, transport_{svc},
           client_opts_{co},
           serverPid_{0}, serverSecret_{0}, in_transaction_{false},
           connection_number_{ next_connection_number() }
@@ -1349,7 +1349,7 @@ struct connection_fsm_def : ::afsm::def::state_machine<
     void
     async_notify(Handler&& h)
     {
-        io_service_->post( ::std::forward<Handler>(h) );
+        strand_.post( ::std::forward<Handler>(h) );
     }
     //@}
 
@@ -1608,6 +1608,7 @@ private:
 private:
     friend class transaction;
     asio_config::io_service_ptr     io_service_;
+    asio_config::io_service::strand strand_;
     transport_type                  transport_;
 
     client_options_type             client_opts_;
@@ -1647,7 +1648,6 @@ public:
             client_options_type const& co,
             connection_callbacks const& callbacks)
         : basic_connection(), fsm_type(svc, co),
-          strand_(*svc),
           callbacks_(callbacks)
     {
         if (PGFSM_DEFAULT_SEVERITY > logger::OFF)
@@ -1763,12 +1763,7 @@ private:
     {
         fsm_type::process_event(events::terminate{});
     }
-
-    asio_config::io_service::strand&
-    strand() override
-    { return strand_; }
 private:
-    asio_config::io_service::strand strand_;
     connection_callbacks            callbacks_;
 };
 

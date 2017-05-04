@@ -127,9 +127,6 @@ private:
 
     virtual void
     do_terminate() = 0;
-
-    virtual asio_config::io_service::strand&
-    strand() = 0;
 };
 
 }  // namespace pg
