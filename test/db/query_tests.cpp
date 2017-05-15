@@ -224,6 +224,7 @@ TEST(QueryTest, QueryQueue)
                 });
         }
 
+        stop.reset();
         db_service::run();
 
         for (auto& t : threads) {
