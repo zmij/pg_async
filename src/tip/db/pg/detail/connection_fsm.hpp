@@ -1724,9 +1724,6 @@ private:
             if (ecb) {
                 ecb(error::db_error("Not in transaction"));
             }
-            else {
-                throw error::db_error("Not in transaction");
-            }
         }
         fsm_type::process_event(events::commit{cb, ecb});
     }
@@ -1738,9 +1735,6 @@ private:
             log(logger::ERROR) << "Cannot rollback transaction: not in transaction";
             if (ecb) {
                 ecb(error::db_error("Not in transaction"));
-            }
-            else {
-                throw error::db_error("Not in transaction");
             }
         }
         fsm_type::process_event(events::rollback{cb, ecb});
