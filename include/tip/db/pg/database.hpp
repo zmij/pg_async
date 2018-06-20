@@ -162,7 +162,9 @@ private:
     db_service() {}
 
     typedef std::shared_ptr<detail::database_impl> pimpl;
-    static pimpl pimpl_;
+
+    static pimpl&
+    impl_ptr();
 
     static pimpl
     impl(size_t pool_size = DEFAULT_POOOL_SIZE,

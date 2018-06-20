@@ -32,26 +32,35 @@ db_service_lock()
 
 }  // namespace
 
-db_service::pimpl db_service::pimpl_;
+db_service::pimpl&
+db_service::impl_ptr()
+{
+    static pimpl p;
+    return p;
+}
 
 db_service::pimpl
 db_service::impl(size_t pool_size, connection_params const& defaults)
 {
     lock_type lock(db_service_lock());
-    if (!pimpl_) {
-        pimpl_.reset(new detail::database_impl(pool_size, defaults));
+
+    auto& pimpl = impl_ptr();
+    if (!pimpl) {
+        pimpl.reset(new detail::database_impl(pool_size, defaults));
     }
-    return pimpl_;
+    return pimpl;
 }
 
 void
 db_service::initialize(size_t pool_size, connection_params const& defaults)
 {
     lock_type lock(db_service_lock());
-    if (!pimpl_) {
-        pimpl_.reset(new detail::database_impl(pool_size, defaults));
+
+    auto& pimpl = impl_ptr();
+    if (!pimpl) {
+        pimpl.reset(new detail::database_impl(pool_size, defaults));
     } else {
-        pimpl_->set_defaults(pool_size, defaults);
+        pimpl->set_defaults(pool_size, defaults);
     }
 }
 
@@ -88,10 +97,12 @@ db_service::stop()
 {
     lock_type lock(db_service_lock());
     local_log(logger::INFO) << "Stop db service";
-    if (pimpl_) {
-        pimpl_->stop();
+
+    auto& pimpl = impl_ptr();
+    if (pimpl) {
+        pimpl->stop();
     }
-    pimpl_.reset();
+    pimpl.reset();
 }
 
 asio_config::io_service_ptr
