@@ -442,6 +442,11 @@ public:
         bool
         to_impl( T& val, std::false_type const& ) const
         {
+            field_description const& fd = description();
+            if (fd.format_code == BINARY_DATA_FORMAT) {
+               throw error::db_error{"Cannot find BINARY_DATA_FORMAT parser for field " + fd.name};
+            }
+
             field_buffer b = input_buffer();
             io::protocol_read< TEXT_DATA_FORMAT >(b.begin(), b.end(), val);
             return true;
