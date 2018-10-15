@@ -33,9 +33,11 @@ main( int argc, char* argv[] )
 
         using namespace tip::db::pg;
         namespace po = boost::program_options;
+        #ifdef WITH_TIP_LOG
         logger::set_proc_name(argv[0]);
         logger::set_stream(std::clog);
         logger::flush_stream(false);
+        #endif
 
         po::options_description desc("Test options");
 
