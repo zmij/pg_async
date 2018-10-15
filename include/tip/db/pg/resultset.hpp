@@ -12,6 +12,7 @@
 #include <tip/db/pg/common.hpp>
 #include <tip/db/pg/error.hpp>
 #include <tip/db/pg/protocol_io_traits.hpp>
+#include <tip/db/pg/detail/data_iterator.hpp>
 
 #include <iterator>
 #include <istream>
@@ -470,228 +471,57 @@ public:
     /**
      * Iterator over the rows in a result set
      */
-    class const_row_iterator : public row {
-    public:
-        //@{
-        /** Iterator concept */
-        typedef row value_type;
-        typedef resultset::difference_type difference_type;
-        typedef value_type reference;
-        typedef value_type const* pointer;
-        typedef std::random_access_iterator_tag iterator_category;
-        //@}
+    class const_row_iterator : public detail::data_iterator< const_row_iterator, row > {
+      using base_type = detail::data_iterator< const_row_iterator, row >;
     public:
         /**
          * Create a terminating iterator
          */
-        const_row_iterator() : row(nullptr, npos) {}
+        const_row_iterator() : base_type(nullptr, npos) {}
 
-        //@{
-        /** @name Dereferencing */
-        reference
-        operator*() const
-        {
-            return reference(*this);
-        }
-        pointer
-        operator->() const
-        {
-            return this;
-        }
-        //@}
-        //@{
-        /** @name Iterator validity checking */
-        /**
-         * Implicitly convert to boolean.
-         * The row index is valid when it is equal to the result set size
-         * for an iterator that is returned by end() function to be valid
-         * and moveable.
-         */
-        operator bool() const
-        { return result_ && row_index_ <= result_->size(); }
-        bool
-        operator !() const
-        { return !(this->operator bool()); }
-        //@}
-        //@{
-        /** @name Random access iterator concept */
-        const_row_iterator&
-        operator++() /**< Prefix increment */
-        { return advance(1); }
-
-        const_row_iterator
-        operator++(int) /**< Postfix increment */
-        {
-            const_row_iterator i(*this);
-            advance(1);
-            return i;
-        }
-        const_row_iterator&
-        operator--() /**< Prefix decrement */
-        { return advance(-1); }
-
-        const_row_iterator
-        operator--(int) /**< Postfix decrement */
-        {
-            const_row_iterator i(*this);
-            advance(-1);
-            return i;
-        }
-
-        const_row_iterator&
-        operator += (difference_type distance)
-        { return advance(distance); }
-        const_row_iterator&
-        operator -= (difference_type distance)
-        { return advance(-distance); }
-        //@}
-
-        //@{
-        /** @name Iterator comparison */
-        bool
-        operator == (const_row_iterator const& rhs) const
-        { return compare(rhs) == 0; }
-
-        bool
-        operator != (const_row_iterator const& rhs) const
-        { return !(*this == rhs); }
-
-        bool
-        operator < (const_row_iterator const& rhs) const
-        { return compare(rhs) < 0; }
-        bool
-        operator <= (const_row_iterator const& rhs) const
-        { return compare(rhs) <= 0; }
-        bool
-        operator > (const_row_iterator const& rhs) const
-        { return compare(rhs) > 0; }
-        bool
-        operator >= (const_row_iterator const& rhs) const
-        { return compare(rhs) >= 0; }
-        //@}
-
-    private:
-        friend class resultset;
-        const_row_iterator(result_pointer res, resultset::size_type index)
-            : row(res, index) {}
         int
         compare(const_row_iterator const& rhs) const;
         const_row_iterator&
         advance(difference_type);
+        bool
+        valid() const
+        { return result_ && row_index_ <= result_->size(); }
+    private:
+        friend class resultset;
+        const_row_iterator(result_pointer res, resultset::size_type index)
+            : base_type(res, index) {}
     }; // const_row_iterator
 
     /**
      * Iterator over the fields in a data row
      */
-    class const_field_iterator : public field {
-    public:
-        //@{
-        /** @name Iterator concept */
-        typedef field value_type;
-        typedef resultset::difference_type difference_type;
-        typedef value_type reference;
-        typedef value_type const* pointer;
-        typedef std::random_access_iterator_tag iterator_category;
-        //@}
+    class const_field_iterator : public detail::data_iterator< const_field_iterator, field > {
+      using base_type = detail::data_iterator< const_field_iterator, field >;
     public:
         /**
          * Create a terminating iterator
          */
-        const_field_iterator() : field(nullptr, npos, npos) {}
+        const_field_iterator() : base_type(nullptr, npos, npos) {}
 
-        //@{
-        /** @name Dereferencing */
-        reference
-        operator*() const
-        {
-            return reference(*this);
-        }
-        pointer
-        operator->() const
-        {
-            return this;
-        }
-        //@}
-        //@{
-        /** @name Iterator validity checking */
-        /**
-         * Implicitly convert to boolean.
-         * The row index is valid when it is equal to the row size
-         * for an iterator that is returned by end() function to be valid
-         * and moveable.
-         */
-        operator bool() const
-        { return result_
-                && row_index_ < result_->size()
-                && field_index_ <= result_->columns_size(); }
-        bool
-        operator !() const
-        { return !(this->operator bool()); }
-        //@}
-        //@{
-        /** @name Random access iterator concept */
-        const_field_iterator&
-        operator++() /**< Prefix increment */
-        { return advance(1); }
-
-        const_field_iterator
-        operator++(int) /**< Postfix increment */
-        {
-            const_field_iterator i(*this);
-            advance(1);
-            return i;
-        }
-        const_field_iterator&
-        operator--() /**< Prefix decrement */
-        { return advance(-1); }
-
-        const_field_iterator
-        operator--(int) /**< Postfix decrement */
-        {
-            const_field_iterator i(*this);
-            advance(-1);
-            return i;
-        }
-
-        const_field_iterator&
-        operator += (difference_type distance)
-        { return advance(distance); }
-        const_field_iterator&
-        operator -= (difference_type distance)
-        { return advance(-distance); }
-        //@}
-
-        //@{
-        /** @name Iterator comparison */
-        bool
-        operator == (const_field_iterator const& rhs) const
-        { return compare(rhs) == 0; }
-
-        bool
-        operator != (const_field_iterator const& rhs) const
-        { return !(*this == rhs); }
-
-        bool
-        operator < (const_field_iterator const& rhs) const
-        { return compare(rhs) < 0; }
-        bool
-        operator <= (const_field_iterator const& rhs) const
-        { return compare(rhs) <= 0; }
-        bool
-        operator > (const_field_iterator const& rhs) const
-        { return compare(rhs) > 0; }
-        bool
-        operator >= (const_field_iterator const& rhs) const
-        { return compare(rhs) >= 0; }
-        //@}
-    private:
-        friend class row;
-        const_field_iterator(result_pointer res, size_type row, size_type col)
-            : field(res, row, col) {}
         int
         compare(const_field_iterator const& rhs) const;
         const_field_iterator&
         advance(difference_type distance);
+        //@{
+        /**
+         * The field index is valid when it is equal to the row size
+         * for an iterator that is returned by end() function to be valid
+         * and movable.
+         */
+        bool
+        valid() const
+        { return result_
+                && row_index_ < result_->size()
+                && field_index_ <= result_->columns_size(); }
+    private:
+        friend class row;
+        const_field_iterator(result_pointer res, size_type row, size_type col)
+            : base_type(res, row, col) {}
     }; // const_field_iterator
     //@}
 public:
