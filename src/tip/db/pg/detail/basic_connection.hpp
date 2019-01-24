@@ -45,9 +45,11 @@ struct connection_callbacks {
 namespace events {
 struct commit {
     notification_callback       callback;
+    error_callback              error;
 };
 struct rollback {
     notification_callback       callback;
+    error_callback              error;
 };
 
 struct execute {
@@ -82,19 +84,19 @@ public:
     alias() const;
 
     void
-    begin(events::begin const&);
+    begin(events::begin&&);
     void
-    commit(notification_callback = notification_callback());
+    commit(notification_callback = notification_callback(), error_callback = error_callback());
     void
-    rollback(notification_callback = notification_callback());
+    rollback(notification_callback = notification_callback(), error_callback = error_callback());
 
     bool
     in_transaction() const;
 
     void
-    execute(events::execute const&);
+    execute(events::execute&&);
     void
-    execute(events::execute_prepared const&);
+    execute(events::execute_prepared&&);
 
     void
     terminate();
@@ -112,16 +114,16 @@ private:
     is_in_transaction() const = 0;
 
     virtual void
-    do_begin(events::begin const&) = 0;
+    do_begin(events::begin&&) = 0;
     virtual void
-    do_commit(notification_callback) = 0;
+    do_commit(notification_callback, error_callback) = 0;
     virtual void
-    do_rollback(notification_callback) = 0;
+    do_rollback(notification_callback, error_callback) = 0;
 
     virtual void
-    do_execute(events::execute const&) = 0;
+    do_execute(events::execute&&) = 0;
     virtual void
-    do_execute(events::execute_prepared const&) = 0;
+    do_execute(events::execute_prepared&&) = 0;
 
     virtual void
     do_terminate() = 0;

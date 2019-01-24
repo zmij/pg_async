@@ -74,21 +74,21 @@ basic_connection::alias() const
 }
 
 void
-basic_connection::begin(events::begin const& evt)
+basic_connection::begin(events::begin&& evt)
 {
-    do_begin(evt);
+    do_begin(::std::move(evt));
 }
 
 void
-basic_connection::commit(notification_callback cb)
+basic_connection::commit(notification_callback cb, error_callback ecb)
 {
-    do_commit(cb);
+    do_commit(cb, ecb);
 }
 
 void
-basic_connection::rollback(notification_callback cb)
+basic_connection::rollback(notification_callback cb, error_callback ecb)
 {
-    do_rollback(cb);
+    do_rollback(cb, ecb);
 }
 
 bool
@@ -98,14 +98,14 @@ basic_connection::in_transaction() const
 }
 
 void
-basic_connection::execute(events::execute const& query)
+basic_connection::execute(events::execute&& query)
 {
-    do_execute(query);
+    do_execute(::std::move(query));
 }
 void
-basic_connection::execute(events::execute_prepared const& query)
+basic_connection::execute(events::execute_prepared&& query)
 {
-    do_execute(query);
+    do_execute(::std::move(query));
 }
 
 

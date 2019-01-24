@@ -73,6 +73,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
     void
     run_async(query_result_callback const& res, error_callback const& err)
     {
+        // TODO wrap res & err in strand
         if (!tran_) {
             db_service::begin(
                 alias_,
@@ -92,6 +93,7 @@ struct query::impl : std::enable_shared_from_this<query::impl> {
             query_result_callback const& res,
             error_callback const& err)
     {
+        namespace util = ::psst::util;
         tran_ = t;
         if (params_.empty()) {
             {

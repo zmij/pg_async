@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 #include "db/config.hpp"
 #include "test-environment.hpp"
@@ -84,9 +85,27 @@ TEST(QueryTest, QueryInlay)
     }
 }
 
+struct call_when_done {
+    ::std::function< void() > handler;
+
+    explicit call_when_done(::std::function< void() > h) : handler{h} {}
+    ~call_when_done()
+    {
+        local_log(logger::INFO) << "Call when done";
+        if (handler) {
+            try {
+                handler();
+            } catch (...) {}
+        }
+    }
+};
+
 TEST(QueryTest, QueryQueue)
 {
     using namespace tip::db::pg;
+    using atomic_counter = ::std::atomic<::std::size_t>;
+    auto const num_requests = test::environment::num_requests;
+
     if (!test::environment::test_database.empty()) {
 
         ASIO_NAMESPACE::deadline_timer timer(*db_service::io_service(),
@@ -107,55 +126,114 @@ TEST(QueryTest, QueryQueue)
         ASSERT_NO_THROW(db_service::add_connection(test::environment::test_database,
                 test::environment::connection_pool));
         connection_options opts = connection_options::parse(test::environment::test_database);
-        {
+        auto stop = ::std::make_shared< call_when_done >(
+            [&timer]()
+            {
+                timer.cancel();
+                db_service::stop();
+            });
+
+        for (int n = 0; n < num_requests; ++n) {
+            auto insert_count = ::std::make_shared<atomic_counter>(0);
+            auto insert2_count = ::std::make_shared<atomic_counter>(0);
+            auto select_count = ::std::make_shared<atomic_counter>(0);
+
             db_service::begin(opts.alias,
-            [&]( transaction_ptr tran ){
+            [&, insert_count, insert2_count, select_count, stop, n]( transaction_ptr tran ){
                 query (tran, "create temporary table pg_async_test(b bigint)")(
-                [&](transaction_ptr c, resultset, bool){
-                    local_log(logger::DEBUG) << "Query one finished";
+                [&, n](transaction_ptr c, resultset, bool){
+                    local_log(logger::DEBUG) << "Test " << n
+                            << "Query one finished";
                     EXPECT_TRUE(c.get());
                 }, [](error::db_error const&){
                     SUCCEED();
                 });
-                for (int i = 0; i < test::environment::num_requests; ++i) {
+                for (int i = 0; i < num_requests; ++i) {
+                    local_log(logger::DEBUG) << "Test " << n
+                            << " Query two enqueue (i=" << i << ")";
                     query(tran, "insert into pg_async_test values($1)", i)
-                    ([&](transaction_ptr c, resultset, bool){
-                        local_log(logger::DEBUG) << "Query two finished";
+                    ([&, i, insert_count, n](transaction_ptr c, resultset, bool){
+                        local_log(logger::DEBUG) << "Test " << n
+                                << " Query two finished (i="
+                                << i << " insert_count=" << *insert_count << ")";
                         EXPECT_TRUE(c.get());
+                        EXPECT_EQ(i, *insert_count) << "Callback called in correct order";
+                        ++(*insert_count);
                     }, [](error::db_error const&){
                         FAIL();
                     });
                 }
-                query(tran, "select * from pg_async_test")
-                ([&](transaction_ptr c, resultset r, bool) {
-                    local_log(logger::DEBUG) << "Query three finished";
-                    EXPECT_TRUE(c.get());
-                    EXPECT_EQ(test::environment::num_requests, r.size());
-                    EXPECT_EQ(1, r.columns_size());
-                    res = r;
-                }, [](error::db_error const&){
-                    FAIL();
-                });
+                for (int i = 0; i < num_requests; ++i) {
+                    local_log(logger::DEBUG) << "Test " << n
+                            << " Query three enqueue (i=" << i << ")";
+                    query(tran, "select * from pg_async_test")
+                    ([&, i, select_count, n](transaction_ptr c, resultset r, bool) {
+                        local_log(logger::DEBUG) << "Test " << n
+                                << " Query three finished (i="
+                                << i << " select_count=" << *select_count << ")";
+                        EXPECT_TRUE(c.get());
+                        EXPECT_EQ(num_requests, r.size());
+                        EXPECT_EQ(1, r.columns_size());
+                        EXPECT_EQ(i, *select_count) << "Callback called in correct order";
+                        ++(*select_count);
+                        res = r;
+                    }, [](error::db_error const&){
+                        FAIL();
+                    });
+                }
+                for (int i = 0; i < num_requests; ++i) {
+                    local_log(logger::DEBUG) << "Test " << n
+                        << " Query four enqueue (i=" << i << ")";
+                    query(tran, "insert into pg_async_test values($1)", i)
+                    ([&, i, insert2_count, n](transaction_ptr c, resultset, bool){
+                        local_log(logger::DEBUG) << "Test " << n
+                                << " Query four finished (i="
+                                << i << " insert2_count=" << *insert2_count << ")";
+                        EXPECT_TRUE(c.get());
+                        EXPECT_EQ(i, *insert2_count) << "Callback called in correct order";
+                        ++(*insert2_count);
+                    }, [](error::db_error const&){
+                        FAIL();
+                    });
+                }
                 query(tran, "drop table pg_async_test")
-                ([&](transaction_ptr c, resultset, bool) {
-                    local_log(logger::DEBUG) << "Query four finished";
+                ([&, n](transaction_ptr c, resultset, bool) {
+                    local_log(logger::DEBUG) << "Test " << n
+                            << " Query five finished";
                     EXPECT_TRUE(c.get());
-                    timer.cancel();
-                    //c->commit();
-                    db_service::stop();
                 }, [](error::db_error const&){
                     FAIL();
                 });
-                tran->commit();
+                tran->commit_async();
                 query(tran, "select 1")
-                ([&](transaction_ptr c, resultset, bool) {},
+                ([&](transaction_ptr c, resultset r, bool)
+                 {
+                    local_log(logger::DEBUG) << "Unexpected finish of query six. Resultset size " << r.size();
+                 },
                  [&](error::db_error const&) { got_error = true; });
             }, [](error::db_error const&){});
+
         }
+        // Additional service threads
+        ::std::vector<::std::thread> threads;
+        for (auto i = 0; i < test::environment::num_threads; ++i) {
+            threads.emplace_back(
+                []()
+                {
+                    db_service::run();
+                });
+        }
+
+        stop.reset();
         db_service::run();
 
+        for (auto& t : threads) {
+            t.join();
+        }
+
+//        EXPECT_EQ(num_requests * num_requests, insert_count);
+        EXPECT_EQ(num_requests, res.size());
         EXPECT_EQ(1, res.columns_size());
-        EXPECT_EQ(test::environment::num_requests, res.size());
         EXPECT_TRUE(got_error);
     }
 }
@@ -207,7 +285,7 @@ TEST(QueryTest, BasicResultParsing)
                     }
 
                     for (resultset::const_iterator row = res.begin(); row != res.end(); ++row) {
-                        tip::log::local local = local_log();
+                        auto local = local_log();
                         local << "Row " << (row - res.begin()) << ": ";
 
                         long id;

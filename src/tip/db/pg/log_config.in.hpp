@@ -15,7 +15,7 @@ namespace db {
 namespace pg {
 namespace config {
 
-namespace log = tip::log;
+namespace log = ::psst::log;
 
 const log::logger::event_severity SERVICE_LOG = log::logger::@PGASYNC_LOG_SERVICE@;
 const log::logger::event_severity CONNECTION_LOG = log::logger::@PGASYNC_LOG_CONNECTION@;

@@ -178,7 +178,7 @@ TEST( ConnectionTest, ConnectionPool )
                                     << " Received results: " << res_count;
                             if (complete) {
                                 local_log(logger::DEBUG) << "Commiting transaction";
-                                t1->commit();
+                                t1->commit_async();
                             }
 
                             if (res_count >= req_count * thread_count) {
@@ -251,7 +251,7 @@ TEST( ConnectionTest, ExecutePrepared )
                         EXPECT_TRUE(r.size());
                         EXPECT_TRUE(r.columns_size());
                         EXPECT_FALSE(r.empty());
-                        trx->commit();
+                        trx->commit_async();
                     }, [&](error::db_error const& ) {
                     });
                 }, [](error::db_error const&) {
@@ -264,6 +264,115 @@ TEST( ConnectionTest, ExecutePrepared )
 
         }}));
         io_service->run();
+    }
+}
+
+TEST( ConnectionTest, ConnectionPoolExtended )
+{
+    typedef std::shared_ptr< std::thread > thread_ptr;
+    typedef std::chrono::high_resolution_clock clock_type;
+    using namespace tip::db::pg;
+    if (!test::environment::test_database.empty()) {
+
+        connection_options opts = connection_options::parse(test::environment::test_database);
+        asio_config::io_service_ptr io_service(std::make_shared< asio_config::io_service >());
+        size_t pool_size = test::environment::connection_pool;
+        int req_count = test::environment::num_requests;
+        int thread_count = test::environment::num_threads;
+
+        clock_type::time_point tp = clock_type::now();
+        clock_type::duration start = tp.time_since_epoch();
+
+        std::shared_ptr< tip::db::pg::detail::connection_pool > pool(
+                tip::db::pg::detail::connection_pool::create(io_service, pool_size, opts));
+
+        std::vector< oids::type::oid_type > param_types;
+        std::vector<char> params;
+        tip::db::pg::detail::write_params(param_types, params, 10, 20);
+
+        ASSERT_TRUE(pool.get());
+
+        std::atomic<int> sent_count(0);
+        std::atomic<int> res_count(0);
+        std::atomic<int> fail_count(0);
+
+        ASIO_NAMESPACE::deadline_timer timer(*io_service,
+                boost::posix_time::seconds(test::environment::deadline));
+        timer.async_wait([&](asio_config::error_code const& ec){
+            if (!ec) {
+                local_log(logger::WARNING) << "Connection pool test timer expired";
+                pool->close([](){
+                    local_log(logger::DEBUG) << "Connection pool closed on timer command";
+                });
+                timer.cancel();
+                if (!io_service->stopped())
+                    io_service->stop();
+            }
+        });
+
+        std::vector< thread_ptr > threads;
+        for (int t = 0; t < thread_count; ++t) {
+            threads.push_back(thread_ptr(new std::thread(
+            [&]() {
+                int t_no = t;
+                for (int i = 0; i < req_count; ++i) {
+                    pool->get_connection(
+                    [&] (transaction_ptr tran) {
+                        int req_no = i;
+                        ASSERT_TRUE(tran.get());
+                        local_log(logger::DEBUG) << "Obtained connection thread  "
+                                << t_no << " request " << req_no;
+                        ++sent_count;
+                        tran->execute( "select * from pg_catalog.pg_class limit 10",
+                        param_types, params,
+                        [&] (transaction_ptr t1, resultset r, bool complete) {
+                            ASSERT_TRUE(t1.get());
+                            if (complete) {
+                                ++res_count;
+                            }
+                            local_log(logger::DEBUG) << "Received a resultset columns: " << r.columns_size()
+                                    << " rows: " << r.size()
+                                    << " completed: " << std::boolalpha << complete;
+                            local_log(logger::DEBUG) << "Sent requests: " << sent_count
+                                    << " Received results: " << res_count;
+                            if (complete) {
+                                local_log(logger::DEBUG) << "Commiting transaction";
+                                t1->commit_async();
+                            }
+
+                            if (res_count >= req_count * thread_count) {
+                                local_log(logger::DEBUG) << "Done all roundtrip tests";
+                                pool->close([&timer](){
+                                    local_log(logger::DEBUG) << "Connection pool closed";
+                                    timer.cancel();
+                                });
+                            }
+                        }, [](error::db_error const&){} );
+                    },
+                    [&] (error::db_error const&) {
+                        ++fail_count; // transaction rolled back
+                    }, transaction_mode{});
+                }
+                io_service->run();
+            }
+            )));
+        }
+
+        for (auto t : threads) {
+            t->join();
+        }
+        if (fail_count) {
+            EXPECT_EQ(pool_size, fail_count); // Transaction will fail in each connection
+        }
+        EXPECT_EQ(req_count * thread_count, sent_count);
+        EXPECT_EQ(req_count * thread_count, res_count);
+        tp = clock_type::now();
+        clock_type::duration run = tp.time_since_epoch() - start;
+        double seconds = (double)run.count() * clock_type::period::num / clock_type::period::den;;
+        local_log(logger::INFO) << "Running "
+                << req_count * thread_count << " requests in "
+                << thread_count << " threads with "
+                << pool_size << " connections took " << seconds << "s";
     }
 }
 
@@ -290,7 +399,7 @@ TEST( TransactionTest, CleanExit )
                     //EXPECT_THROW( c->begin(events::begin()), db_error );
                     EXPECT_TRUE(tran.get());
                     EXPECT_TRUE(tran->in_transaction());
-                    ASSERT_NO_THROW(tran->commit());
+                    ASSERT_NO_THROW(tran->commit_async());
                 },
                 [&](error::db_error const&){
                     transaction_error = true;

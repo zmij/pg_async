@@ -12,10 +12,14 @@
 #include <memory>
 #include <functional>
 #include <map>
+#include <future>
 #include <boost/optional.hpp>
 
 #include <tip/db/pg/asio_config.hpp>
+#include <tip/db/pg/future_config.hpp>
 #include <tip/db/pg/common.hpp>
+#include <tip/db/pg/error.hpp>
+
 
 namespace tip {
 namespace db {
@@ -110,6 +114,42 @@ public:
     begin(dbalias const&, transaction_callback const&,
             error_callback const&, transaction_mode const& = transaction_mode{});
 
+    /**
+     * Wrap async call to begin to a future
+     * @param
+     * @param
+     * @return
+     */
+    template < template <typename> class _Promise = promise >
+    static auto
+    begin_async(dbalias const& alias, transaction_mode const& mode = transaction_mode{})
+        -> decltype(::std::declval<_Promise<transaction_ptr>>().get_future())
+    {
+        auto promise = ::std::make_shared<_Promise<transaction_ptr>>();
+
+        begin(
+            alias,
+            [promise](transaction_ptr trx)
+            {
+                promise->set_value(trx);
+            },
+            [promise](error::db_error const& e)
+            {
+                promise->set_exception(::std::make_exception_ptr(e));
+            }, mode
+        );
+
+        return promise->get_future();
+    }
+
+    template < template <typename> class _Promise = promise >
+    static transaction_ptr
+    begin(dbalias const& alias, transaction_mode const& mode = transaction_mode{})
+    {
+        auto future = begin_async< _Promise >(alias, mode);
+        return future.get();
+    }
+
     static void
     run();
     static void
@@ -122,7 +162,9 @@ private:
     db_service() {}
 
     typedef std::shared_ptr<detail::database_impl> pimpl;
-    static pimpl pimpl_;
+
+    static pimpl&
+    impl_ptr();
 
     static pimpl
     impl(size_t pool_size = DEFAULT_POOOL_SIZE,

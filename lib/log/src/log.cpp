@@ -5,11 +5,12 @@
  * @author: zmij
  */
 
-#include <tip/log.hpp>
+#include <pushkin/log.hpp>
 #include <iomanip>
 #include <chrono>
 #include <algorithm>
 #include <ostream>
+#include <fstream>
 #include <istream>
 #include <iterator>
 #include <unistd.h>
@@ -19,20 +20,26 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <pushkin/log/stream_redirect.hpp>
+
 #include <boost/thread/tss.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/date_time/date_facet.hpp>
 
-namespace tip {
+#if defined __linux__ or defined MACOSX
+#include <pthread.h>
+#endif
+
+namespace psst {
 namespace log {
 
 const std::string::size_type PROC_NAME_MAX_LEN = 12;
 const std::string UNKNOW_CATEGORY = "<UNKNOWN>";
 const std::string::size_type CATEGORY_MAX_LEN = UNKNOW_CATEGORY.size();
 
-typedef boost::posix_time::ptime timestamp_type;
+using timestamp_type = boost::posix_time::ptime;
 
 namespace {
 
@@ -40,7 +47,7 @@ namespace {
 	timestamp_type
 	timestamp()
 	{
-		return boost::posix_time::microsec_clock::local_time();
+        return boost::posix_time::microsec_clock::universal_time();
 	}
 
 	std::string const&
@@ -150,7 +157,7 @@ operator >> (std::istream& in, logger::event_severity& es)
 }
 
 struct event_data {
-	typedef boost::asio::streambuf buffer_type;
+    using buffer_type = boost::asio::streambuf;
 	size_t						thread_no_;
 	timestamp_type				timestamp_;
 	logger::event_severity		severity_;
@@ -165,17 +172,23 @@ struct event_data {
 };
 
 struct log_writer {
-	typedef std::shared_ptr<event_data> event_ptr;
-	typedef std::queue<event_ptr> event_queue;
+    using event_ptr     = ::std::shared_ptr<event_data>;
+    using event_queue   = ::std::queue<event_ptr>;
+    using mutex_type    = ::std::mutex;
+    using lock_guard    = ::std::lock_guard<mutex_type>;
+    using unique_lock   = ::std::unique_lock<mutex_type>;
+    using redirect_ptr  = ::std::shared_ptr< stream_redirect >;
 
-	std::ostream& out_;
+    ::std::ostream&                     out_;
+    redirect_ptr                        redirect_;
 	pid_t pid_;
 
 	event_queue events_;
 	std::condition_variable cond_;
-	std::mutex mtx_;
+    mutex_type                          mtx_;
 
 	bool finished_;
+
 
 	log_writer(std::ostream& s)
 			: out_(s), pid_(::getpid()), finished_(false)
@@ -184,6 +197,11 @@ struct log_writer {
 		date_facet* f = new date_facet(date_format.c_str());
 		out_.imbue(std::locale(std::locale::classic(), f));
 	}
+
+    ~log_writer()
+    {
+        out_.flush();
+    }
 
 	void
 	change_date_format()
@@ -194,28 +212,48 @@ struct log_writer {
 	}
 
 	void
+    redirect(::std::string const& file)
+    {
+        if (redirect_)
+            throw ::std::runtime_error{ "Log is already redirected" };
+        unique_lock lock{mtx_};
+        redirect_ = ::std::make_shared< stream_redirect >( out_, file );
+    }
+
+    void
+    reopen()
+    {
+        if (redirect_) {
+            unique_lock lock{mtx_};
+            redirect_->reopen();
+        }
+    }
+
+    void
 	run()
 	{
+        // TODO Wrap in if have posix
+        #if defined __linux__
+        pthread_setname_np(pthread_self(), "logger");
+        #elif defined MACOSX
+        pthread_setname_np("logger");
+        #endif
 		while (!finished_) {
 			try {
+                event_queue events;
 				{
-					std::unique_lock<std::mutex> lock(mtx_);
+                    unique_lock lock{mtx_};
 					while (events_.empty() && !finished_) cond_.wait(lock);
+                    events.swap(events_);
 				}
-				bool empty_queue = false;
-				{
-					std::unique_lock<std::mutex> lock(mtx_);
-					empty_queue = events_.empty();
-				}
-				while (!empty_queue) {
+
+                while (!events.empty()) {
+                    while (!events.empty()) {
 					event_ptr e;
-					{
-						std::unique_lock<std::mutex> lock(mtx_);
-						if (events_.empty()) break;
-						e = events_.front();
-						events_.pop();
+                        e = events.front();
+                        events.pop();
 						if (!e) break;
-					}
+
 					event_data& evt = *e;
 					std::ostream::sentry s(out_);
 					if (s) {
@@ -244,16 +282,16 @@ struct log_writer {
 						if (flush_stream_)
 							out_.flush();
 					}
-					{
-						std::unique_lock<std::mutex> lock(mtx_);
-						empty_queue = events_.empty();
 					}
+                    unique_lock lock{mtx_};
+                    events.swap(events_);
 				}
+                out_.flush();
 			} catch (::std::exception const& e) {
-				auto time = boost::posix_time::microsec_clock::local_time();
+                auto time = boost::posix_time::microsec_clock::universal_time();
 				out_ << time.time_of_day() << " Exception in logging thread: " << e.what() << ::std::endl;
 			} catch (...) {
-				auto time = boost::posix_time::microsec_clock::local_time();
+                auto time = boost::posix_time::microsec_clock::universal_time();
 				out_ << time.time_of_day() << " Unknown exception in logging thread"<< ::std::endl;
 			}
 		}
@@ -262,7 +300,7 @@ struct log_writer {
 	void
 	push(event_ptr e)
 	{
-		std::unique_lock<std::mutex> lock(mtx_);
+        unique_lock lock{mtx_};
 		events_.push(e);
 		cond_.notify_all();
 	}
@@ -270,19 +308,19 @@ struct log_writer {
 	void
 	finish()
 	{
-		std::unique_lock<std::mutex> lock(mtx_);
+        unique_lock lock{mtx_};
 		finished_ = true;
 		cond_.notify_all();
 	}
 };
 
-struct logger::Impl {
+struct logger::impl {
 	struct thread_number {
 		size_t no;
 	};
-	typedef boost::thread_specific_ptr<event_data> thread_event_ptr;
-	typedef boost::thread_specific_ptr<thread_number> thread_number_ptr;
-	typedef std::shared_ptr<event_data> event_ptr;
+    using thread_event_ptr = boost::thread_specific_ptr<event_data>;
+    using thread_number_ptr = boost::thread_specific_ptr<thread_number>;
+    using event_ptr = std::shared_ptr<event_data>;
 
 	log_writer writer_;
 	std::thread writer_thread_;
@@ -292,7 +330,7 @@ struct logger::Impl {
 
 	bool finished_;
 
-	Impl(std::ostream& out)
+    impl(std::ostream& out)
 			: writer_(out), writer_thread_(), finished_(false)
 	{
 		writer_thread_ = std::thread([&]{
@@ -300,7 +338,7 @@ struct logger::Impl {
 		});
 	}
 
-	~Impl()
+    ~impl()
 	{
 		try {
 			flush();
@@ -357,9 +395,12 @@ struct logger::Impl {
 	void
 	flush()
 	{
-		if (!finished_ && event_.get() && size() > 0) {
-			event_data* e = event_.release();
-			writer_.push(event_ptr(e));
+        if (!finished_ && event_.get()) {
+            event_ptr e(event_.release());
+            if (logger::min_severity() <= e->severity_
+                && logger::OFF < e->severity_) {
+                writer_.push(e);
+		}
 		}
 	}
 
@@ -368,6 +409,18 @@ struct logger::Impl {
 	{
 		writer_.change_date_format();
 	}
+
+    void
+    redirect(::std::string const& file)
+    {
+        writer_.redirect(file);
+    }
+
+    void
+    rotate()
+    {
+        writer_.reopen();
+    }
 };
 
 logger&
@@ -387,7 +440,14 @@ void
 logger::set_stream(std::ostream& s)
 {
 	logger& l = instance();
-	l.pimpl_.reset(new Impl(s));
+    l.pimpl_.reset(new impl(s));
+}
+
+void
+logger::set_target_file(::std::string const& file_name)
+{
+    logger& l = instance();
+    l.pimpl_->redirect(file_name);
 }
 
 void
@@ -442,7 +502,7 @@ logger::severity_color(event_severity s)
 
 
 logger::logger(std::ostream& out)
-		: pimpl_(new Impl(out))
+        : pimpl_(new impl(out))
 {
 }
 
@@ -479,16 +539,19 @@ logger::flush()
 	return *this;
 }
 
+void
+logger::rotate()
+{
+    pimpl_->rotate();
+}
+
 }  // namespace log
 namespace util {
 
 log::logger&
 operator << (log::logger& out, ANSI_COLOR col)
 {
-	using log::logger;
-	logger::event_severity s = out.severity();
-	if (logger::min_severity() <= s && logger::OFF < s
-			&& log::logger::use_colors()) {
+    if(log::logger::use_colors()) {
 		std::ostream os(&out.buffer());
 		os << col;
 	}
@@ -496,5 +559,5 @@ operator << (log::logger& out, ANSI_COLOR col)
 }
 
 }  // namespace util
-}  // namespace tip
+}  // namespace psst
 

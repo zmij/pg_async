@@ -10,7 +10,6 @@
 #include <tip/db/pg/error.hpp>
 #include <stdexcept>
 
-#include <tip/db/pg/version.hpp>
 #include <tip/db/pg/log.hpp>
 
 namespace tip {
@@ -84,7 +83,8 @@ database_impl::add_pool(connection_options const& co,
         if (!pool_size.is_initialized()) {
             pool_size = pool_size_;
         }
-        local_log(logger::INFO) << "Create a new connection pool " << co.alias;
+        local_log(logger::INFO) << "Create a new connection pool " << co.alias
+                << " size " << *pool_size;
         client_options_type parms(params);
         for (auto p : defaults_) {
             if (!parms.count(p.first)) {
@@ -110,7 +110,7 @@ database_impl::get_connection(dbalias const& alias,
         throw error::connection_error("Database service is not running");
 
     if (!connections_.count(alias)) {
-        throw error::connection_error("Database alias is not registered");
+        throw error::connection_error("Database alias '" + alias + "' is not registered");
     }
     connection_pool_ptr pool = connections_[alias];
     pool->get_connection(cb, err, mode);
@@ -132,7 +132,7 @@ database_impl::stop()
         asio_config::io_service_ptr svc = service_;
 
         for (auto c: connections_) {
-            // FIXME Pass a close callback. Call stop
+            // Pass a close callback. Call stop
             // only when all connections are closed, may be with some timeout
             c.second->close(
             [pool_count, svc](){

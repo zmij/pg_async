@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+option(TEST_PG_ASYNC_FSM "Build test for pg_async FSM" OFF)
+
 configure_file(config.in.hpp config.hpp)
 
 # Test SQL script files
@@ -18,40 +20,44 @@ foreach(sql_file ${test_pg_SQL})
     )
 endforeach()
 
-add_custom_target(test-sql-scripts 
+add_custom_target(test-sql-scripts
     DEPENDS ${test_pg_SQL}
     COMMENT "Copy test SQL scripts"
 )
 
-set(test_pg_SRCS 
-    fsm_tests.cpp
+set(test_pg_SRCS
+    test_main.cpp
+    test-environment.cpp
     internals_tests.cpp
     db_io_tests.cpp
     query_tests.cpp
     errors_tests.cpp
     array_support_test.cpp
     timestamp_io_test.cpp
-    test_main.cpp
-    test-environment.cpp
+    uuid_io_test.cpp
 )
+
+if(TEST_PG_ASYNC_FSM)
+    list(APPEND test_pg_SRCS fsm_tests.cpp)
+endif()
 
 set(PGTEST test-pg-async)
 
 add_executable( ${PGTEST} ${test_pg_SRCS})
 
 target_link_libraries(
-    ${PGTEST} 
+    ${PGTEST}
     ${Boost_PROGRAM_OPTIONS_LIBRARIES}
     ${GTEST_LIBRARIES}
     ${PGASYNC_LIB_NAME}
 )
 
 if (TEST_DATABASE)
-    set(TEST_ARGS
+    set(DB_TEST_ARGS
         "-d${TEST_DATABASE}" -s2 -x4 -q10 --run-deadline=1
     )
 else()
-    set(TEST_ARGS)
+    set(DB_TEST_ARGS)
 endif()
 
 if (GTEST_XML_OUTPUT)
@@ -64,9 +70,43 @@ endif()
 
 add_test(
     NAME test-pg-async
-    COMMAND ${PGTEST} ${TEST_ARGS}
+    COMMAND ${PGTEST} ${DB_TEST_ARGS} ${TEST_ARGS}
 )
 
 
 add_dependencies(${PGTEST} test-sql-scripts)
+
+if(WITH_BOOST_FIBER)
+#-----------------------------------------------------------------------------
+#   PG fiber test
+
+set(fiber_test_SRCS
+    test_main.cpp
+    test-environment.cpp
+    fiber_query_test.cpp
+)
+add_executable(test-pg-fiber ${fiber_test_SRCS})
+target_link_libraries(
+    test-pg-fiber
+    ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+    ${GTEST_LIBRARIES}
+    ${PGASYNC_LIB_NAME}
+    ${FIBER_LIBS}
+)
+
+if (GTEST_XML_OUTPUT)
+    set (
+        FIBER_TEST_ARGS
+        --gtest_output=xml:test-pg-fiber-detail.xml
+    )
+endif()
+
+
+add_test(
+    NAME test-pg-fiber
+    COMMAND test-pg-fiber ${DB_TEST_ARGS} ${FIBER_TEST_ARGS}
+)
+
+
+endif()
 
