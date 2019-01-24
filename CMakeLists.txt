@@ -13,7 +13,7 @@ if (PROJECT_VERSION)
     # Built as a subproject
     set(_pversion ${PROJECT_VERSION})
 else()
-    set(_pversion 0.1.0)
+    set(_pversion 1.0.0)
 endif()
 
 set(_pname ${PROJECT_PREFIX}-pg-async)
